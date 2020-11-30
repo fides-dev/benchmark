@@ -43,7 +43,8 @@ rule evaluate_benchmark:
     output:
         full_waterfall=expand(
             os.path.join('evaluation', '{model}_{analysis}.pdf'),
-            model=['{model}'], analysis=['all_starts', 'by_hess', 'by_refine', 'by_stepback', 'by_subspace']
+            model=['{model}'], analysis=['all_starts', 'by_hess', 'by_refine',
+                                         'by_stepback', 'by_subspace']
         )
     shell:
         'python3 {input.script} {wildcards.model}'
