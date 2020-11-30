@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 python3 -m virtualenv venv
 source ./venv/bin/activate
-pip install requirements.txt
+pip install -r requirements.txt
 git submodule init
 git submodule update
