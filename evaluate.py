@@ -31,15 +31,17 @@ for hdf_results_file in hdf5_files:
     MODEL_NAME, HESSIAN, STEPBACK, SUBSPACE, REFINE, N_STARTS = \
         hdf_results_file.split('__')
 
-    reader = OptimizationResultHDF5Reader(os.path.join('results',
-                                                       hdf_results_file))
-    result = reader.read()
-    result.problem = problem
-    all_results.append({
-        'result': result, 'model': MODEL_NAME, 'hess': HESSIAN,
-        'stepback': STEPBACK, 'subspace': SUBSPACE, 'refine': REFINE,
-        'file': hdf_results_file
-    })
+    if HESSIAN == 'FIM' and REFINE == '0' and STEPBACK == 'reflect_single':
+        reader = OptimizationResultHDF5Reader(os.path.join('results',
+                                                           hdf_results_file))
+        result = reader.read()
+        result.problem = problem
+
+        all_results.append({
+            'result': result, 'model': MODEL_NAME, 'hess': HESSIAN,
+            'stepback': STEPBACK, 'subspace': SUBSPACE, 'refine': REFINE,
+            'file': hdf_results_file
+        })
 
 ref = create_references(
     x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
@@ -49,6 +51,8 @@ ref = create_references(
         np.asarray(petab_problem.x_free_indices)]
     )
 )
+
+os.makedirs('evaluation', exist_ok=True)
 
 tab10 = cm.get_cmap('tab20')
 colors = {}
@@ -63,8 +67,11 @@ for field in ['hess', 'stepback', 'refine']:
     }}
 
 waterfall(
-    [r['result'] for r in all_results],
-    legends=[os.path.splitext(r['file'])[0] for r in all_results]
+    [r['result'] for r in sorted(
+        all_results,
+        key=lambda r: r['result'].optimize_result.list[0]['fval']
+    )],
+    legends=[os.path.splitext(r['file'])[0] for r in all_results],
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_all_starts.pdf'))
@@ -92,15 +99,21 @@ df = pd.melt(df, value_vars=['log10(time)', 'log10(fval - minfval + 1)',
              id_vars=['hess', 'stepback', 'subspace', 'refine'])
 
 
-for field in ['hess', 'stepback', 'subspace', 'refine']:
-    g = sns.FacetGrid(
-        df, row='variable', sharey=False
-    )
-    g.map(sns.violinplot, field, "value")
-    g.set_xticklabels(rotation=90)
-    plt.tight_layout()
-    plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_by_{field}.pdf'))
-    plt.show()
+for refine in df.refine.unique():
+    for variable in df.variable.unique():
+        g = sns.FacetGrid(
+            df[(df.refine == refine) & (df.variable == variable)],
+            row='hess', col='stepback', sharey=False
+        )
+        g.map(sns.boxplot, 'subspace', "value")
+        g.set_xticklabels(rotation=90)
+        g.set_ylabels(variable)
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'{MODEL_NAME}_refine{refine}_variable{variable}.pdf'
+        ))
+        plt.show()
 
 
 """
