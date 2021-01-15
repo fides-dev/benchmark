@@ -5,13 +5,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import cm
+import petab.visualize
+import amici.petab_objective
 
 import pypesto.petab
 import petab
 from pypesto.store import OptimizationResultHDF5Reader
-from pypesto.visualize import waterfall, create_references, \
-    optimization_run_properties_per_multistart
+from pypesto.visualize import waterfall, create_references
 
 from compile_petab import folder_base
 
@@ -25,13 +25,15 @@ yaml_config = os.path.join(folder_base, MODEL_NAME, MODEL_NAME + '.yaml')
 petab_problem = petab.Problem.from_yaml(yaml_config)
 importer = pypesto.petab.PetabImporter(petab_problem)
 problem = importer.create_problem()
+model = importer.create_model()
 
 all_results = []
 for hdf_results_file in hdf5_files:
-    MODEL_NAME, HESSIAN, STEPBACK, SUBSPACE, REFINE, N_STARTS = \
+    MODEL, HESSIAN, STEPBACK, SUBSPACE, REFINE, N_STARTS = \
         hdf_results_file.split('__')
 
-    if HESSIAN == 'FIM' and REFINE == '0' and STEPBACK == 'reflect_single':
+    if HESSIAN == 'FIM' and REFINE == '0' and STEPBACK == 'reflect_single'\
+            and MODEL == MODEL_NAME:
         reader = OptimizationResultHDF5Reader(os.path.join('results',
                                                            hdf_results_file))
         result = reader.read()
@@ -54,84 +56,79 @@ ref = create_references(
 
 os.makedirs('evaluation', exist_ok=True)
 
-tab10 = cm.get_cmap('tab20')
-colors = {}
-for field in ['hess', 'stepback', 'refine']:
-    opts = np.unique([r[field] for r in all_results])
-    colors[field] = {**{
-        ('full', opt): (*tab10.colors[iopt * 2], 1.0)
-        for iopt, opt in enumerate(opts)
-    }, **{
-        ('2D', opt): (*tab10.colors[iopt * 2 + 1], 1.0)
-        for iopt, opt in enumerate(opts)
-    }}
-
 waterfall(
     [r['result'] for r in sorted(
         all_results,
         key=lambda r: r['result'].optimize_result.list[0]['fval']
     )],
+    reference=ref,
     legends=[os.path.splitext(r['file'])[0] for r in all_results],
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_all_starts.pdf'))
 
 df = pd.DataFrame([
-    {'fval': start['fval'], 'time': start['time'], 'iter': start['n_fval'],
-     'hess': results['hess'], 'stepback': results['stepback'],
-     'subspace': results['subspace'], 'refine': results['refine']}
+    {
+        'fval': start['fval'],
+        'time': start['time'],
+        'iter': start['n_fval'],
+        'id': start['id'],
+        'subspace': results['subspace']
+    }
     for results in all_results
     for start in results['result'].optimize_result.list
 ])
 
+df = df.pivot(index='id', columns=['subspace'])
+
 df.fval = df.fval - np.nanmin(df.fval) + 1
-df.fval = df.fval.apply(np.log10)
-df.time = df.time.apply(np.log10)
-df.iter = df.iter.apply(np.log10)
-df = df[np.isfinite(df.fval)]
+for value in ['time', 'fval', 'iter']:
+    df[value] = df[value].apply(np.log10)
+df = df[np.isfinite(df.fval).all(axis=1)]
 
-df.rename(columns={'fval': 'log10(fval - minfval + 1)',
-                   'time': 'log10(time)',
-                   'iter': 'log10(iter)'}, inplace=True)
+df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-df = pd.melt(df, value_vars=['log10(time)', 'log10(fval - minfval + 1)',
-                             'log10(iter)'],
-             id_vars=['hess', 'stepback', 'subspace', 'refine'])
+for value in ['time', 'fval', 'iter']:
+    lb, ub = [
+        fun([fun(df[f"{value} 2D"]), fun(df[f"{value} full"])])
+        for fun in [np.nanmin, np.nanmax]
+    ]
+    lb -= (ub-lb)/10
+    ub += (ub-lb)/10
 
-
-for refine in df.refine.unique():
-    for variable in df.variable.unique():
-        g = sns.FacetGrid(
-            df[(df.refine == refine) & (df.variable == variable)],
-            row='hess', col='stepback', sharey=False
-        )
-        g.map(sns.boxplot, 'subspace', "value")
-        g.set_xticklabels(rotation=90)
-        g.set_ylabels(variable)
-        plt.tight_layout()
-        plt.savefig(os.path.join(
-            'evaluation',
-            f'{MODEL_NAME}_refine{refine}_variable{variable}.pdf'
-        ))
-        plt.show()
-
-
-"""
-for field in ['hess', 'stepback', 'refine']:
-    waterfall(
-        [r['result'] for r in all_results],
-        colors=np.asarray([colors[field][(r['subspace'], r[field])]
-                           for r in all_results]),
-        legends=[f'{r["subspace"]}/{r[field]}' for r in all_results],
-        reference=ref,
-    )
-    optimization_run_properties_per_multistart(
-        [r['result'] for r in all_results],
-        properties_to_plot=['time', 'n_fval'],
-        colors=[colors[field][(r['subspace'], r[field])] for r in all_results],
-        legends=[f'{r["subspace"]}/{r[field]}' for r in all_results],
-    )
+    g = sns.jointplot(data=df,
+                      x=f"{value} 2D", y=f"{value} full",
+                      kind='reg',
+                      xlim=(lb, ub), ylim=(lb, ub),
+                      marginal_kws={'bins': 25},
+                      joint_kws={'scatter_kws': {'alpha': 0.3}})
     plt.tight_layout()
-    plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_by_{field}.pdf'))
-"""
+    plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_{value}.pdf'))
+    plt.show()
+
+for result in all_results:
+    simulation = amici.petab_objective.simulate_petab(
+        petab_problem,
+        model,
+        problem_parameters=dict(zip(
+            problem.x_names,
+            result['result'].optimize_result.list[0]['x'],
+        )), scaled_parameters=True
+    )
+    # Convert the simulation to PEtab format.
+    simulation_df = amici.petab_objective.rdatas_to_simulation_df(
+        simulation['rdatas'],
+        model=model,
+        measurement_df=petab_problem.measurement_df,
+    )
+    # Plot with PEtab
+    petab.visualize.plot_data_and_simulation(
+        exp_data=petab_problem.measurement_df,
+        exp_conditions=petab_problem.condition_df,
+        sim_data=simulation_df,
+    )
+    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join('evaluation',
+                             f'{MODEL_NAME}_sim_{result["optimizer"]}.pdf'))
 
