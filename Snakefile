@@ -3,7 +3,7 @@ import os
 from benchmark import PREFIX_TEMPLATE
 
 MODELS = ['Zheng_PNAS2012', 'Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
-OPTIMIZER = ['fides.subspace=2D', 'fides.subspace=full', 'ls_trf']
+OPTIMIZER = ['fides.subspace=2D', 'fides.subspace=full']
 N_STARTS = ['1000']
 
 

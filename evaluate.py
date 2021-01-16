@@ -29,19 +29,17 @@ model = importer.create_model()
 
 all_results = []
 for hdf_results_file in hdf5_files:
-    MODEL, HESSIAN, STEPBACK, SUBSPACE, REFINE, N_STARTS = \
+    MODEL, OPTIMIZER, N_STARTS = \
         hdf_results_file.split('__')
 
-    if HESSIAN == 'FIM' and REFINE == '0' and STEPBACK == 'reflect_single'\
-            and MODEL == MODEL_NAME:
+    if MODEL == MODEL_NAME and OPTIMIZER != 'ls_trf':
         reader = OptimizationResultHDF5Reader(os.path.join('results',
                                                            hdf_results_file))
         result = reader.read()
         result.problem = problem
 
         all_results.append({
-            'result': result, 'model': MODEL_NAME, 'hess': HESSIAN,
-            'stepback': STEPBACK, 'subspace': SUBSPACE, 'refine': REFINE,
+            'result': result, 'model': MODEL_NAME, 'optimizer': OPTIMIZER,
             'file': hdf_results_file
         })
 
@@ -56,13 +54,15 @@ ref = create_references(
 
 os.makedirs('evaluation', exist_ok=True)
 
+all_results = sorted(
+    all_results,
+    key=lambda r: r['result'].optimize_result.list[0]['fval']
+)
+
 waterfall(
-    [r['result'] for r in sorted(
-        all_results,
-        key=lambda r: r['result'].optimize_result.list[0]['fval']
-    )],
+    [r['result'] for r in all_results],
     reference=ref,
-    legends=[os.path.splitext(r['file'])[0] for r in all_results],
+    legends=[r['optimizer'] for r in all_results],
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_all_starts.pdf'))
@@ -72,32 +72,35 @@ df = pd.DataFrame([
         'fval': start['fval'],
         'time': start['time'],
         'iter': start['n_fval'],
+        'itertime': start['n_fval']/start['time'],
         'id': start['id'],
-        'subspace': results['subspace']
+        'optimizer': results['optimizer']
     }
     for results in all_results
     for start in results['result'].optimize_result.list
 ])
 
-df = df.pivot(index='id', columns=['subspace'])
+df = df.pivot(index='id', columns=['optimizer'])
 
 df.fval = df.fval - np.nanmin(df.fval) + 1
-for value in ['time', 'fval', 'iter']:
+for value in ['time', 'fval', 'iter', 'itertime']:
     df[value] = df[value].apply(np.log10)
 df = df[np.isfinite(df.fval).all(axis=1)]
 
 df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-for value in ['time', 'fval', 'iter']:
+for value in ['time', 'fval', 'iter', 'itertime']:
     lb, ub = [
-        fun([fun(df[f"{value} 2D"]), fun(df[f"{value} full"])])
+        fun([fun(df[f"{value} fides.subspace=2D"]),
+             fun(df[f"{value} fides.subspace=full"])])
         for fun in [np.nanmin, np.nanmax]
     ]
     lb -= (ub-lb)/10
     ub += (ub-lb)/10
 
     g = sns.jointplot(data=df,
-                      x=f"{value} 2D", y=f"{value} full",
+                      x=f"{value} fides.subspace=2D",
+                      y=f"{value} fides.subspace=full",
                       kind='reg',
                       xlim=(lb, ub), ylim=(lb, ub),
                       marginal_kws={'bins': 25},
