@@ -32,7 +32,7 @@ for hdf_results_file in hdf5_files:
     MODEL, OPTIMIZER, N_STARTS = \
         hdf_results_file.split('__')
 
-    if MODEL == MODEL_NAME and OPTIMIZER != 'ls_trf':
+    if MODEL == MODEL_NAME:
         reader = OptimizationResultHDF5Reader(os.path.join('results',
                                                            hdf_results_file))
         result = reader.read()

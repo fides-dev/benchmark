@@ -39,7 +39,7 @@ if __name__ == '__main__':
     petab_problem = petab.Problem.from_yaml(yaml_config)
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
-    problem.objective.amici_solver.setMaxSteps(int(1e4))
+    problem.objective.amici_solver.setMaxSteps(int(1e3))
     problem.objective.amici_solver.setAbsoluteTolerance(1e-8)
     problem.objective.amici_solver.setRelativeTolerance(1e-8)
 
