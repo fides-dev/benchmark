@@ -107,10 +107,11 @@ if __name__ == '__main__':
         trace_record_sres=False,
         trace_record_schi2=False,
     )
-    result = optimize.minimize(problem=problem, optimizer=optimizer,
-                               n_starts=N_STARTS, engine=engine,
-                               options=options,
-                               history_options=history_options)
+    result = optimize.minimize(
+        problem=problem, optimizer=optimizer, n_starts=N_STARTS, engine=engine,
+        options=options,
+    #    history_options=history_options
+    )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
     plt.tight_layout()
@@ -124,9 +125,9 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig(os.path.join('results', prefix + '_convergence.pdf'))
 
-    visualize.optimizer_history(result)
-    plt.tight_layout()
-    plt.savefig(os.path.join('results', prefix + '_history.pdf'))
+    #visualize.optimizer_history(result)
+    #plt.tight_layout()
+    #plt.savefig(os.path.join('results', prefix + '_history.pdf'))
 
     writer = OptimizationResultHDF5Writer(hdf_results_file)
     writer.write(result, overwrite=True)
