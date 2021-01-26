@@ -110,6 +110,11 @@ if __name__ == '__main__':
             method='ls_trf'
         )
 
+    if optimizer_name == 'ipopt':
+        optimizer = optimize.IpoptOptimizer(
+            options={'max_iter': 20}
+        )
+
     engine = pypesto.engine.SingleCoreEngine()
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,

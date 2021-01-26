@@ -3,4 +3,5 @@ amici==0.11.12
 fides==0.2.3
 seaborn==0.11.1
 snakemake==5.32.0
+ipopt==0.3.0
 git+https://github.com/ICB-DCM/pyPESTO@develop
