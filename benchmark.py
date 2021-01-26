@@ -63,6 +63,9 @@ if __name__ == '__main__':
             amici.InterpolationType_polynomial
         )
 
+    if MODEL_NAME == 'Fujita_SciSignal2010':
+        problem.objective.amici_solver.setMaxSteps(int(2e4))
+
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: 1e3,
@@ -91,7 +94,7 @@ if __name__ == '__main__':
                 amici.SensitivityMethod.adjoint
             )
         else:
-            hessian_update = 'FIM'
+            hessian_update = hessian_updates.get('FIM')
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
