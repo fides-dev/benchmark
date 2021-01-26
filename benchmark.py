@@ -1,6 +1,7 @@
 import os
 import sys
 import petab
+import amici
 import fides
 import pypesto.petab
 import pypesto.optimize as optimize
@@ -27,7 +28,6 @@ if __name__ == '__main__':
 
     optimizer_name = OPTIMIZER.split('.')[0]
 
-
     parsed_options = {
         option.split('=')[0]: option.split('=')[1]
         for option in OPTIMIZER.split('.')[1:]
@@ -37,16 +37,39 @@ if __name__ == '__main__':
 
     # create a petab problem
     petab_problem = petab.Problem.from_yaml(yaml_config)
+    if MODEL_NAME == 'Chen_MSB2009':
+        wrong_pars = \
+            petab_problem.parameter_df[petab.PARAMETER_SCALE] == petab.LIN
+
+        for field in [petab.LOWER_BOUND, petab.UPPER_BOUND,
+                      petab.NOMINAL_VALUE]:
+            petab_problem.parameter_df.loc[wrong_pars, field] = np.power(
+                10, petab_problem.parameter_df.loc[wrong_pars, field]
+            )
+
+        petab_problem.parameter_df.loc[wrong_pars, petab.PARAMETER_SCALE] = \
+            petab.LOG10
+
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
+
     problem.objective.amici_solver.setMaxSteps(int(1e4))
     problem.objective.amici_solver.setAbsoluteTolerance(1e-8)
     problem.objective.amici_solver.setRelativeTolerance(1e-8)
+
+    if MODEL_NAME == 'Chen_MSB2009':
+        problem.objective.amici_solver.setMaxSteps(int(2e5))
+        problem.objective.amici_solver.setInterpolationType(
+            amici.InterpolationType_polynomial
+        )
 
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: 1e3,
         }
+
+        if MODEL_NAME == 'Chen_MSB2009':
+            optim_options[fides.Options.MAXITER] = 20
 
         parsed2optim = {
             'stepback': fides.Options.STEPBACK_STRAT,
@@ -60,8 +83,15 @@ if __name__ == '__main__':
             'FIM': None,
         }
 
-        hessian_update = hessian_updates.get(
-            parsed_options.get('hessian', 'FIM'))
+        if parsed_options.get('hessian', 'FIM') != 'FIM':
+            hessian_update = hessian_updates.get(
+                parsed_options.get('hessian', 'FIM')
+            )
+            problem.objective.amici_solver.setSensitivityMethod(
+                amici.SensitivityMethod.adjoint
+            )
+        else:
+            hessian_update = 'FIM'
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
@@ -86,7 +116,6 @@ if __name__ == '__main__':
                                        startpoint_resample=True)
 
     # do the optimization
-
     ref = visualize.create_references(
         x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
             petab_problem.x_free_indices
@@ -109,7 +138,7 @@ if __name__ == '__main__':
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS, engine=engine,
         options=options,
-    #    history_options=history_options
+        history_options=history_options
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')

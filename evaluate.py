@@ -17,6 +17,7 @@ from compile_petab import folder_base
 
 
 MODEL_NAME = sys.argv[1]
+EVALUATION_TYPE = sys.argv[2]
 
 hdf5_files = [r for r in os.listdir('results')
               if r.startswith(MODEL_NAME) and r.endswith('.hdf5')]
@@ -49,7 +50,8 @@ ref = create_references(
     )],
     fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
         np.asarray(petab_problem.x_free_indices)]
-    )
+    ),
+    legend='Hass2019'
 )
 
 os.makedirs('evaluation', exist_ok=True)
@@ -65,7 +67,18 @@ waterfall(
     legends=[r['optimizer'] for r in all_results],
 )
 plt.tight_layout()
-plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_all_starts.pdf'))
+plt.savefig(os.path.join('evaluation',
+                         f'{MODEL_NAME}_all_starts_{EVALUATION_TYPE}.pdf'))
+
+waterfall(
+    [r['result'] for r in all_results],
+    reference=ref,
+    legends=[r['optimizer'] for r in all_results],
+    start_indices=range(100)
+)
+plt.tight_layout()
+plt.savefig(os.path.join('evaluation',
+                         f'{MODEL_NAME}_100_starts_{EVALUATION_TYPE}.pdf'))
 
 df = pd.DataFrame([
     {
@@ -106,8 +119,17 @@ for value in ['time', 'fval', 'iter', 'itertime']:
                       marginal_kws={'bins': 25},
                       joint_kws={'scatter_kws': {'alpha': 0.3}})
     plt.tight_layout()
-    plt.savefig(os.path.join('evaluation', f'{MODEL_NAME}_{value}.pdf'))
-    plt.show()
+    plt.savefig(os.path.join(
+        'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf')
+    )
+
+    plt.subplots()
+    g = sns.boxplot(data=pd.melt(df[[f"{value} fides.subspace=2D",
+                                     f"{value} fides.subspace=full"]]),
+                    x='variable', y='value')
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'))
 
 for result in all_results:
     simulation = amici.petab_objective.simulate_petab(
@@ -130,8 +152,9 @@ for result in all_results:
         exp_conditions=petab_problem.condition_df,
         sim_data=simulation_df,
     )
-    plt.show()
     plt.tight_layout()
-    plt.savefig(os.path.join('evaluation',
-                             f'{MODEL_NAME}_sim_{result["optimizer"]}.pdf'))
+    plt.savefig(os.path.join(
+        'evaluation',
+        f'{MODEL_NAME}_sim_{result["optimizer"]}_{EVALUATION_TYPE}.pdf'
+    ))
 
