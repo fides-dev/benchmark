@@ -1,5 +1,5 @@
 petab==0.1.14
-amici==0.11.12
+git+https://github.com/AMICI-dev/AMICI@develop
 fides==0.2.3
 seaborn==0.11.1
 snakemake==5.32.0

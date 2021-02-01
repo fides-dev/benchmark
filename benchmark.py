@@ -68,11 +68,13 @@ if __name__ == '__main__':
 
     if optimizer_name == 'fides':
         optim_options = {
-            fides.Options.MAXITER: 1e3,
+            fides.Options.MAXITER: 500,
+            fides.Options.FATOL: 0.0,
+            fides.Options.GATOL: 0.0,
         }
 
         if MODEL_NAME == 'Chen_MSB2009':
-            optim_options[fides.Options.MAXITER] = 20
+            optim_options[fides.Options.MAXITER] = 10
 
         parsed2optim = {
             'stepback': fides.Options.STEPBACK_STRAT,
@@ -93,6 +95,7 @@ if __name__ == '__main__':
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
+            optim_options[fides.Options.MAXITER] = 50
         else:
             hessian_update = hessian_updates.get('FIM')
 
@@ -110,12 +113,15 @@ if __name__ == '__main__':
 
     if optimizer_name == 'ls_trf':
         optimizer = optimize.ScipyOptimizer(
-            method='ls_trf'
+            method='ls_trf', options={'max_iter': 500,
+                                      'xtol': 0.0,
+                                      'ftol': 0.0,
+                                      'gtol': 0.0}
         )
 
     if optimizer_name == 'ipopt':
         optimizer = optimize.IpoptOptimizer(
-            options={'max_iter': 20}
+            options={'max_iter': 10}
         )
 
     engine = pypesto.engine.SingleCoreEngine()

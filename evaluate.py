@@ -125,7 +125,8 @@ for value in ['time', 'fval', 'iter', 'itertime']:
 
     plt.subplots()
     g = sns.boxplot(data=pd.melt(df[[f"{value} fides.subspace=2D",
-                                     f"{value} fides.subspace=full"]]),
+                                     f"{value} fides.subspace=full",
+                                     f"{value} ls_trf"]]),
                     x='variable', y='value')
     plt.tight_layout()
     plt.savefig(os.path.join(
