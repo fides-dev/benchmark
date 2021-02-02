@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     if optimizer_name == 'ls_trf':
         optimizer = optimize.ScipyOptimizer(
-            method='ls_trf', options={'max_iter': 500,
+            method='ls_trf', options={'max_nfev': 500,
                                       'xtol': 0.0,
                                       'ftol': 0.0,
                                       'gtol': 0.0}
