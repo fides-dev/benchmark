@@ -33,7 +33,8 @@ for hdf_results_file in hdf5_files:
     MODEL, OPTIMIZER, N_STARTS = \
         hdf_results_file.split('__')
 
-    if MODEL == MODEL_NAME:
+    if MODEL == MODEL_NAME and (OPTIMIZER != 'ls_trf' or
+                                MODEL == 'Fujita_SciSignal2010'):
         reader = OptimizationResultHDF5Reader(os.path.join('results',
                                                            hdf_results_file))
         result = reader.read()
@@ -84,8 +85,6 @@ df = pd.DataFrame([
     {
         'fval': start['fval'],
         'time': start['time'],
-        'iter': start['n_fval'],
-        'itertime': start['n_fval']/start['time'],
         'id': start['id'],
         'optimizer': results['optimizer']
     }
@@ -96,13 +95,13 @@ df = pd.DataFrame([
 df = df.pivot(index='id', columns=['optimizer'])
 
 df.fval = df.fval - np.nanmin(df.fval) + 1
-for value in ['time', 'fval', 'iter', 'itertime']:
+for value in ['time', 'fval']:
     df[value] = df[value].apply(np.log10)
 df = df[np.isfinite(df.fval).all(axis=1)]
 
 df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-for value in ['time', 'fval', 'iter', 'itertime']:
+for value in ['time', 'fval']:
     lb, ub = [
         fun([fun(df[f"{value} fides.subspace=2D"]),
              fun(df[f"{value} fides.subspace=full"])])
@@ -124,9 +123,8 @@ for value in ['time', 'fval', 'iter', 'itertime']:
     )
 
     plt.subplots()
-    g = sns.boxplot(data=pd.melt(df[[f"{value} fides.subspace=2D",
-                                     f"{value} fides.subspace=full",
-                                     f"{value} ls_trf"]]),
+    g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
+                                     if c.startswith(value)]]),
                     x='variable', y='value')
     plt.tight_layout()
     plt.savefig(os.path.join(
