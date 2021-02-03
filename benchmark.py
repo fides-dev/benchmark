@@ -95,7 +95,7 @@ if __name__ == '__main__':
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
-            optim_options[fides.Options.MAXITER] = 50
+            optim_options[fides.Options.MAXITER] = 25
         else:
             hessian_update = hessian_updates.get('FIM')
 
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                 optim_options[optim_field] = parsed_options[parse_field]
 
         optimizer = optimize.FidesOptimizer(
-            options=optim_options, verbose=logging.WARNING,
+            options=optim_options, verbose=logging.INFO,
             hessian_update=hessian_update
         )
 
@@ -116,15 +116,18 @@ if __name__ == '__main__':
             method='ls_trf', options={'max_nfev': 500,
                                       'xtol': 0.0,
                                       'ftol': 0.0,
-                                      'gtol': 0.0}
+                                      'gtol': 1e-15}
         )
 
     if optimizer_name == 'ipopt':
+        problem.objective.amici_solver.setSensitivityMethod(
+            amici.SensitivityMethod.adjoint
+        )
         optimizer = optimize.IpoptOptimizer(
-            options={'max_iter': 10}
+            options={'max_iter': 25}
         )
 
-    engine = pypesto.engine.SingleCoreEngine()
+    engine = pypesto.engine.MultiThreadEngine(n_threads=4)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=True)
