@@ -101,34 +101,35 @@ df = df[np.isfinite(df.fval).all(axis=1)]
 
 df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-for value in ['time', 'fval']:
-    lb, ub = [
-        fun([fun(df[f"{value} fides.subspace=2D"]),
-             fun(df[f"{value} fides.subspace=full"])])
-        for fun in [np.nanmin, np.nanmax]
-    ]
-    lb -= (ub-lb)/10
-    ub += (ub-lb)/10
+if EVALUATION_TYPE == 'subspace':
+    for value in ['time', 'fval']:
+        lb, ub = [
+            fun([fun(df[f"{value} fides.subspace=2D"]),
+                 fun(df[f"{value} fides.subspace=full"])])
+            for fun in [np.nanmin, np.nanmax]
+        ]
+        lb -= (ub-lb)/10
+        ub += (ub-lb)/10
 
-    g = sns.jointplot(data=df,
-                      x=f"{value} fides.subspace=2D",
-                      y=f"{value} fides.subspace=full",
-                      kind='reg',
-                      xlim=(lb, ub), ylim=(lb, ub),
-                      marginal_kws={'bins': 25},
-                      joint_kws={'scatter_kws': {'alpha': 0.3}})
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf')
-    )
+        sns.jointplot(
+            data=df,
+            x=f"{value} fides.subspace=2D",
+            y=f"{value} fides.subspace=full",
+            kind='reg', xlim=(lb, ub), ylim=(lb, ub),
+            marginal_kws={'bins': 25}, joint_kws={'scatter_kws': {'alpha': 0.3}}
+        )
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf')
+        )
 
-    plt.subplots()
-    g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
-                                     if c.startswith(value)]]),
-                    x='variable', y='value')
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'))
+        plt.subplots()
+        g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
+                                         if c.startswith(value)]]),
+                        x='variable', y='value')
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'))
 
 for result in all_results:
     simulation = amici.petab_objective.simulate_petab(

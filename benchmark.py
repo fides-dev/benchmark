@@ -74,7 +74,7 @@ if __name__ == '__main__':
         }
 
         if MODEL_NAME == 'Chen_MSB2009':
-            optim_options[fides.Options.MAXITER] = 10
+            optim_options[fides.Options.MAXITER] = 20
 
         parsed2optim = {
             'stepback': fides.Options.STEPBACK_STRAT,
@@ -95,7 +95,7 @@ if __name__ == '__main__':
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
-            optim_options[fides.Options.MAXITER] = 25
+            optim_options[fides.Options.MAXITER] = 100
         else:
             hessian_update = hessian_updates.get('FIM')
 
