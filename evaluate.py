@@ -27,6 +27,17 @@ petab_problem = petab.Problem.from_yaml(yaml_config)
 importer = pypesto.petab.PetabImporter(petab_problem)
 problem = importer.create_problem()
 model = importer.create_model()
+solver = importer.create_solver()
+
+solver.setMaxSteps(int(1e4))
+solver.setAbsoluteTolerance(1e-8)
+solver.setRelativeTolerance(1e-8)
+
+if MODEL_NAME == 'Chen_MSB2009':
+    problem.objective.amici_solver.setMaxSteps(int(2e5))
+    problem.objective.amici_solver.setInterpolationType(
+        amici.InterpolationType_polynomial
+    )
 
 all_results = []
 for hdf_results_file in hdf5_files:
@@ -138,7 +149,8 @@ for result in all_results:
         problem_parameters=dict(zip(
             problem.x_names,
             result['result'].optimize_result.list[0]['x'],
-        )), scaled_parameters=True
+        )), scaled_parameters=True,
+        solver=solver
     )
     # Convert the simulation to PEtab format.
     simulation_df = amici.petab_objective.rdatas_to_simulation_df(
