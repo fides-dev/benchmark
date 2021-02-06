@@ -89,13 +89,11 @@ if __name__ == '__main__':
         }
 
         if parsed_options.get('hessian', 'FIM') != 'FIM':
-            hessian_update = hessian_updates.get(
-                parsed_options.get('hessian', 'FIM')
-            )
+            hessian_update = hessian_updates.get(parsed_options.get('hessian'))
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
-            optim_options[fides.Options.MAXITER] = 100
+            optim_options[fides.Options.MAXITER] = 200
         else:
             hessian_update = hessian_updates.get('FIM')
 
@@ -107,7 +105,7 @@ if __name__ == '__main__':
                 optim_options[optim_field] = parsed_options[parse_field]
 
         optimizer = optimize.FidesOptimizer(
-            options=optim_options, verbose=logging.INFO,
+            options=optim_options, verbose=logging.WARNING,
             hessian_update=hessian_update
         )
 
@@ -151,6 +149,10 @@ if __name__ == '__main__':
         trace_record_res=False,
         trace_record_sres=False,
         trace_record_schi2=False,
+        trace_save_iter=10,
+        storage_file=os.path.join(
+            'results', f'{MODEL_NAME}_{OPTIMIZER}_trace{{id}}.csv'
+        )
     )
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS, engine=engine,
