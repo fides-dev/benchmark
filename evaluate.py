@@ -12,6 +12,7 @@ import pypesto.petab
 import petab
 from pypesto.store import OptimizationResultHDF5Reader
 from pypesto.visualize import waterfall, create_references
+from pypesto.objective.history import CsvHistory
 
 from compile_petab import folder_base
 
@@ -39,10 +40,11 @@ if MODEL_NAME == 'Chen_MSB2009':
         amici.InterpolationType_polynomial
     )
 
+
 all_results = []
 for hdf_results_file in hdf5_files:
     MODEL, OPTIMIZER, N_STARTS = \
-        hdf_results_file.split('__')
+        os.path.splitext(hdf_results_file)[0].split('__')
 
     if MODEL == MODEL_NAME and (OPTIMIZER != 'ls_trf' or
                                 MODEL == 'Fujita_SciSignal2010'):
@@ -96,6 +98,7 @@ df = pd.DataFrame([
     {
         'fval': start['fval'],
         'time': start['time'],
+        'ipt': start['time']/start['n_grad'],
         'id': start['id'],
         'optimizer': results['optimizer']
     }
@@ -113,7 +116,7 @@ df = df[np.isfinite(df.fval).all(axis=1)]
 df.columns = [' '.join(col).strip() for col in df.columns.values]
 
 if EVALUATION_TYPE == 'subspace':
-    for value in ['time', 'fval']:
+    for value in ['time', 'fval', 'ipt']:
         lb, ub = [
             fun([fun(df[f"{value} fides.subspace=2D"]),
                  fun(df[f"{value} fides.subspace=full"])])
@@ -141,6 +144,84 @@ if EVALUATION_TYPE == 'subspace':
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'))
+
+if EVALUATION_TYPE == 'adjoint':
+    opt0 = 'ipopt'
+    opt1 = 'fides.subspace=full.hessian=BFGS'
+    result0 = next(
+        r['result'] for r in all_results
+        if r['optimizer'] == opt0
+    )
+    result1 = next(
+        r['result'] for r in all_results
+        if r['optimizer'] == opt1
+    )
+    fig, axes = plt.subplots(1, 2)
+    fval_offset = np.min([
+        np.min(result0.optimize_result.get_for_key('fval')),
+        np.min(result1.optimize_result.get_for_key('fval'))
+    ]) - 1
+    alpha = 1/len(result0.optimize_result.list)
+    for start0 in result0.optimize_result.list:
+        start1 = next(
+            s for s in result1.optimize_result.list
+            if np.equal(s['x0'], start0['x0']).all()
+        )
+        history0 = CsvHistory(
+            file=os.path.join('results',
+                              f'{MODEL_NAME}_{opt0}_trace{start0["id"]}.csv'),
+            load_from_file=True
+        )
+        history1 = CsvHistory(
+            file=os.path.join('results',
+                              f'{MODEL_NAME}_{opt1}_trace{start1["id"]}.csv'),
+            load_from_file=True
+        )
+        fvals0 = history0.get_fval_trace() - fval_offset
+        fvals1 = history1.get_fval_trace() - fval_offset
+        times0 = history0.get_time_trace()
+        times1 = history1.get_time_trace()
+        i0 = 0
+        i1 = 0
+        ttrace0 = [start0['fval0'] - fval_offset]
+        ttrace1 = [start1['fval0'] - fval_offset]
+        if times0[i0] < times1[i1]:
+            i0 += 1
+        else:
+            i1 += 1
+        while i0 < len(fvals0) or i1 < len(fvals1):
+            ttrace0.append(np.min(fvals0[:np.min([i0+1, len(fvals0)-1]) + 1]))
+            ttrace1.append(np.min(fvals1[:np.min([i1+1, len(fvals1)-1]) + 1]))
+            if i1 == len(fvals1) or (not(i0 == len(fvals0)) and
+                                     times0[i0] < times1[i1]):
+                i0 += 1
+            else:
+                i1 += 1
+        for ax in axes:
+            ax.plot(ttrace0, ttrace1, 'k.-', alpha=alpha)
+            ax.plot(ttrace0[-1], ttrace1[-1], 'r.', zorder=99)
+
+    for iax, ax in enumerate(axes):
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_aspect('equal')
+
+        xy_min = np.min([ax.get_xlim()[0], ax.get_ylim()[0]])
+        if iax == 0:
+            xy_max = np.max([ax.get_xlim()[1], ax.get_ylim()[1]])
+        else:
+            xy_max = 1e5
+
+        ax.set_xlim([xy_min, xy_max])
+        ax.set_ylim([xy_min, xy_max])
+        ax.set_xlabel(f'funcion value {opt0}')
+        ax.set_ylabel(f'funcion value {opt1}')
+        ax.plot([xy_min, xy_max], [xy_min, xy_max], 'k:')
+
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(os.path.join(
+        'evaluation', f'{MODEL_NAME}_{value}_traces_{EVALUATION_TYPE}.pdf'))
 
 for result in all_results:
     simulation = amici.petab_objective.simulate_petab(

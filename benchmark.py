@@ -71,6 +71,7 @@ if __name__ == '__main__':
             fides.Options.MAXITER: 500,
             fides.Options.FATOL: 0.0,
             fides.Options.GATOL: 0.0,
+            fides.Options.MAXTIME: 4*3600
         }
 
         if MODEL_NAME == 'Chen_MSB2009':
@@ -93,7 +94,6 @@ if __name__ == '__main__':
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
-            optim_options[fides.Options.MAXITER] = 200
         else:
             hessian_update = hessian_updates.get('FIM')
 
@@ -122,7 +122,10 @@ if __name__ == '__main__':
             amici.SensitivityMethod.adjoint
         )
         optimizer = optimize.IpoptOptimizer(
-            options={'max_iter': 25}
+            options={'max_iter': 1000,
+                     'tol': 1e-100,
+                     'acceptable_tol': 1e-100,
+                     'max_cpu_time': 4*3600}
         )
 
     engine = pypesto.engine.MultiThreadEngine(n_threads=4)
@@ -151,7 +154,8 @@ if __name__ == '__main__':
         trace_record_schi2=False,
         trace_save_iter=10,
         storage_file=os.path.join(
-            'results', f'{MODEL_NAME}_{OPTIMIZER}_trace{{id}}.csv'
+            'results',
+            f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__trace{{id}}.csv'
         )
     )
     result = optimize.minimize(

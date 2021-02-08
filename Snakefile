@@ -8,11 +8,9 @@ OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full', 'ls_trf']
 N_STARTS_SUBSPACE = ['1000']
 
 MODELS_ADJOINT = ['Chen_MSB2009']
-OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=FIM',
-                     'fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
+OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
                      'ipopt']
-N_STARTS_ADJOINT = ['10']
+N_STARTS_ADJOINT = ['100']
 
 
 rule compile_model:
