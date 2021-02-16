@@ -2,8 +2,9 @@ import os
 
 from benchmark import PREFIX_TEMPLATE
 
-MODELS_SUBSPACE = ['Zheng_PNAS2012', 'Fujita_SciSignal2010',
-                   'Boehm_JProteomeRes2014']
+# MODELS_SUBSPACE = ['Zheng_PNAS2012', 'Fujita_SciSignal2010',
+#                    'Boehm_JProteomeRes2014']
+MODELS_SUBSPACE = []
 OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full', 'ls_trf']
 N_STARTS_SUBSPACE = ['1000']
 
