@@ -16,6 +16,8 @@ from compile_petab import folder_base
 np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
+MAX_ITER = 500
+MAX_TIME = 3600.0
 
 if __name__ == '__main__':
     MODEL_NAME = sys.argv[1]
@@ -47,8 +49,8 @@ if __name__ == '__main__':
                 10, petab_problem.parameter_df.loc[wrong_pars, field]
             )
 
-        petab_problem.parameter_df.loc[wrong_pars, petab.PARAMETER_SCALE] = \
-            petab.LOG10
+        petab_problem.parameter_df.loc[wrong_pars, petab.ESTIMATE] = \
+            0
 
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
@@ -68,14 +70,11 @@ if __name__ == '__main__':
 
     if optimizer_name == 'fides':
         optim_options = {
-            fides.Options.MAXITER: 500,
+            fides.Options.MAXITER: MAX_ITER,
             fides.Options.FATOL: 0.0,
             fides.Options.GATOL: 0.0,
-            fides.Options.MAXTIME: 4*3600
+            fides.Options.MAXTIME: MAX_TIME,
         }
-
-        if MODEL_NAME == 'Chen_MSB2009':
-            optim_options[fides.Options.MAXITER] = 20
 
         parsed2optim = {
             'stepback': fides.Options.STEPBACK_STRAT,
@@ -111,7 +110,7 @@ if __name__ == '__main__':
 
     if optimizer_name == 'ls_trf':
         optimizer = optimize.ScipyOptimizer(
-            method='ls_trf', options={'max_nfev': 500,
+            method='ls_trf', options={'max_nfev': MAX_ITER,
                                       'xtol': 0.0,
                                       'ftol': 0.0,
                                       'gtol': 1e-15}
@@ -122,10 +121,10 @@ if __name__ == '__main__':
             amici.SensitivityMethod.adjoint
         )
         optimizer = optimize.IpoptOptimizer(
-            options={'max_iter': 1000,
+            options={'max_iter': MAX_ITER,
                      'tol': 1e-100,
                      'acceptable_tol': 1e-100,
-                     'max_cpu_time': 4*3600}
+                     'max_cpu_time': MAX_TIME}
         )
 
     engine = pypesto.engine.MultiThreadEngine(n_threads=4)
