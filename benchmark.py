@@ -40,17 +40,11 @@ if __name__ == '__main__':
     # create a petab problem
     petab_problem = petab.Problem.from_yaml(yaml_config)
     if MODEL_NAME == 'Chen_MSB2009':
-        wrong_pars = \
-            petab_problem.parameter_df[petab.PARAMETER_SCALE] == petab.LIN
-
-        for field in [petab.LOWER_BOUND, petab.UPPER_BOUND,
-                      petab.NOMINAL_VALUE]:
-            petab_problem.parameter_df.loc[wrong_pars, field] = np.power(
-                10, petab_problem.parameter_df.loc[wrong_pars, field]
-            )
-
-        petab_problem.parameter_df.loc[wrong_pars, petab.ESTIMATE] = \
-            0
+        # don't estimate parameters on linear scale
+        petab_problem.parameter_df.loc[
+            petab_problem.parameter_df[petab.PARAMETER_SCALE] == petab.LIN,
+            petab.ESTIMATE
+        ] = 0
 
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
