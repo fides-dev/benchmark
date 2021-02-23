@@ -17,7 +17,7 @@ np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
 MAX_ITER = 500
-MAX_TIME = 3600.0
+MAX_TIME = 7200.0
 
 if __name__ == '__main__':
     MODEL_NAME = sys.argv[1]
@@ -121,7 +121,7 @@ if __name__ == '__main__':
                      'max_cpu_time': MAX_TIME}
         )
 
-    engine = pypesto.engine.MultiThreadEngine(n_threads=4)
+    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=True)
