@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import petab.visualize
 import amici.petab_objective
-
 import pypesto.petab
 import petab
+
 from pypesto.store import OptimizationResultHDF5Reader
 from pypesto.visualize import waterfall, create_references
 from pypesto.objective.history import CsvHistory
-
+from matplotlib import cm
 from compile_petab import folder_base
 
 
@@ -35,11 +35,7 @@ solver.setAbsoluteTolerance(1e-8)
 solver.setRelativeTolerance(1e-8)
 
 if MODEL_NAME == 'Chen_MSB2009':
-    problem.objective.amici_solver.setMaxSteps(int(2e5))
-    problem.objective.amici_solver.setInterpolationType(
-        amici.InterpolationType_polynomial
-    )
-
+    solver.setMaxSteps(int(2e5))
 
 all_results = []
 for hdf_results_file in hdf5_files:
@@ -58,6 +54,23 @@ for hdf_results_file in hdf5_files:
             'file': hdf_results_file
         })
 
+cmap = cm.get_cmap('tab10')
+colors = {
+    legend: tuple([*cmap.colors[il], 1.0])
+    for il, legend in enumerate([
+        'ls_trf', 'ipopt', 'fides.subspace=full', 'fides.subspace=2D',
+        'fides.subspace=full.hessian=BFGS', 'Hass2019', 'PEtab'
+    ])
+}
+
+hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
+    'Hass2019', f'{MODEL_NAME}_ps.csv'
+), delimiter=',')
+
+hass2019_fmintrust_chis = np.genfromtxt(os.path.join(
+    'Hass2019', f'{MODEL_NAME}_chi2s.csv',
+), delimiter=',')
+
 ref = create_references(
     x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
         petab_problem.x_free_indices
@@ -65,7 +78,17 @@ ref = create_references(
     fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
         np.asarray(petab_problem.x_free_indices)]
     ),
-    legend='Hass2019'
+    legend='PEtab reference value',
+    color=colors['PEtab']
+) + create_references(
+    x=hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
+                            np.asarray(petab_problem.x_free_indices)],
+    fval=problem.objective(
+        hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
+                              np.asarray(petab_problem.x_free_indices)]
+    ),
+    legend='Hass2019 fmintrust',
+    color=colors['Hass2019']
 )
 
 os.makedirs('evaluation', exist_ok=True)
@@ -79,6 +102,7 @@ waterfall(
     [r['result'] for r in all_results],
     reference=ref,
     legends=[r['optimizer'] for r in all_results],
+    colors=[colors[r['optimizer']] for r in all_results],
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation',
@@ -88,35 +112,55 @@ waterfall(
     [r['result'] for r in all_results],
     reference=ref,
     legends=[r['optimizer'] for r in all_results],
-    start_indices=range(100)
+    colors=[colors[r['optimizer']] for r in all_results],
+    start_indices=range(int(int(N_STARTS)/10))
 )
 plt.tight_layout()
-plt.savefig(os.path.join('evaluation',
-                         f'{MODEL_NAME}_100_starts_{EVALUATION_TYPE}.pdf'))
+plt.savefig(os.path.join(
+    'evaluation',
+    f'{MODEL_NAME}_{int(int(N_STARTS)/10)}_starts_{EVALUATION_TYPE}.pdf'
+))
 
-df = pd.DataFrame([
-    {
-        'fval': start['fval'],
-        'time': start['time'],
-        'ipt': start['time']/start['n_grad'],
-        'id': start['id'],
-        'optimizer': results['optimizer']
-    }
-    for results in all_results
-    for start in results['result'].optimize_result.list
-])
+dfs = [
+    pd.DataFrame([
+        {
+            'fval': start['fval'],
+            'time': start['time'],
+            'ipt': start['time']/start['n_grad'],
+            'id': start['id'],
+            'dist': np.log10(np.min(np.abs(
+                start['fval'] - np.asarray([
+                    s['fval']
+                    for s in results['result'].optimize_result.list[:length]
+                    if s['id'] != start['id']
+                ])
+            ))),
+            'optimizer': results['optimizer']
+        }
+        for results in all_results
+        for start in results['result'].optimize_result.list[:length]
+    ]).pivot(index='id', columns=['optimizer'])
+    for length in [np.min([int(N_STARTS), 300]), int(N_STARTS)]
+]
 
-df = df.pivot(index='id', columns=['optimizer'])
+df_reduced, df_full = dfs
 
-df.fval = df.fval - np.nanmin(df.fval) + 1
-for value in ['time', 'fval']:
-    df[value] = df[value].apply(np.log10)
-df = df[np.isfinite(df.fval).all(axis=1)]
+for df in [df_full, df_reduced]:
+    df.fval = df.fval - np.nanmin(df.fval) + 1
+    for value in ['time', 'fval']:
+        df[value] = df[value].apply(np.log10)
 
-df.columns = [' '.join(col).strip() for col in df.columns.values]
+df_full = df_full[np.isfinite(df_full.fval).all(axis=1)]
+
+for df in [df_full, df_reduced]:
+    df.columns = [' '.join(col).strip() for col in df.columns.values]
 
 if EVALUATION_TYPE == 'subspace':
-    for value in ['time', 'fval', 'ipt']:
+    for value in ['time', 'fval', 'ipt', 'dist']:
+        if value == 'dist':
+            df = df_reduced
+        else:
+            df = df_full
         lb, ub = [
             fun([fun(df[f"{value} fides.subspace=2D"]),
                  fun(df[f"{value} fides.subspace=full"])])
@@ -129,8 +173,9 @@ if EVALUATION_TYPE == 'subspace':
             data=df,
             x=f"{value} fides.subspace=2D",
             y=f"{value} fides.subspace=full",
-            kind='reg', xlim=(lb, ub), ylim=(lb, ub),
-            marginal_kws={'bins': 25}, joint_kws={'scatter_kws': {'alpha': 0.3}}
+            kind='scatter', xlim=(lb, ub), ylim=(lb, ub),
+            alpha=0.3,
+            marginal_kws={'bins': 25},
         )
         plt.tight_layout()
         plt.savefig(os.path.join(
@@ -138,12 +183,14 @@ if EVALUATION_TYPE == 'subspace':
         )
 
         plt.subplots()
+
         g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
                                          if c.startswith(value)]]),
                         x='variable', y='value')
         plt.tight_layout()
         plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'))
+            'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'
+        ))
 
 if EVALUATION_TYPE == 'adjoint':
     opt0 = 'ipopt'
@@ -164,17 +211,22 @@ if EVALUATION_TYPE == 'adjoint':
     alpha = 1/len(result0.optimize_result.list)
     for start0 in result0.optimize_result.list:
         start1 = next(
-            s for s in result1.optimize_result.list
-            if np.equal(s['x0'], start0['x0']).all()
+            (s for s in result1.optimize_result.list
+             if s['id'] == start0['id']),
+            None
         )
+        if start1 is None:
+            continue
         history0 = CsvHistory(
             file=os.path.join('results',
-                              f'{MODEL_NAME}_{opt0}_trace{start0["id"]}.csv'),
+                              f'{MODEL_NAME}__{opt0}__100__'
+                              f'trace{start0["id"]}.csv'),
             load_from_file=True
         )
         history1 = CsvHistory(
             file=os.path.join('results',
-                              f'{MODEL_NAME}_{opt1}_trace{start1["id"]}.csv'),
+                              f'{MODEL_NAME}__{opt1}__100__'
+                              f'trace{start1["id"]}.csv'),
             load_from_file=True
         )
         fvals0 = history0.get_fval_trace() - fval_offset
@@ -210,7 +262,7 @@ if EVALUATION_TYPE == 'adjoint':
         if iax == 0:
             xy_max = np.max([ax.get_xlim()[1], ax.get_ylim()[1]])
         else:
-            xy_max = 1e5
+            xy_max = 1e8
 
         ax.set_xlim([xy_min, xy_max])
         ax.set_ylim([xy_min, xy_max])
@@ -219,7 +271,6 @@ if EVALUATION_TYPE == 'adjoint':
         ax.plot([xy_min, xy_max], [xy_min, xy_max], 'k:')
 
     plt.tight_layout()
-    plt.show()
     plt.savefig(os.path.join(
         'evaluation', f'{MODEL_NAME}_{value}_traces_{EVALUATION_TYPE}.pdf'))
 
@@ -250,4 +301,3 @@ for result in all_results:
         'evaluation',
         f'{MODEL_NAME}_sim_{result["optimizer"]}_{EVALUATION_TYPE}.pdf'
     ))
-

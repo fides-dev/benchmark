@@ -16,7 +16,7 @@ from compile_petab import folder_base
 np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
-MAX_ITER = 500
+MAX_ITER = 1e3
 MAX_TIME = 7200.0
 
 if __name__ == '__main__':
@@ -65,8 +65,6 @@ if __name__ == '__main__':
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: MAX_ITER,
-            fides.Options.FATOL: 0.0,
-            fides.Options.GATOL: 0.0,
             fides.Options.MAXTIME: MAX_TIME,
         }
 
@@ -106,8 +104,8 @@ if __name__ == '__main__':
         optimizer = optimize.ScipyOptimizer(
             method='ls_trf', options={'max_nfev': MAX_ITER,
                                       'xtol': 0.0,
-                                      'ftol': 0.0,
-                                      'gtol': 1e-15}
+                                      'ftol': 1e-8,
+                                      'gtol': 1e-6}
         )
 
     if optimizer_name == 'ipopt':
@@ -116,7 +114,7 @@ if __name__ == '__main__':
         )
         optimizer = optimize.IpoptOptimizer(
             options={'max_iter': MAX_ITER,
-                     'tol': 1e-100,
+                     'tol': 1e-8,
                      'acceptable_tol': 1e-100,
                      'max_cpu_time': MAX_TIME}
         )
@@ -152,7 +150,8 @@ if __name__ == '__main__':
         )
     )
     result = optimize.minimize(
-        problem=problem, optimizer=optimizer, n_starts=N_STARTS, engine=engine,
+        problem=problem, optimizer=optimizer, n_starts=N_STARTS,
+        engine=engine,
         options=options,
         history_options=history_options
     )
