@@ -61,9 +61,10 @@ colors = {
     for il, legend in enumerate([
         'ls_trf', 'ipopt', 'fides.subspace=full', 'fides.subspace=2D',
         'fides.subspace=full.hessian=BFGS',
+        'fides.subspace=2D.hessian=BFGS',
         'fides.subspace=full.hessian=Hybrid',
         'fides.subspace=2D.hessian=Hybrid',
-        'Hass2019', 'PEtab', 'Hass2019_fmintrust'
+        'Hass2019_fmintrust'
     ])
 }
 
@@ -95,22 +96,6 @@ hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
 ), delimiter=',')
 
 ref = create_references(
-    x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
-        petab_problem.x_free_indices
-    )],
-    fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
-        np.asarray(petab_problem.x_free_indices)]
-    ),
-    legend='PEtab reference value',
-    color=colors['PEtab']
-) + create_references(
-    x=x_ref[np.asarray(
-        petab_problem.x_free_indices
-    )],
-    fval=problem.objective(x_ref[np.asarray(petab_problem.x_free_indices)]),
-    legend='Hass2019 benchmark',
-    color=colors['Hass2019']
-) + create_references(
     x=hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
                             np.asarray(petab_problem.x_free_indices)],
     fval=problem.objective(

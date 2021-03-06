@@ -8,7 +8,7 @@ OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full',
                       'fides.subspace=2D.hessian=Hybrid',
                       'fides.subspace=full.hessian=Hybrid'
                       'fides.subspace=full.hessian=BFGS',
-                      'fides.subspace=full.hessian=2D', 'ls_trf']
+                      'fides.subspace=2D.hessian=BFGS', 'ls_trf']
 N_STARTS_SUBSPACE = ['1000']
 
 MODELS_ADJOINT = ['Chen_MSB2009']
