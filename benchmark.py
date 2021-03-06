@@ -75,18 +75,20 @@ if __name__ == '__main__':
         }
 
         hessian_updates = {
+            'Hybrid': fides.HybridUpdate(),
             'BFGS': fides.BFGS(),
             'SR1': fides.SR1(),
             'FIM': None,
         }
 
-        if parsed_options.get('hessian', 'FIM') != 'FIM':
+        if parsed_options.get('hessian', 'FIM') not in ['FIM', 'Hybrid']:
             hessian_update = hessian_updates.get(parsed_options.get('hessian'))
             problem.objective.amici_solver.setSensitivityMethod(
                 amici.SensitivityMethod.adjoint
             )
         else:
-            hessian_update = hessian_updates.get('FIM')
+            hessian_update = hessian_updates.get(parsed_options.get('hessian',
+                                                                    'FIM'))
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
@@ -137,18 +139,22 @@ if __name__ == '__main__':
     print(f'Reference fval: {ref[0]["fval"]}')
 
     hdf_results_file = os.path.join('results', prefix + '.hdf5')
-    history_options = HistoryOptions(
-        trace_record=True,
-        trace_record_hess=False,
-        trace_record_res=False,
-        trace_record_sres=False,
-        trace_record_schi2=False,
-        trace_save_iter=10,
-        storage_file=os.path.join(
-            'results',
-            f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__trace{{id}}.csv'
+
+    if MODEL_NAME == 'Chen_MSB2009':
+        history_options = HistoryOptions(
+            trace_record=True,
+            trace_record_hess=False,
+            trace_record_res=False,
+            trace_record_sres=False,
+            trace_record_schi2=False,
+            trace_save_iter=10,
+            storage_file=os.path.join(
+                'results',
+                f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__trace{{id}}.csv'
+            )
         )
-    )
+    else:
+        history_options=None
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
         engine=engine,

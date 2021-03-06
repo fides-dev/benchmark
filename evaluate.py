@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -59,16 +60,38 @@ colors = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
         'ls_trf', 'ipopt', 'fides.subspace=full', 'fides.subspace=2D',
-        'fides.subspace=full.hessian=BFGS', 'Hass2019', 'PEtab'
+        'fides.subspace=full.hessian=BFGS',
+        'fides.subspace=full.hessian=Hybrid',
+        'fides.subspace=2D.hessian=Hybrid',
+        'Hass2019', 'PEtab', 'Hass2019_fmintrust'
     ])
 }
 
-hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
-    'Hass2019', f'{MODEL_NAME}_ps.csv'
-), delimiter=',')
+hass_2019 = pd.read_excel(os.path.join(
+    'Hass2019', f'{MODEL_NAME}.xlsx'
+), sheet_name='Parameters')
+hass_2019.parameter = hass_2019.parameter.apply(
+    lambda x: re.sub(r'log10\(([\w_]+)\)', r'\1', x)
+)
+
+hass_2019_x = dict(hass_2019[['parameter', 'value']].values)
+x_ref = np.array([
+    hass_2019_x.get(
+        par, hass_2019_x.get(
+            par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
+                'scaling', 'scaleFactor').replace('_tot', ''),
+            None
+    ))
+    for par in petab_problem.x_ids
+])
 
 hass2019_fmintrust_chis = np.genfromtxt(os.path.join(
     'Hass2019', f'{MODEL_NAME}_chi2s.csv',
+), delimiter=',')
+
+
+hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
+    'Hass2019', f'{MODEL_NAME}_ps.csv'
 ), delimiter=',')
 
 ref = create_references(
@@ -81,6 +104,13 @@ ref = create_references(
     legend='PEtab reference value',
     color=colors['PEtab']
 ) + create_references(
+    x=x_ref[np.asarray(
+        petab_problem.x_free_indices
+    )],
+    fval=problem.objective(x_ref[np.asarray(petab_problem.x_free_indices)]),
+    legend='Hass2019 benchmark',
+    color=colors['Hass2019']
+) + create_references(
     x=hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
                             np.asarray(petab_problem.x_free_indices)],
     fval=problem.objective(
@@ -88,7 +118,7 @@ ref = create_references(
                               np.asarray(petab_problem.x_free_indices)]
     ),
     legend='Hass2019 fmintrust',
-    color=colors['Hass2019']
+    color=colors['Hass2019_fmintrust']
 )
 
 os.makedirs('evaluation', exist_ok=True)
@@ -179,8 +209,9 @@ if EVALUATION_TYPE == 'subspace':
         )
         plt.tight_layout()
         plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf')
+            'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf'
         )
+)
 
         plt.subplots()
 
