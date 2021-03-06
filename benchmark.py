@@ -83,9 +83,10 @@ if __name__ == '__main__':
 
         if parsed_options.get('hessian', 'FIM') not in ['FIM', 'Hybrid']:
             hessian_update = hessian_updates.get(parsed_options.get('hessian'))
-            problem.objective.amici_solver.setSensitivityMethod(
-                amici.SensitivityMethod.adjoint
-            )
+            if MODEL_NAME == 'Chen_MSB2009':
+                problem.objective.amici_solver.setSensitivityMethod(
+                    amici.SensitivityMethod.adjoint
+                )
         else:
             hessian_update = hessian_updates.get(parsed_options.get('hessian',
                                                                     'FIM'))

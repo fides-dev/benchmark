@@ -6,17 +6,14 @@ MODELS_SUBSPACE = ['Zheng_PNAS2012', 'Fujita_SciSignal2010',
                    'Boehm_JProteomeRes2014']
 OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full',
                       'fides.subspace=2D.hessian=Hybrid',
-                      'fides.subspace=full.hessian=Hybrid', 'ls_trf']
-#OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full',
-#                      'fides.subspace=2D.stepback=truncate',
-#                      'fides.subspace=full.stepback=truncate',
-#                      'fides.subspace=2D.stepback=mixed',
-#                      'fides.subspace=full.stepback=mixed',]
-N_STARTS_SUBSPACE = ['100']
+                      'fides.subspace=full.hessian=Hybrid'
+                      'fides.subspace=full.hessian=BFGS',
+                      'fides.subspace=full.hessian=2D', 'ls_trf']
+N_STARTS_SUBSPACE = ['1000']
 
-#MODELS_ADJOINT = ['Chen_MSB2009']
-MODELS_ADJOINT = []
+MODELS_ADJOINT = ['Chen_MSB2009']
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
+                     'fides.subspace=full.hessian=2D'
                      'ipopt']
 N_STARTS_ADJOINT = ['100']
 
