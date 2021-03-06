@@ -13,7 +13,7 @@ N_STARTS_SUBSPACE = ['1000']
 
 MODELS_ADJOINT = ['Chen_MSB2009']
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=full.hessian=2D'
+                     'fides.subspace=full.hessian=2D',
                      'ipopt']
 N_STARTS_ADJOINT = ['100']
 
