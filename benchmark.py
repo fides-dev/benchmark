@@ -116,7 +116,7 @@ if __name__ == '__main__':
             amici.SensitivityMethod.adjoint
         )
         optimizer = optimize.IpoptOptimizer(
-            options={'max_iter': MAX_ITER,
+            options={'max_iter': int(MAX_ITER),
                      'tol': 1e-8,
                      'acceptable_tol': 1e-100,
                      'max_cpu_time': MAX_TIME}
