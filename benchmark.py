@@ -75,7 +75,11 @@ if __name__ == '__main__':
         }
 
         hessian_updates = {
-            'Hybrid': fides.HybridUpdate(),
+            'Hybrid_05': fides.HybridUpdate(
+                switch_iteration=np.ceil(0.5*problem.dim)),
+            'Hybrid_1': fides.HybridUpdate(switch_iteration=problem.dim),
+            'Hybrid_2': fides.HybridUpdate(switch_iteration=2*problem.dim),
+            'Hybrid_5': fides.HybridUpdate(switch_iteration=5*problem.dim),
             'BFGS': fides.BFGS(),
             'SR1': fides.SR1(),
             'FIM': None,

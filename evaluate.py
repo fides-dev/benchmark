@@ -149,6 +149,7 @@ dfs = [
             'fval': start['fval'],
             'time': start['time'],
             'ipt': start['time']/start['n_grad'],
+            'iter': start['n_grad'] + start['n_sres'],
             'id': start['id'],
             'dist': np.log10(np.min(np.abs(
                 start['fval'] - np.asarray([
@@ -169,7 +170,7 @@ df_reduced, df_full = dfs
 
 for df in [df_full, df_reduced]:
     df.fval = df.fval - np.nanmin(df.fval) + 1
-    for value in ['time', 'fval']:
+    for value in ['time', 'fval', 'iter']:
         df[value] = df[value].apply(np.log10)
 
 df_full = df_full[np.isfinite(df_full.fval).all(axis=1)]
@@ -178,7 +179,7 @@ for df in [df_full, df_reduced]:
     df.columns = [' '.join(col).strip() for col in df.columns.values]
 
 if EVALUATION_TYPE == 'subspace':
-    for value in ['time', 'fval', 'ipt', 'dist']:
+    for value in ['time', 'fval', 'ipt', 'dist', 'iter']:
         if value == 'dist':
             df = df_reduced
         else:
@@ -210,6 +211,7 @@ if EVALUATION_TYPE == 'subspace':
         g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
                                          if c.startswith(value)]]),
                         x='variable', y='value')
+        g.set_xticklabels(g.get_xticklabels(), rotation=30)
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'

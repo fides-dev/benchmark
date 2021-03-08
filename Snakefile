@@ -5,8 +5,14 @@ from benchmark import PREFIX_TEMPLATE
 MODELS_SUBSPACE = ['Zheng_PNAS2012', 'Fujita_SciSignal2010',
                    'Boehm_JProteomeRes2014']
 OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full',
-                      'fides.subspace=2D.hessian=Hybrid',
-                      'fides.subspace=full.hessian=Hybrid'
+                      'fides.subspace=2D.hessian=Hybrid_05',
+                      'fides.subspace=full.hessian=Hybrid_05',
+                      'fides.subspace=2D.hessian=Hybrid_1',
+                      'fides.subspace=full.hessian=Hybrid_1',
+                      'fides.subspace=2D.hessian=Hybrid_2',
+                      'fides.subspace=full.hessian=Hybrid_2',
+                      'fides.subspace=2D.hessian=Hybrid_5',
+                      'fides.subspace=full.hessian=Hybrid_5',
                       'fides.subspace=full.hessian=BFGS',
                       'fides.subspace=2D.hessian=BFGS', 'ls_trf']
 N_STARTS_SUBSPACE = ['1000']
@@ -27,6 +33,18 @@ rule compile_model:
         model=r'[\w_]+'
     shell:
          'python3 {input.script} {wildcards.model}'
+
+rule run_benchmark_chen:
+    input:
+        script='benchmark.py',
+        model=os.path.join('amici_models', 'Chen_MSB2009', 'Chen_MSB2009', 'Chen_MSB2009.py')
+    output:
+        h5=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='Chen_MSB2009', optimizer='{optimizer}', starts='{starts}'
+        ) + '.hdf5')
+    shell:
+         'python3 {input.script} Chen_MSB2009 {wildcards.optimizer} '
+         '{wildcards.starts}'
 
 rule run_benchmark:
     input:
@@ -83,3 +101,4 @@ rule benchmark:
             model=MODELS_ADJOINT
         ),
 
+ruleorder: run_benchmark_chen > run_benchmark
