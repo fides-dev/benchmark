@@ -2,23 +2,27 @@ import os
 
 from benchmark import PREFIX_TEMPLATE
 
-MODELS_SUBSPACE = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
-OPTIMIZER_SUBSPACE = ['fides.subspace=2D', 'fides.subspace=full',
-                      'fides.subspace=2D.hessian=Hybrid_05',
-                      'fides.subspace=full.hessian=Hybrid_05',
-                      'fides.subspace=2D.hessian=Hybrid_1',
-                      'fides.subspace=full.hessian=Hybrid_1',
-                      'fides.subspace=2D.hessian=Hybrid_2',
-                      'fides.subspace=full.hessian=Hybrid_2',
-                      'fides.subspace=2D.hessian=Hybrid_5',
-                      'fides.subspace=full.hessian=Hybrid_5',
-                      'fides.subspace=full.hessian=BFGS',
-                      'fides.subspace=2D.hessian=BFGS', 'ls_trf']
+MODELS_FORWARD = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
+OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
+                    'fides.subspace=2D.hessian=Hybrid_05',
+                     'fides.subspace=full.hessian=Hybrid_05',
+                     'fides.subspace=2D.hessian=Hybrid_1',
+                     'fides.subspace=full.hessian=Hybrid_1',
+                     'fides.subspace=2D.hessian=Hybrid_2',
+                     'fides.subspace=full.hessian=Hybrid_2',
+                     'fides.subspace=2D.hessian=Hybrid_5',
+                     'fides.subspace=full.hessian=Hybrid_5',
+                     'fides.subspace=full.hessian=BFGS',
+                     'fides.subspace=2D.hessian=BFGS'
+                     'fides.subspace=full.hessian=SR1',
+                     'fides.subspace=2D.hessian=SR1', 'ls_trf']
 N_STARTS_SUBSPACE = ['1000']
 
 MODELS_ADJOINT = ['Chen_MSB2009']
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
                      'fides.subspace=2D.hessian=BFGS',
+                     'fides.subspace=full.hessian=SR1',
+                     'fides.subspace=2D.hessian=SR1'
                      'ipopt']
 N_STARTS_ADJOINT = ['100']
 
@@ -36,7 +40,8 @@ rule compile_model:
 rule run_benchmark_chen:
     input:
         script='benchmark.py',
-        model=os.path.join('amici_models', 'Chen_MSB2009', 'Chen_MSB2009', 'Chen_MSB2009.py')
+        model=os.path.join('amici_models', 'Chen_MSB2009', 'Chen_MSB2009',
+                           'Chen_MSB2009.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='Chen_MSB2009', optimizer='{optimizer}', starts='{starts}'
@@ -61,14 +66,14 @@ rule evaluate_subspace_benchmark:
     input:
         script='evaluate.py',
         hdf5=expand(rules.run_benchmark.output.h5,
-                    model=['{model}'], optimizer=OPTIMIZER_SUBSPACE,
+                    model=['{model}'], optimizer=OPTIMIZER_FORWARD,
                     starts=N_STARTS_SUBSPACE)
     output:
         full_waterfall=expand(
-            os.path.join('evaluation', '{model}_{analysis}_subspace.pdf'),
+            os.path.join('evaluation', '{model}_{analysis}_forward.pdf'),
             model=['{model}'], analysis=['all_starts', 'time', 'fval', 'iter',
                                          *[f'sim_{opt}' for opt
-                                           in OPTIMIZER_SUBSPACE]]
+                                           in OPTIMIZER_FORWARD]]
         )
     shell:
         'python3 {input.script} {wildcards.model} subspace'
@@ -92,8 +97,8 @@ rule evaluate_adjoint_benchmark:
 rule benchmark:
     input:
         expand(
-            os.path.join('evaluation', '{model}_all_starts_subspace.pdf'),
-            model=MODELS_SUBSPACE
+            os.path.join('evaluation', '{model}_all_starts_forward.pdf'),
+            model=MODELS_FORWARD
         ),
         expand(
             os.path.join('evaluation', '{model}_all_starts_adjoint.pdf'),
