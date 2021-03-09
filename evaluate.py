@@ -1,13 +1,20 @@
 import sys
 import os
 import re
+import matplotlib as mpl
+
+new_rc_params = {
+    "font.family": 'Helvetica',
+    "pdf.fonttype": 42,
+    'ps.fonttype': 42,
+    'svg.fonttype': 'none',
+}
+mpl.rcParams.update(new_rc_params)
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import petab.visualize
-import amici.petab_objective
 import pypesto.petab
 import petab
 
@@ -16,7 +23,6 @@ from pypesto.visualize import waterfall, create_references
 from pypesto.objective.history import CsvHistory
 from matplotlib import cm
 from compile_petab import folder_base
-
 
 MODEL_NAME = sys.argv[1]
 EVALUATION_TYPE = sys.argv[2]
@@ -62,8 +68,8 @@ colors = {
         'ls_trf', 'ipopt', 'fides.subspace=full', 'fides.subspace=2D',
         'fides.subspace=full.hessian=BFGS',
         'fides.subspace=2D.hessian=BFGS',
-        'fides.subspace=full.hessian=Hybrid',
-        'fides.subspace=2D.hessian=Hybrid',
+        'fides.subspace=full.hessian=Hybrid_2',
+        'fides.subspace=2D.hessian=Hybrid_2',
         'Hass2019', 'Hass2019_fmintrust'
     ])
 }
@@ -120,21 +126,24 @@ all_results = sorted(
     key=lambda r: r['result'].optimize_result.list[0]['fval']
 )
 
+waterfall_results = [r for r in all_results
+                     if r['optimizer'] in colors]
+
 waterfall(
-    [r['result'] for r in all_results],
+    [r['result'] for r in waterfall_results],
     reference=ref,
-    legends=[r['optimizer'] for r in all_results],
-    colors=[colors[r['optimizer']] for r in all_results],
+    legends=[r['optimizer'] for r in waterfall_results],
+    colors=[colors[r['optimizer']] for r in waterfall_results],
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation',
                          f'{MODEL_NAME}_all_starts_{EVALUATION_TYPE}.pdf'))
 
 waterfall(
-    [r['result'] for r in all_results],
+    [r['result'] for r in waterfall_results],
     reference=ref,
-    legends=[r['optimizer'] for r in all_results],
-    colors=[colors[r['optimizer']] for r in all_results],
+    legends=[r['optimizer'] for r in waterfall_results],
+    colors=[colors[r['optimizer']] for r in waterfall_results],
     start_indices=range(int(int(N_STARTS)/10))
 )
 plt.tight_layout()
@@ -143,79 +152,124 @@ plt.savefig(os.path.join(
     f'{MODEL_NAME}_{int(int(N_STARTS)/10)}_starts_{EVALUATION_TYPE}.pdf'
 ))
 
-dfs = [
-    pd.DataFrame([
+if EVALUATION_TYPE == 'forward':
+
+    df = pd.DataFrame([
         {
             'fval': start['fval'],
             'time': start['time'],
-            'ipt': start['time']/start['n_grad'],
             'iter': start['n_grad'] + start['n_sres'],
             'id': start['id'],
-            'dist': np.log10(np.min(np.abs(
-                start['fval'] - np.asarray([
-                    s['fval']
-                    for s in results['result'].optimize_result.list[:length]
-                    if s['id'] != start['id']
-                ])
-            ))),
             'optimizer': results['optimizer']
         }
         for results in all_results
-        for start in results['result'].optimize_result.list[:length]
-    ]).pivot(index='id', columns=['optimizer'])
-    for length in [np.min([int(N_STARTS), 300]), int(N_STARTS)]
-]
+        for start in results['result'].optimize_result.list
+    ])
 
-df_reduced, df_full = dfs
+    df['opt_subspace'] = df['optimizer'].apply(
+        lambda x:
+        'fides ' + x.split('.')[1].split('=')[1]
+        if len(x.split('.')) > 1
+        else 'ls_trf full'
+    )
 
-for df in [df_full, df_reduced]:
-    df.fval = df.fval - np.nanmin(df.fval) + 1
-    for value in ['time', 'fval', 'iter']:
-        df[value] = df[value].apply(np.log10)
+    df['hessian'] = df['optimizer'].apply(
+        lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
+        else 'FIM'
+    )
 
-df_full = df_full[np.isfinite(df_full.fval).all(axis=1)]
+    plt.subplots()
+    g = sns.violinplot(data=df,
+                       x='hessian', y='iter', hue='opt_subspace',
+                       order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
+                              'Hybrid_5', 'BFGS'])
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        'evaluation',
+        f'{MODEL_NAME}_iter_box_{EVALUATION_TYPE}.pdf'
+    ))
 
-for df in [df_full, df_reduced]:
-    df.columns = [' '.join(col).strip() for col in df.columns.values]
+    df_pivot = df.pivot(index='id', columns=['optimizer'])
 
-if EVALUATION_TYPE == 'subspace':
-    for value in ['time', 'fval', 'ipt', 'dist', 'iter']:
-        if value == 'dist':
-            df = df_reduced
-        else:
-            df = df_full
+    fmin = np.nanmin(df_pivot.fval)
+
+    df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
+
+    df_pivot = df_pivot[np.isfinite(df_pivot.fval).all(axis=1)]
+
+    df_pivot.columns = [' '.join(col).strip()
+                        for col in df_pivot.columns.values]
+
+    for name, vals in {
+        'FIM': ('fval fides.subspace=2D',
+                'fval fides.subspace=full'),
+        'Hybrid': ("fval fides.subspace=2D.hessian=Hybrid_2",
+                   "fval fides.subspace=full.hessian=Hybrid_2"),
+        'full': ("fval fides.subspace=full",
+                 "fval fides.subspace=full.hessian=Hybrid_2"),
+    }.items():
         lb, ub = [
-            fun([fun(df[f"{value} fides.subspace=2D"]),
-                 fun(df[f"{value} fides.subspace=full"])])
+            fun([fun(df_pivot[vals[0]]),
+                 fun(df_pivot[vals[1]])])
             for fun in [np.nanmin, np.nanmax]
         ]
-        lb -= (ub-lb)/10
-        ub += (ub-lb)/10
+        lb -= (ub - lb) / 10
+        ub += (ub - lb) / 10
+        if MODEL_NAME == 'Fujita_SciSignal2010':
+            ub = 5
 
         sns.jointplot(
-            data=df,
-            x=f"{value} fides.subspace=2D",
-            y=f"{value} fides.subspace=full",
+            data=df_pivot,
+            x=vals[0],
+            y=vals[1],
             kind='scatter', xlim=(lb, ub), ylim=(lb, ub),
             alpha=0.3,
             marginal_kws={'bins': 25},
         )
         plt.tight_layout()
         plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{value}_joint_{EVALUATION_TYPE}.pdf'
-        )
-)
-
-        plt.subplots()
-
-        g = sns.boxplot(data=pd.melt(df[[c for c in df.columns
-                                         if c.startswith(value)]]),
-                        x='variable', y='value')
-        g.set_xticklabels(g.get_xticklabels(), rotation=30)
-        plt.tight_layout()
-        plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{value}_box_{EVALUATION_TYPE}.pdf'
+            'evaluation',
+            f'{MODEL_NAME}_fval_{name}_{EVALUATION_TYPE}.pdf'
         ))
+
+    df_time = pd.DataFrame([
+        {
+            'convergence_count': np.sum(np.log10(
+                results['result'].optimize_result.get_for_key(
+                    'fval') - fmin + 1) < 0.1),
+            'total_time': np.sum(
+                results['result'].optimize_result.get_for_key('time')),
+            'starts_per_h': np.sum(np.log10(
+                results['result'].optimize_result.get_for_key(
+                    'fval') - fmin + 1) < 0.1) / np.sum(
+                results['result'].optimize_result.get_for_key('time')) * 3600,
+            'optimizer': results['optimizer']
+        }
+        for results in all_results
+    ])
+
+    df_time['opt_subspace'] = df_time['optimizer'].apply(
+        lambda x:
+        'fides ' + x.split('.')[1].split('=')[1]
+        if len(x.split('.')) > 1
+        else 'ls_trf full'
+    )
+
+    df_time['hessian'] = df_time['optimizer'].apply(
+        lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
+        else 'FIM'
+    )
+
+    plt.subplots()
+    g = sns.barplot(data=df_time,
+                    x='hessian', y='starts_per_h', hue='opt_subspace',
+                    order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
+                           'Hybrid_5', 'BFGS'])
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        'evaluation',
+        f'{MODEL_NAME}_time_box_{EVALUATION_TYPE}.pdf'
+    ))
 
 if EVALUATION_TYPE == 'adjoint':
     opt0 = 'ipopt'
@@ -298,31 +352,3 @@ if EVALUATION_TYPE == 'adjoint':
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation', f'{MODEL_NAME}_{value}_traces_{EVALUATION_TYPE}.pdf'))
-
-for result in all_results:
-    simulation = amici.petab_objective.simulate_petab(
-        petab_problem,
-        model,
-        problem_parameters=dict(zip(
-            problem.x_names,
-            result['result'].optimize_result.list[0]['x'],
-        )), scaled_parameters=True,
-        solver=solver
-    )
-    # Convert the simulation to PEtab format.
-    simulation_df = amici.petab_objective.rdatas_to_simulation_df(
-        simulation['rdatas'],
-        model=model,
-        measurement_df=petab_problem.measurement_df,
-    )
-    # Plot with PEtab
-    petab.visualize.plot_data_and_simulation(
-        exp_data=petab_problem.measurement_df,
-        exp_conditions=petab_problem.condition_df,
-        sim_data=simulation_df,
-    )
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation',
-        f'{MODEL_NAME}_sim_{result["optimizer"]}_{EVALUATION_TYPE}.pdf'
-    ))
