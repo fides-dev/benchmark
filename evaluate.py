@@ -65,9 +65,11 @@ cmap = cm.get_cmap('tab10')
 colors = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'ls_trf', 'ipopt', 'fides.subspace=full', 'fides.subspace=2D',
+        'fides.subspace=full', 'fides.subspace=2D',
         'fides.subspace=full.hessian=BFGS',
         'fides.subspace=2D.hessian=BFGS',
+        'fides.subspace=full.hessian=SR1',
+        'fides.subspace=2D.hessian=SR1',
         'fides.subspace=full.hessian=Hybrid_2',
         'fides.subspace=2D.hessian=Hybrid_2',
         'Hass2019', 'Hass2019_fmintrust'
@@ -179,14 +181,13 @@ if EVALUATION_TYPE == 'forward':
     )
 
     plt.subplots()
-    g = sns.violinplot(data=df,
-                       x='hessian', y='iter', hue='opt_subspace',
-                       order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                              'Hybrid_5', 'BFGS'])
+    g = sns.boxplot(data=df, x='hessian', y='iter', hue='opt_subspace',
+                    order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
+                           'Hybrid_5', 'BFGS', 'SR1'])
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'{MODEL_NAME}_iter_box_{EVALUATION_TYPE}.pdf'
+        f'{MODEL_NAME}_iter_{EVALUATION_TYPE}.pdf'
     ))
 
     df_pivot = df.pivot(index='id', columns=['optimizer'])
@@ -195,18 +196,26 @@ if EVALUATION_TYPE == 'forward':
 
     df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
 
-    df_pivot = df_pivot[np.isfinite(df_pivot.fval).all(axis=1)]
+    df_pivot = df_pivot[(df_pivot.fval < 1e5).all(axis=1)]
 
     df_pivot.columns = [' '.join(col).strip()
                         for col in df_pivot.columns.values]
 
     for name, vals in {
-        'FIM': ('fval fides.subspace=2D',
-                'fval fides.subspace=full'),
-        'Hybrid': ("fval fides.subspace=2D.hessian=Hybrid_2",
-                   "fval fides.subspace=full.hessian=Hybrid_2"),
-        'full': ("fval fides.subspace=full",
-                 "fval fides.subspace=full.hessian=Hybrid_2"),
+        '2Dvsfull_FIM': ('fval fides.subspace=2D',
+                         'fval fides.subspace=full'),
+        '2Dvsfull_Hybrid': ("fval fides.subspace=2D.hessian=Hybrid_2",
+                            "fval fides.subspace=full.hessian=Hybrid_2"),
+        'FIMvsBFGS_2D': ("fval fides.subspace=2D",
+                         "fval fides.subspace=2D.hessian=BFGS"),
+        'FIMvsSR1_2D': ("fval fides.subspace=2D",
+                        "fval fides.subspace=2D.hessian=SR1"),
+        'FIMvsHybrid_05_2D': ("fval fides.subspace=2D",
+                              "fval fides.subspace=2D.hessian=Hybrid_05"),
+        'FIMvsHybrid_2_2D': ("fval fides.subspace=2D",
+                             "fval fides.subspace=2D.hessian=Hybrid_2"),
+        'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
+                             "fval fides.subspace=2D.hessian=Hybrid_5"),
     }.items():
         lb, ub = [
             fun([fun(df_pivot[vals[0]]),
@@ -215,8 +224,6 @@ if EVALUATION_TYPE == 'forward':
         ]
         lb -= (ub - lb) / 10
         ub += (ub - lb) / 10
-        if MODEL_NAME == 'Fujita_SciSignal2010':
-            ub = 5
 
         sns.jointplot(
             data=df_pivot,
@@ -264,11 +271,11 @@ if EVALUATION_TYPE == 'forward':
     g = sns.barplot(data=df_time,
                     x='hessian', y='starts_per_h', hue='opt_subspace',
                     order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                           'Hybrid_5', 'BFGS'])
+                           'Hybrid_5', 'BFGS', 'SR1'])
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'{MODEL_NAME}_time_box_{EVALUATION_TYPE}.pdf'
+        f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf'
     ))
 
 if EVALUATION_TYPE == 'adjoint':
@@ -351,4 +358,4 @@ if EVALUATION_TYPE == 'adjoint':
 
     plt.tight_layout()
     plt.savefig(os.path.join(
-        'evaluation', f'{MODEL_NAME}_{value}_traces_{EVALUATION_TYPE}.pdf'))
+        'evaluation', f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf'))

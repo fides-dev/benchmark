@@ -2,7 +2,9 @@ import os
 
 from benchmark import PREFIX_TEMPLATE
 
-MODELS_FORWARD = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
+MODELS_FORWARD = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014',
+                  'Crauste_CellSystems2017', 'Beer_MolBioSystems2014',
+                  'Fiedler_BMC2016','Weber_BMC2015', 'Zheng_PNAS2012']
 OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
                     'fides.subspace=2D.hessian=Hybrid_05',
                      'fides.subspace=full.hessian=Hybrid_05',
