@@ -66,12 +66,11 @@ colors = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
         'fides.subspace=full', 'fides.subspace=2D',
+        'ls_trf', 'ipopt',
         'fides.subspace=full.hessian=BFGS',
         'fides.subspace=2D.hessian=BFGS',
         'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=SR1',
-        'fides.subspace=full.hessian=Hybrid_2',
-        'fides.subspace=2D.hessian=Hybrid_2',
         'Hass2019', 'Hass2019_fmintrust'
     ])
 }
@@ -136,6 +135,7 @@ waterfall(
     reference=ref,
     legends=[r['optimizer'] for r in waterfall_results],
     colors=[colors[r['optimizer']] for r in waterfall_results],
+    size=(6, 3.5),
 )
 plt.tight_layout()
 plt.savefig(os.path.join('evaluation',
@@ -146,7 +146,8 @@ waterfall(
     reference=ref,
     legends=[r['optimizer'] for r in waterfall_results],
     colors=[colors[r['optimizer']] for r in waterfall_results],
-    start_indices=range(int(int(N_STARTS)/10))
+    start_indices=range(int(int(N_STARTS)/10)),
+    size=(6, 3.5)
 )
 plt.tight_layout()
 plt.savefig(os.path.join(
@@ -183,7 +184,8 @@ if EVALUATION_TYPE == 'forward':
     plt.subplots()
     g = sns.boxplot(data=df, x='hessian', y='iter', hue='opt_subspace',
                     order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                           'Hybrid_5', 'BFGS', 'SR1'])
+                           'Hybrid_5', 'BFGS', 'SR1'],
+                    hue_order=['fides 2D', 'fides full', 'ls_trf'])
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
@@ -246,10 +248,10 @@ if EVALUATION_TYPE == 'forward':
                     'fval') - fmin + 1) < 0.1),
             'total_time': np.sum(
                 results['result'].optimize_result.get_for_key('time')),
-            'starts_per_h': np.sum(np.log10(
+            'conv_per_grad': np.sum(np.log10(
                 results['result'].optimize_result.get_for_key(
                     'fval') - fmin + 1) < 0.1) / np.sum(
-                results['result'].optimize_result.get_for_key('time')) * 3600,
+                results['result'].optimize_result.get_for_key('n_grad')),
             'optimizer': results['optimizer']
         }
         for results in all_results
@@ -267,16 +269,18 @@ if EVALUATION_TYPE == 'forward':
         else 'FIM'
     )
 
-    plt.subplots()
-    g = sns.barplot(data=df_time,
-                    x='hessian', y='starts_per_h', hue='opt_subspace',
-                    order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                           'Hybrid_5', 'BFGS', 'SR1'])
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation',
-        f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf'
-    ))
+    for metric in ['convergence_count', 'conv_per_grad']:
+        plt.subplots()
+        g = sns.barplot(data=df_time,
+                        x='hessian', y=metric, hue='opt_subspace',
+                        order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
+                               'Hybrid_5', 'BFGS', 'SR1'],
+                        hue_order=['fides 2D', 'fides full', 'ls_trf'])
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'{MODEL_NAME}_{metric}_{EVALUATION_TYPE}.pdf'
+        ))
 
 if EVALUATION_TYPE == 'adjoint':
     opt0 = 'ipopt'

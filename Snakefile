@@ -4,7 +4,7 @@ from benchmark import PREFIX_TEMPLATE
 
 MODELS_FORWARD = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014',
                   'Crauste_CellSystems2017', 'Beer_MolBioSystems2014',
-                  'Fiedler_BMC2016','Weber_BMC2015', 'Zheng_PNAS2012']
+                  'Weber_BMC2015', 'Zheng_PNAS2012']
 OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
                     'fides.subspace=2D.hessian=Hybrid_05',
                      'fides.subspace=full.hessian=Hybrid_05',
@@ -39,17 +39,32 @@ rule compile_model:
     shell:
          'python3 {input.script} {wildcards.model}'
 
-rule run_benchmark_chen:
+rule run_benchmark_long:
     input:
         script='benchmark.py',
-        model=os.path.join('amici_models', 'Chen_MSB2009', 'Chen_MSB2009',
-                           'Chen_MSB2009.py')
+        model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
-            model='Chen_MSB2009', optimizer='{optimizer}', starts='{starts}'
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5')
+    wildcard_constraints:
+        model='(Chen_MSB2009|Beer_MolBioSystems2014)'
     shell:
-         'python3 {input.script} Chen_MSB2009 {wildcards.optimizer} '
+         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         '{wildcards.starts}'
+
+rule run_benchmark_short:
+    input:
+        script='benchmark.py',
+        model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
+    output:
+        h5=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '.hdf5')
+    wildcard_constraints:
+        model='(Crauste_CellSystems2017|Boehm_JProteomeRes2014)'
+    shell:
+         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 rule run_benchmark:
@@ -107,4 +122,4 @@ rule benchmark:
             model=MODELS_ADJOINT
         ),
 
-ruleorder: run_benchmark_chen > run_benchmark
+ruleorder: run_benchmark_long > run_benchmark_short > run_benchmark
