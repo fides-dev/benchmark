@@ -16,7 +16,7 @@ from compile_petab import folder_base
 np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
-MAX_ITER = 1e3
+MAX_ITER = 1e4
 MAX_TIME = 7200.0
 
 if __name__ == '__main__':
@@ -46,6 +46,13 @@ if __name__ == '__main__':
             petab.ESTIMATE
         ] = 0
 
+    if MODEL_NAME == 'Weber_BMC2015':
+        # don't estimate parameters on linear scale
+        petab_problem.parameter_df.loc[
+            ['std_yPKDt', 'std_yPI4K3Bt', 'std_yCERTt'],
+            petab.ESTIMATE
+        ] = 0
+
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
 
@@ -61,6 +68,10 @@ if __name__ == '__main__':
 
     if MODEL_NAME == 'Fujita_SciSignal2010':
         problem.objective.amici_solver.setMaxSteps(int(2e4))
+
+    if MODEL_NAME == 'Weber_BMC2015':
+        problem.objective.amici_solver.setAbsoluteTolerance(1e-6)
+        problem.objective.amici_solver.setRelativeTolerance(1e-6)
 
     if optimizer_name == 'fides':
         optim_options = {
@@ -159,7 +170,7 @@ if __name__ == '__main__':
             )
         )
     else:
-        history_options=None
+        history_options = None
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
         engine=engine,
