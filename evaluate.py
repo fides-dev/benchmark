@@ -71,7 +71,7 @@ colors = {
         'fides.subspace=2D.hessian=BFGS',
         'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=SR1',
-        'Hass2019', 'Hass2019_fmintrust'
+        'Hass2019'
     ])
 }
 
@@ -102,12 +102,12 @@ hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
     'Hass2019', f'{MODEL_NAME}_ps.csv'
 ), delimiter=',')
 
-ref = create_references(
+refs = create_references(
     x=x_ref[np.asarray(
         petab_problem.x_free_indices
     )],
     fval=problem.objective(x_ref[np.asarray(petab_problem.x_free_indices)]),
-    legend='Hass2019 benchmark',
+    legend='Hass2019',
     color=colors['Hass2019']
 ) + create_references(
     x=hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
@@ -116,9 +116,20 @@ ref = create_references(
         hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
                               np.asarray(petab_problem.x_free_indices)]
     ),
-    legend='Hass2019 fmintrust',
-    color=colors['Hass2019_fmintrust']
+    legend='Hass2019',
+    color=colors['Hass2019']
+) + create_references(
+    x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
+        petab_problem.x_free_indices
+    )],
+    fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
+        np.asarray(petab_problem.x_free_indices)]
+    ),
+    legend='Hass2019',
+    color=colors['Hass2019']
 )
+
+ref = refs[np.argmin([r.fval for r in refs])]
 
 os.makedirs('evaluation', exist_ok=True)
 
