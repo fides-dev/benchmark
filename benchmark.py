@@ -185,7 +185,7 @@ if __name__ == '__main__':
         history_options = None
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
-        #engine=engine,
+        engine=engine,
         options=options,
         history_options=history_options
     )
