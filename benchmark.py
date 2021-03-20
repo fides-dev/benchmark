@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import logging
 from compile_petab import folder_base
 
+from fix_fiedler import fix_fiedler
 np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
@@ -53,6 +54,12 @@ if __name__ == '__main__':
             petab.ESTIMATE
         ] = 0
 
+    if MODEL_NAME == 'Fiedler_BMC2016':
+        fix_fiedler(petab_problem)
+
+    if MODEL_NAME == 'Brannmark_JBC2010':
+        petab.flatten_timepoint_specific_output_overrides(petab_problem)
+
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem()
 
@@ -72,6 +79,11 @@ if __name__ == '__main__':
     if MODEL_NAME == 'Weber_BMC2015':
         problem.objective.amici_solver.setAbsoluteTolerance(1e-6)
         problem.objective.amici_solver.setRelativeTolerance(1e-6)
+
+    if MODEL_NAME == 'Brannmark_JBC2010':
+        problem.objective.amici_model.setSteadyStateSensitivityMode(
+            amici.SteadyStateSensitivityMode.simulationFSA
+        )
 
     if optimizer_name == 'fides':
         optim_options = {
@@ -173,7 +185,7 @@ if __name__ == '__main__':
         history_options = None
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
-        engine=engine,
+        #engine=engine,
         options=options,
         history_options=history_options
     )

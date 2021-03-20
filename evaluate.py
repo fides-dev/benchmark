@@ -23,6 +23,7 @@ from pypesto.visualize import waterfall, create_references
 from pypesto.objective.history import CsvHistory
 from matplotlib import cm
 from compile_petab import folder_base
+from fix_fiedler import fix_fiedler
 
 MODEL_NAME = sys.argv[1]
 EVALUATION_TYPE = sys.argv[2]
@@ -32,46 +33,23 @@ hdf5_files = [r for r in os.listdir('results')
 
 yaml_config = os.path.join(folder_base, MODEL_NAME, MODEL_NAME + '.yaml')
 petab_problem = petab.Problem.from_yaml(yaml_config)
+if MODEL_NAME == 'Fiedler_BMC2016':
+    fix_fiedler(petab_problem)
+if MODEL_NAME == 'Brannmark_JBC2010':
+    petab.flatten_timepoint_specific_output_overrides(petab_problem)
 importer = pypesto.petab.PetabImporter(petab_problem)
 problem = importer.create_problem()
 model = importer.create_model()
 solver = importer.create_solver()
 
-solver.setMaxSteps(int(1e4))
-solver.setAbsoluteTolerance(1e-8)
-solver.setRelativeTolerance(1e-8)
-
-if MODEL_NAME == 'Chen_MSB2009':
-    solver.setMaxSteps(int(2e5))
-
-all_results = []
-for hdf_results_file in hdf5_files:
-    MODEL, OPTIMIZER, N_STARTS = \
-        os.path.splitext(hdf_results_file)[0].split('__')
-
-    if MODEL == MODEL_NAME and (OPTIMIZER != 'ls_trf' or
-                                MODEL == 'Fujita_SciSignal2010'):
-        reader = OptimizationResultHDF5Reader(os.path.join('results',
-                                                           hdf_results_file))
-        result = reader.read()
-        result.problem = problem
-
-        all_results.append({
-            'result': result, 'model': MODEL_NAME, 'optimizer': OPTIMIZER,
-            'file': hdf_results_file
-        })
-
 cmap = cm.get_cmap('tab10')
 colors = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'fides.subspace=full', 'fides.subspace=2D',
-        'ls_trf', 'ipopt',
+        'fides.subspace=full', 'fides.subspace=2D', 'ls_trf', 'ipopt',
         'fides.subspace=full.hessian=BFGS',
-        'fides.subspace=2D.hessian=BFGS',
-        'fides.subspace=full.hessian=SR1',
-        'fides.subspace=2D.hessian=SR1',
-        'Hass2019'
+        'fides.subspace=2D.hessian=BFGS', 'fides.subspace=full.hessian=SR1',
+        'fides.subspace=2D.hessian=SR1', 'Hass2019'
     ])
 }
 
@@ -133,6 +111,24 @@ ref = refs[np.argmin([r.fval for r in refs])]
 
 os.makedirs('evaluation', exist_ok=True)
 
+all_results = []
+for hdf_results_file in hdf5_files:
+    MODEL, OPTIMIZER, N_STARTS = \
+        os.path.splitext(hdf_results_file)[0].split('__')
+
+    if MODEL == MODEL_NAME and (OPTIMIZER != 'ls_trf' or
+                                MODEL in ['Fujita_SciSignal2010',
+                                          'Crauste_CellSystems2017']):
+        reader = OptimizationResultHDF5Reader(os.path.join('results',
+                                                           hdf_results_file))
+        result = reader.read()
+        result.problem = problem
+
+        all_results.append({
+            'result': result, 'model': MODEL_NAME, 'optimizer': OPTIMIZER,
+            'file': hdf_results_file
+        })
+
 all_results = sorted(
     all_results,
     key=lambda r: r['result'].optimize_result.list[0]['fval']
@@ -140,6 +136,9 @@ all_results = sorted(
 
 waterfall_results = [r for r in all_results
                      if r['optimizer'] in colors]
+
+fmin = np.nanmin([r['result'].optimize_result.list[0]['fval']
+                  for r in all_results] + [ref.fval])
 
 waterfall(
     [r['result'] for r in waterfall_results],
@@ -158,7 +157,7 @@ waterfall(
     legends=[r['optimizer'] for r in waterfall_results],
     colors=[colors[r['optimizer']] for r in waterfall_results],
     start_indices=range(int(int(N_STARTS)/10)),
-    size=(6, 3.5)
+    size=(6, 3.5),
 )
 plt.tight_layout()
 plt.savefig(os.path.join(
@@ -196,7 +195,9 @@ if EVALUATION_TYPE == 'forward':
     g = sns.boxplot(data=df, x='hessian', y='iter', hue='opt_subspace',
                     order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
                            'Hybrid_5', 'BFGS', 'SR1'],
-                    hue_order=['fides 2D', 'fides full', 'ls_trf'])
+                    hue_order=['fides 2D', 'fides full', 'ls_trf'],
+                    )
+    g.set_yscale('log')
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
@@ -204,8 +205,6 @@ if EVALUATION_TYPE == 'forward':
     ))
 
     df_pivot = df.pivot(index='id', columns=['optimizer'])
-
-    fmin = np.nanmin(df_pivot.fval)
 
     df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
 
@@ -309,7 +308,7 @@ if EVALUATION_TYPE == 'adjoint':
         np.min(result0.optimize_result.get_for_key('fval')),
         np.min(result1.optimize_result.get_for_key('fval'))
     ]) - 1
-    alpha = 1/len(result0.optimize_result.list)
+    alpha = 0.1
     for start0 in result0.optimize_result.list:
         start1 = next(
             (s for s in result1.optimize_result.list
