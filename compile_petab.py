@@ -2,8 +2,6 @@ import pypesto.petab
 import petab
 import os
 import sys
-import pandas as pd
-import re
 
 from fix_fiedler import fix_fiedler
 
@@ -21,6 +19,5 @@ if __name__ == '__main__':
         fix_fiedler(petab_problem)
     if MODEL_NAME == 'Brannmark_JBC2010':
         petab.flatten_timepoint_specific_output_overrides(petab_problem)
-    petab.flatten_timepoint_specific_output_overrides(petab_problem)
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_model(force_compile=True)
