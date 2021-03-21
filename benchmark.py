@@ -1,9 +1,7 @@
 import os
 import sys
-import petab
 import amici
 import fides
-import pypesto.petab
 import pypesto.optimize as optimize
 from pypesto.objective import HistoryOptions
 import pypesto.visualize as visualize
@@ -11,80 +9,37 @@ from pypesto.store import OptimizationResultHDF5Writer
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
-from compile_petab import folder_base
+from compile_petab import load_problem
 
-from fix_fiedler import fix_fiedler
-np.random.seed(0)
 
-PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
-MAX_ITER = 1e4
-MAX_TIME = 7200.0
+def set_solver_model_options(solver, model):
+    solver.setMaxSteps(int(1e4))
+    solver.setAbsoluteTolerance(1e-8)
+    solver.setRelativeTolerance(1e-8)
 
-if __name__ == '__main__':
-    MODEL_NAME = sys.argv[1]
-    OPTIMIZER = sys.argv[2]
-    N_STARTS = int(sys.argv[3])
-
-    prefix = PREFIX_TEMPLATE.format(model=MODEL_NAME,
-                                    optimizer=OPTIMIZER,
-                                    starts=str(N_STARTS))
-
-    optimizer_name = OPTIMIZER.split('.')[0]
-
-    parsed_options = {
-        option.split('=')[0]: option.split('=')[1]
-        for option in OPTIMIZER.split('.')[1:]
-    }
-
-    yaml_config = os.path.join(folder_base, MODEL_NAME, MODEL_NAME + '.yaml')
-
-    # create a petab problem
-    petab_problem = petab.Problem.from_yaml(yaml_config)
-    if MODEL_NAME == 'Chen_MSB2009':
-        # don't estimate parameters on linear scale
-        petab_problem.parameter_df.loc[
-            petab_problem.parameter_df[petab.PARAMETER_SCALE] == petab.LIN,
-            petab.ESTIMATE
-        ] = 0
-
-    if MODEL_NAME == 'Weber_BMC2015':
-        # don't estimate parameters on linear scale
-        petab_problem.parameter_df.loc[
-            ['std_yPKDt', 'std_yPI4K3Bt', 'std_yCERTt'],
-            petab.ESTIMATE
-        ] = 0
-
-    if MODEL_NAME == 'Fiedler_BMC2016':
-        fix_fiedler(petab_problem)
-
-    if MODEL_NAME == 'Brannmark_JBC2010':
-        petab.flatten_timepoint_specific_output_overrides(petab_problem)
-
-    importer = pypesto.petab.PetabImporter(petab_problem)
-    problem = importer.create_problem()
-
-    problem.objective.amici_solver.setMaxSteps(int(1e4))
-    problem.objective.amici_solver.setAbsoluteTolerance(1e-8)
-    problem.objective.amici_solver.setRelativeTolerance(1e-8)
-
-    if MODEL_NAME == 'Chen_MSB2009':
-        problem.objective.amici_solver.setMaxSteps(int(2e5))
-        problem.objective.amici_solver.setInterpolationType(
+    if model == 'Chen_MSB2009':
+        solver.setMaxSteps(int(2e5))
+        solver.setInterpolationType(
             amici.InterpolationType_polynomial
         )
+        solver.setSensitivityMethod(
+            amici.SensitivityMethod.adjoint
+        )
 
-    if MODEL_NAME == 'Fujita_SciSignal2010':
-        problem.objective.amici_solver.setMaxSteps(int(2e4))
+    if model == 'Fujita_SciSignal2010':
+        solver.setMaxSteps(int(2e4))
 
-    if MODEL_NAME == 'Weber_BMC2015':
-        problem.objective.amici_solver.setAbsoluteTolerance(1e-6)
-        problem.objective.amici_solver.setRelativeTolerance(1e-6)
+    if model == 'Weber_BMC2015':
+        solver.setAbsoluteTolerance(1e-6)
+        solver.setRelativeTolerance(1e-6)
 
-    if MODEL_NAME == 'Brannmark_JBC2010':
-        problem.objective.amici_model.setSteadyStateSensitivityMode(
+    if model == 'Brannmark_JBC2010':
+        model.setSteadyStateSensitivityMode(
             amici.SteadyStateSensitivityMode.simulationFSA
         )
 
+
+def get_optimizer(optimizer_name: str):
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: MAX_ITER,
@@ -110,10 +65,6 @@ if __name__ == '__main__':
 
         if parsed_options.get('hessian', 'FIM') not in ['FIM', 'Hybrid']:
             hessian_update = hessian_updates.get(parsed_options.get('hessian'))
-            if MODEL_NAME == 'Chen_MSB2009':
-                problem.objective.amici_solver.setSensitivityMethod(
-                    amici.SensitivityMethod.adjoint
-                )
         else:
             hessian_update = hessian_updates.get(parsed_options.get('hessian',
                                                                     'FIM'))
@@ -125,13 +76,13 @@ if __name__ == '__main__':
                     value = bool(value)
                 optim_options[optim_field] = parsed_options[parse_field]
 
-        optimizer = optimize.FidesOptimizer(
+        return optimize.FidesOptimizer(
             options=optim_options, verbose=logging.WARNING,
             hessian_update=hessian_update
         )
 
     if optimizer_name == 'ls_trf':
-        optimizer = optimize.ScipyOptimizer(
+        return optimize.ScipyOptimizer(
             method='ls_trf', options={'max_nfev': MAX_ITER,
                                       'xtol': 0.0,
                                       'ftol': 1e-8,
@@ -139,15 +90,41 @@ if __name__ == '__main__':
         )
 
     if optimizer_name == 'ipopt':
-        problem.objective.amici_solver.setSensitivityMethod(
-            amici.SensitivityMethod.adjoint
-        )
-        optimizer = optimize.IpoptOptimizer(
+        return optimize.IpoptOptimizer(
             options={'max_iter': int(MAX_ITER),
                      'tol': 1e-8,
                      'acceptable_tol': 1e-100,
                      'max_cpu_time': MAX_TIME}
         )
+
+
+np.random.seed(0)
+
+PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
+MAX_ITER = 1e4
+MAX_TIME = 7200.0
+
+if __name__ == '__main__':
+    MODEL_NAME = sys.argv[1]
+    OPTIMIZER = sys.argv[2]
+    N_STARTS = int(sys.argv[3])
+
+    prefix = PREFIX_TEMPLATE.format(model=MODEL_NAME,
+                                    optimizer=OPTIMIZER,
+                                    starts=str(N_STARTS))
+
+    optimizer_name = OPTIMIZER.split('.')[0]
+
+    parsed_options = {
+        option.split('=')[0]: option.split('=')[1]
+        for option in OPTIMIZER.split('.')[1:]
+    }
+
+    petab_problem, problem = load_problem(MODEL_NAME)
+    set_solver_model_options(problem.objective.amici_solver,
+                             problem.objective.amici_model)
+
+    optimizer = get_optimizer(optimizer_name)
 
     engine = pypesto.engine.MultiThreadEngine(n_threads=10)
 
@@ -201,10 +178,6 @@ if __name__ == '__main__':
     visualize.optimizer_convergence(result)
     plt.tight_layout()
     plt.savefig(os.path.join('results', prefix + '_convergence.pdf'))
-
-    #visualize.optimizer_history(result)
-    #plt.tight_layout()
-    #plt.savefig(os.path.join('results', prefix + '_history.pdf'))
 
     writer = OptimizationResultHDF5Writer(hdf_results_file)
     writer.write(result, overwrite=True)
