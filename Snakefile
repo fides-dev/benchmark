@@ -5,7 +5,8 @@ from evaluate import OPTIMIZER_FORWARD, OPTIMIZER_ADJOINT , N_STARTS_ADJOINT, \
     N_STARTS_FORWARD
 
 MODELS_FORWARD = ['Fujita_SciSignal2010', 'Crauste_CellSystems2017',
-                  'Beer_MolBioSystems2014',]
+                  'Beer_MolBioSystems2014', 'Brannmark_JBC2010',
+                  'Fiedler_BMC2016']
 
 MODELS_ADJOINT = []
 
