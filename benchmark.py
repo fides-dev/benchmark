@@ -2,6 +2,7 @@ import os
 import sys
 import amici
 import fides
+import pypesto
 import pypesto.optimize as optimize
 from pypesto.objective import HistoryOptions
 import pypesto.visualize as visualize
@@ -74,7 +75,7 @@ def get_optimizer(optimizer_name: str):
                 value = parsed_options[parse_field]
                 if optim_field == fides.Options.REFINE_STEPBACK:
                     value = bool(value)
-                optim_options[optim_field] = parsed_options[parse_field]
+                optim_options[optim_field] = value
 
         return optimize.FidesOptimizer(
             options=optim_options, verbose=logging.WARNING,
@@ -85,7 +86,7 @@ def get_optimizer(optimizer_name: str):
         return optimize.ScipyOptimizer(
             method='ls_trf', options={'max_nfev': MAX_ITER,
                                       'xtol': 0.0,
-                                      'ftol': 1e-8,
+                                      'ftol': 1e-10,
                                       'gtol': 1e-6}
         )
 
@@ -126,7 +127,7 @@ if __name__ == '__main__':
 
     optimizer = get_optimizer(optimizer_name)
 
-    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
+    engine = pypesto.engine.MultiThreadEngine(n_threads=20)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=True)

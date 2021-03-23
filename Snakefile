@@ -1,31 +1,13 @@
 import os
 
 from benchmark import PREFIX_TEMPLATE
+from evaluate import OPTIMIZER_FORWARD, OPTIMIZER_ADJOINT , N_STARTS_ADJOINT, \
+    N_STARTS_FORWARD
 
-MODELS_FORWARD = ['Brannmark_JBC2010', 'Fiedler_BMC2016']
-OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
-                     'fides.subspace=2D.hessian=Hybrid_05',
-                     'fides.subspace=full.hessian=Hybrid_05',
-                     'fides.subspace=2D.hessian=Hybrid_1',
-                     'fides.subspace=full.hessian=Hybrid_1',
-                     'fides.subspace=2D.hessian=Hybrid_2',
-                     'fides.subspace=full.hessian=Hybrid_2',
-                     'fides.subspace=2D.hessian=Hybrid_5',
-                     'fides.subspace=full.hessian=Hybrid_5',
-                     'fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
-                     'fides.subspace=full.hessian=SR1',
-                     'fides.subspace=2D.hessian=SR1', 'ls_trf']
-N_STARTS_SUBSPACE = ['1000']
+MODELS_FORWARD = ['Fujita_SciSignal2010', 'Crauste_CellSystems2017',
+                  'Beer_MolBioSystems2014',]
 
 MODELS_ADJOINT = []
-OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
-                     'fides.subspace=full.hessian=SR1',
-                     'fides.subspace=2D.hessian=SR1'
-                     'ipopt']
-N_STARTS_ADJOINT = ['100']
-
 
 rule compile_model:
     input:
@@ -82,7 +64,7 @@ rule evaluate_subspace_benchmark:
         script='evaluate.py',
         hdf5=expand(rules.run_benchmark.output.h5,
                     model=['{model}'], optimizer=OPTIMIZER_FORWARD,
-                    starts=N_STARTS_SUBSPACE)
+                    starts=N_STARTS_FORWARD)
     output:
         full_waterfall=expand(
             os.path.join('evaluation', '{model}_{analysis}_forward.pdf'),

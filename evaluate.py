@@ -1,16 +1,20 @@
 import sys
 import os
 import re
-import matplotlib as mpl
+import petab
+import pypesto
+import sklearn
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib as mpl
 
 from pypesto.store import OptimizationResultHDF5Reader
 from pypesto.visualize import waterfall, create_references
 from pypesto.objective.history import CsvHistory
+from pypesto.optimize.result import OptimizerResult
 from matplotlib import cm
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -29,12 +33,37 @@ cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'fides.subspace=full', 'fides.subspace=2D', 'ls_trf', 'ipopt',
-        'fides.subspace=full.hessian=BFGS',
-        'fides.subspace=2D.hessian=BFGS', 'Hass2019',
-        'fmincon', 'lsqnonlin'
+        'fides.subspace=2D', 'ls_trf', 'ipopt',
+        'fides.subspace=full.hessian=SR1',
+        'fides.subspace=2D.hessian=BFGS',
+        'fmincon', 'lsqnonlin', 'Hass2019'
     ])
 }
+
+OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
+                     'fides.subspace=2D.hessian=Hybrid_05',
+                     'fides.subspace=full.hessian=Hybrid_05',
+                     'fides.subspace=2D.hessian=Hybrid_1',
+                     'fides.subspace=full.hessian=Hybrid_1',
+                     'fides.subspace=2D.hessian=Hybrid_2',
+                     'fides.subspace=full.hessian=Hybrid_2',
+                     'fides.subspace=2D.hessian=Hybrid_5',
+                     'fides.subspace=full.hessian=Hybrid_5',
+                     'fides.subspace=full.hessian=BFGS',
+                     'fides.subspace=2D.hessian=BFGS',
+                     'fides.subspace=full.hessian=SR1',
+                     'fides.subspace=2D.hessian=SR1',
+                     'ls_trf']
+
+N_STARTS_FORWARD = ['1000']
+
+OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
+                     'fides.subspace=2D.hessian=BFGS',
+                     'fides.subspace=full.hessian=SR1',
+                     'fides.subspace=2D.hessian=SR1'
+                     'ipopt']
+
+N_STARTS_ADJOINT = ['100']
 
 
 def get_num_converged(fvals, fmin):
@@ -45,18 +74,136 @@ def get_num_converged_per_grad(fvals, n_grads, fmin):
     return get_num_converged(fvals, fmin) / np.nansum(n_grads)
 
 
+def get_dist(fvals, fmin):
+    fvals = np.asarray(fvals)
+    converged_fvals = fvals[fvals < fmin + CONVERGENCE_THRESHOLD]
+    if len(converged_fvals) < 2:
+        return 0
+    distances = sklearn.metrics.pairwise_distances(
+        converged_fvals.reshape(-1, 1)
+    )
+    distances[np.diag_indices(len(converged_fvals))] = np.Inf
+    return 1/np.median(distances.min(axis=1))
+
+
+def load_results(model, optimizer, n_starts):
+    if optimizer in ['lsqnonlin', 'fmincon']:
+        return load_results_from_benchmark(model, optimizer)
+    else:
+        return load_results_from_hdf5(model, optimizer, n_starts)
+
+
 def load_results_from_hdf5(model, optimizer, n_starts):
     file = f'{model}__{optimizer}__{n_starts}.hdf5'
     reader = OptimizationResultHDF5Reader(os.path.join('results', file))
     return reader.read()
 
 
+hass_alias = {
+    'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
+    'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
+}
+
+matlab_alias = {
+    'fmincon': 'trust',
+    'lsqnonlin': 'lsq'
+}
+
+
+def load_results_from_benchmark(model, optimizer):
+    hass_2019_pars = pd.read_excel(os.path.join(
+        'Hass2019', f'{model}.xlsx'
+    ), sheet_name='Parameters')
+    hass_2019_pars.parameter = hass_2019_pars.parameter.apply(
+        lambda x: re.sub(r'log10\(([\w_]+)\)', r'\1', x)
+    )
+
+    if model == 'Weber_BMC2015':
+        hass_2019_pars = hass_2019_pars.append(
+            petab_problem.parameter_df.reset_index().loc[
+                [39, 34, 38, 33, 35, 36, 37, 32],
+                [petab.PARAMETER_ID, petab.NOMINAL_VALUE,
+                 petab.LOWER_BOUND,
+                 petab.UPPER_BOUND, petab.PARAMETER_SCALE,
+                 petab.ESTIMATE]].rename(
+                columns={
+                    petab.PARAMETER_ID: 'parameter',
+                    petab.NOMINAL_VALUE: 'value',
+                    petab.LOWER_BOUND: 'lower boundary',
+                    petab.UPPER_BOUND: 'upper boundary',
+                    petab.PARAMETER_SCALE: 'analysis at log-scale',
+                    petab.ESTIMATE: 'estimated'
+                }
+            )
+        )
+
+    par_names = list(hass_2019_pars.parameter)
+
+    par_idx = np.array([
+        par_names.index(par)
+        if par in par_names
+        else par_names.index(
+            par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
+                'scaling', 'scaleFactor').replace('_tot', '')
+        )
+        for par in [
+            petab_problem.x_ids[ix] for ix in petab_problem.x_free_indices
+        ]
+    ])
+    hass2019_chis = np.genfromtxt(os.path.join(
+        'Hass2019',
+        f'{hass_alias.get(model, model)}_{optimizer}_chi2s.csv',
+    ), delimiter=',')
+    hass2019_iter = np.genfromtxt(os.path.join(
+        'Hass2019',
+        f'{hass_alias.get(model, model)}_{optimizer}_iter.csv',
+    ), delimiter=',')
+    hass2019_ps = np.genfromtxt(os.path.join(
+        'Hass2019',
+        f'{hass_alias.get(model, model)}_{optimizer}_ps.csv',
+    ), delimiter=',')
+
+    fvals_file = os.path.join(
+        'Hass2019',
+        f'{hass_alias.get(model, model)}_{optimizer}_fvals.csv',
+    )
+    if os.path.exists(fvals_file):
+        hass2019_fvals = np.genfromtxt(fvals_file, delimiter=',')
+    else:
+        if model == 'Crauste_CellSystems2017':
+            chi2min = 19.6659294289557
+            hass2019_fvals = (hass2019_chis - chi2min) / 2 + fmin
+        else:
+            hass2019_fvals = np.array([
+                problem.objective(p[par_idx])
+                if not np.isnan(p).any() else np.NaN
+                for p in hass2019_ps
+            ])
+            assert np.isfinite(hass2019_fvals[np.nanargmin(hass2019_chis)])
+            assert np.abs(hass2019_chis[np.nanargmin(hass2019_chis)] -
+                          hass2019_chis[np.nanargmin(hass2019_fvals)]) < 0.01
+        np.savetxt(
+            fvals_file, hass2019_fvals, delimiter=','
+        )
+
+    result = pypesto.Result()
+    result.optimize_result = pypesto.OptimizeResult()
+    for fval, p, n_grad in zip(hass2019_fvals, hass2019_ps, hass2019_iter):
+        if not np.isfinite(fval):
+            continue
+        result.optimize_result.append(OptimizerResult(
+            x=p,
+            fval=fval,
+            n_grad=n_grad,
+            n_sres=0,
+        ))
+    result.optimize_result.sort()
+    return result
+
+
 if __name__ == '__main__':
     MODEL_NAME = sys.argv[1]
     EVALUATION_TYPE = sys.argv[2]
-
-    hdf5_files = [r for r in os.listdir('results')
-                  if r.startswith(MODEL_NAME) and r.endswith('.hdf5')]
 
     petab_problem, problem = load_problem(MODEL_NAME)
     set_solver_model_options(problem.objective.amici_solver,
@@ -68,6 +215,24 @@ if __name__ == '__main__':
     hass_2019.parameter = hass_2019.parameter.apply(
         lambda x: re.sub(r'log10\(([\w_]+)\)', r'\1', x)
     )
+    if MODEL_NAME == 'Weber_BMC2015':
+        par_df = petab_problem.parameter_df.reset_index().loc[
+            [32, 33, 34, 35, 36, 37, 38, 39],
+            [petab.PARAMETER_ID, petab.NOMINAL_VALUE,
+             petab.LOWER_BOUND,
+             petab.UPPER_BOUND, petab.PARAMETER_SCALE,
+             petab.ESTIMATE]].rename(
+            columns={
+                petab.PARAMETER_ID: 'parameter',
+                petab.NOMINAL_VALUE: 'value',
+                petab.LOWER_BOUND: 'lower boundary',
+                petab.UPPER_BOUND: 'upper boundary',
+                petab.PARAMETER_SCALE: 'analysis at log-scale',
+                petab.ESTIMATE: 'estimated'
+            }
+        )
+        par_df.value = par_df.value.apply(np.log10)
+        hass_2019 = hass_2019.append(par_df)
 
     hass_2019_x = dict(hass_2019[['parameter', 'value']].values)
     x_ref = np.array([
@@ -76,39 +241,21 @@ if __name__ == '__main__':
                 par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
                     'scaling', 'scaleFactor').replace('_tot', ''),
                 None
-        ))
+            )
+        )
         for par in petab_problem.x_ids
     ])
 
-    hass_alias = {
-        'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
-        'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
-    }
+    os.makedirs('evaluation', exist_ok=True)
 
-    hass2019_fmintrust_chis = np.genfromtxt(os.path.join(
-        'Hass2019',
-        f'{hass_alias.get(MODEL_NAME, MODEL_NAME)}_trust_chi2s.csv',
-    ), delimiter=',')
-
-    hass2019_fmintrust_ps = np.genfromtxt(os.path.join(
-        'Hass2019',
-        f'{hass_alias.get(MODEL_NAME, MODEL_NAME)}_trust_ps.csv'
-    ), delimiter=',')
+    all_results = []
 
     refs = create_references(
         x=x_ref[np.asarray(
             petab_problem.x_free_indices
         )],
-        fval=problem.objective(x_ref[np.asarray(petab_problem.x_free_indices)]),
-        legend='Hass2019',
-        color=ALGO_COLORS['Hass2019']
-    ) + create_references(
-        x=hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
-                                np.asarray(petab_problem.x_free_indices)],
         fval=problem.objective(
-            hass2019_fmintrust_ps[hass2019_fmintrust_chis.argmin(),
-                                  np.asarray(petab_problem.x_free_indices)]
-        ),
+            x_ref[np.asarray(petab_problem.x_free_indices)]),
         legend='Hass2019',
         color=ALGO_COLORS['Hass2019']
     ) + create_references(
@@ -116,36 +263,31 @@ if __name__ == '__main__':
             petab_problem.x_free_indices
         )],
         fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
-            np.asarray(petab_problem.x_free_indices)]
-        ),
+                                   np.asarray(petab_problem.x_free_indices)]
+                               ),
         legend='Hass2019',
         color=ALGO_COLORS['Hass2019']
     )
 
-    if MODEL_NAME == 'Fiedler_BMC2016':
-        # benchmark results worse than reference
-        ref = refs[1]
-        ref.fval = -56.86964545865438
+    if EVALUATION_TYPE == 'forward':
+        optimizers = ['lsqnonlin', 'fmincon'] + OPTIMIZER_FORWARD
+        n_starts = N_STARTS_FORWARD[0]
     else:
-        ref = refs[np.argmin([r.fval for r in refs])]
+        optimizers = OPTIMIZER_ADJOINT
+        n_starts = N_STARTS_ADJOINT[0]
 
-    os.makedirs('evaluation', exist_ok=True)
+    for optimizer in optimizers:
 
-    all_results = []
-    for hdf_results_file in hdf5_files:
-        MODEL, OPTIMIZER, N_STARTS = \
-            os.path.splitext(hdf_results_file)[0].split('__')
+        if optimizer == 'ls_trf' \
+                and MODEL_NAME not in ['Fujita_SciSignal2010',
+                                       'Crauste_CellSystems2017']:
+            continue
 
-        if MODEL == MODEL_NAME and (OPTIMIZER != 'ls_trf' or
-                                    MODEL in ['Fujita_SciSignal2010',
-                                              'Crauste_CellSystems2017']):
-
-            result = load_results_from_hdf5(MODEL, OPTIMIZER, N_STARTS)
-            result.problem = problem
-            all_results.append({
-                'result': result, 'model': MODEL_NAME, 'optimizer': OPTIMIZER,
-                'file': hdf_results_file
-            })
+        result = load_results(MODEL_NAME, optimizer, n_starts)
+        result.problem = problem
+        all_results.append({
+            'result': result, 'model': MODEL_NAME, 'optimizer': optimizer,
+        })
 
     all_results = sorted(
         all_results,
@@ -156,11 +298,10 @@ if __name__ == '__main__':
                          if r['optimizer'] in ALGO_COLORS]
 
     fmin = np.nanmin([r['result'].optimize_result.list[0]['fval']
-                      for r in all_results] + [ref.fval])
+                      for r in all_results])
 
     waterfall(
         [r['result'] for r in waterfall_results],
-        reference=ref,
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
         size=(6, 3.5),
@@ -171,16 +312,15 @@ if __name__ == '__main__':
 
     waterfall(
         [r['result'] for r in waterfall_results],
-        reference=ref,
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
-        start_indices=range(int(int(N_STARTS)/10)),
+        start_indices=range(int(int(n_starts)/10)),
         size=(6, 3.5),
     )
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'{MODEL_NAME}_{int(int(N_STARTS)/10)}_starts_{EVALUATION_TYPE}.pdf'
+        f'{MODEL_NAME}_{int(int(n_starts)/10)}_starts_{EVALUATION_TYPE}.pdf'
     ))
 
     if EVALUATION_TYPE == 'forward':
@@ -194,6 +334,7 @@ if __name__ == '__main__':
             }
             for results in all_results
             for start in results['result'].optimize_result.list
+            if results['optimizer'] in OPTIMIZER_FORWARD
         ])
 
         df['opt_subspace'] = df['optimizer'].apply(
@@ -212,7 +353,7 @@ if __name__ == '__main__':
         g = sns.boxplot(data=df, x='hessian', y='iter', hue='opt_subspace',
                         order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
                                'Hybrid_5', 'BFGS', 'SR1'],
-                        hue_order=['fides 2D', 'fides full', 'ls_trf'],
+                        hue_order=['fides 2D', 'fides full', 'ls_trf full'],
                         )
         g.set_yscale('log')
         plt.tight_layout()
@@ -274,12 +415,15 @@ if __name__ == '__main__':
                     results['result'].optimize_result.get_for_key('fval'),
                     fmin
                 ),
-                'total_time': np.sum(
-                    results['result'].optimize_result.get_for_key('time')
-                ),
                 'conv_per_grad': get_num_converged_per_grad(
                     results['result'].optimize_result.get_for_key('fval'),
+                    results['result'].optimize_result.get_for_key('n_sres')
+                    if results['optimizer'] == 'ls_tr' else
                     results['result'].optimize_result.get_for_key('n_grad'),
+                    fmin
+                ),
+                'consistency': get_dist(
+                    results['result'].optimize_result.get_for_key('fval'),
                     fmin
                 ),
                 'optimizer': results['optimizer']
@@ -299,7 +443,7 @@ if __name__ == '__main__':
             else 'FIM'
         )
 
-        for metric in ['convergence_count', 'conv_per_grad']:
+        for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
             plt.subplots()
             g = sns.barplot(data=df_time,
                             x='hessian', y=metric, hue='opt_subspace',
@@ -394,4 +538,5 @@ if __name__ == '__main__':
 
         plt.tight_layout()
         plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf'))
+            'evaluation', f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf')
+        )

@@ -1,16 +1,13 @@
 import os
-import re
-import petab
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import sklearn
 
 from evaluate import (
     load_results_from_hdf5, get_num_converged_per_grad, get_num_converged,
-    CONVERGENCE_THRESHOLD, ALGO_COLORS
+    get_dist, ALGO_COLORS
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -23,18 +20,6 @@ new_rc_params = {
     'svg.fonttype': 'none',
 }
 mpl.rcParams.update(new_rc_params)
-
-
-def get_dist(fvals, fmin):
-    fvals = np.asarray(fvals)
-    converged_fvals = fvals[fvals < fmin + CONVERGENCE_THRESHOLD]
-    if len(converged_fvals) < 2:
-        return 0
-    distances = sklearn.metrics.pairwise_distances(
-        converged_fvals.reshape(-1, 1)
-    )
-    distances[np.diag_indices(len(converged_fvals))] = np.Inf
-    return 1/np.median(distances.min(axis=1))
 
 
 for analysis, algos in {
@@ -63,60 +48,9 @@ for analysis, algos in {
             'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
         }
 
-        hass_2019 = pd.read_excel(os.path.join(
-            'Hass2019', f'{model}.xlsx'
-        ), sheet_name='General Info')
-
-        hass_2019_pars = pd.read_excel(os.path.join(
-            'Hass2019', f'{model}.xlsx'
-        ), sheet_name='Parameters')
-        hass_2019_pars.parameter = hass_2019_pars.parameter.apply(
-            lambda x: re.sub(r'log10\(([\w_]+)\)', r'\1', x)
-        )
-
         petab_problem, problem = load_problem(model)
         set_solver_model_options(problem.objective.amici_solver,
                                  problem.objective.amici_model)
-
-        if model == 'Weber_BMC2015':
-            hass_2019_pars = hass_2019_pars.append(
-                petab_problem.parameter_df.reset_index().loc[
-                    [39, 38, 35, 36, 37],
-                    [petab.PARAMETER_ID, petab.NOMINAL_VALUE,
-                     petab.LOWER_BOUND,
-                     petab.UPPER_BOUND, petab.PARAMETER_SCALE,
-                     petab.ESTIMATE]].rename(
-                    columns={
-                        petab.PARAMETER_ID: 'parameter',
-                        petab.NOMINAL_VALUE: 'value',
-                        petab.LOWER_BOUND: 'lower boundary',
-                        petab.UPPER_BOUND: 'upper boundary',
-                        petab.PARAMETER_SCALE: 'analysis at log-scale',
-                        petab.ESTIMATE: 'estimated'
-                    }
-                )
-            )
-
-        par_names = list(hass_2019_pars.parameter)
-
-        par_idx = np.array([
-            par_names.index(par)
-            if par in par_names
-            else par_names.index(
-                par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
-                    'scaling', 'scaleFactor').replace('_tot', '')
-            )
-            for par in [
-                petab_problem.x_ids[ix] for ix in petab_problem.x_free_indices
-            ]
-        ])
-
-        fmin = hass_2019.iloc[5, 1] / 2
-        if model == 'Crauste_CellSystems2017':
-            fmin = 190.96521897435176
-        if model == 'Fiedler_BMC2016':
-            # benchmark results worse than reference
-            fmin = -56.86964545865438
 
         matlab_alias = {
             'fmincon': 'trust',
@@ -126,38 +60,7 @@ for analysis, algos in {
         for matlab_algo, alias in matlab_alias.items():
             if matlab_algo not in algos:
                 continue
-            hass2019_chis = np.genfromtxt(os.path.join(
-                'Hass2019',
-                f'{hass_alias.get(model, model)}_{alias}_chi2s.csv',
-            ), delimiter=',')
-            hass2019_iter = np.genfromtxt(os.path.join(
-                'Hass2019',
-                f'{hass_alias.get(model, model)}_{alias}_iter.csv',
-            ), delimiter=',')
-            hass2019_ps = np.genfromtxt(os.path.join(
-                'Hass2019',
-                f'{hass_alias.get(model, model)}_{alias}_ps.csv',
-            ), delimiter=',')
 
-            fvals_file = os.path.join(
-                'Hass2019',
-                f'{hass_alias.get(model, model)}_{alias}_fvals.csv',
-            )
-            if os.path.exists(fvals_file):
-                hass2019_fvals = np.genfromtxt(fvals_file, delimiter=',')
-            else:
-                if model == 'Crauste_CellSystems2017':
-                    chi2min = 19.6659294289557
-                    hass2019_fvals = (hass2019_chis - chi2min)/2 + fmin
-                else:
-                    hass2019_fvals = np.array([
-                        problem.objective(p[par_idx])
-                        if not np.isnan(p).any() else np.NaN
-                        for p in hass2019_ps
-                    ])
-                np.savetxt(
-                    fvals_file, hass2019_fvals, delimiter=','
-                )
 
             all_results.append(
                 {
