@@ -45,6 +45,11 @@ def get_optimizer(optimizer_name: str):
         optim_options = {
             fides.Options.MAXITER: MAX_ITER,
             fides.Options.MAXTIME: MAX_TIME,
+            fides.Options.FATOL: 0.0,
+            fides.Options.FRTOL: 0.0,
+            fides.Options.XTOL: 1e-6,
+            fides.Options.GATOL: 0.0,
+            fides.Options.GRTOL: 0.0,
         }
 
         parsed2optim = {
@@ -85,9 +90,9 @@ def get_optimizer(optimizer_name: str):
     if optimizer_name == 'ls_trf':
         return optimize.ScipyOptimizer(
             method='ls_trf', options={'max_nfev': MAX_ITER,
-                                      'xtol': 0.0,
-                                      'ftol': 1e-10,
-                                      'gtol': 1e-6}
+                                      'xtol': 1e-6,
+                                      'ftol': 0.0,
+                                      'gtol': 0.0}
         )
 
     if optimizer_name == 'ipopt':
