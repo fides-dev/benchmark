@@ -1,3 +1,6 @@
 [submodule "Benchmark-Models-PEtab"]
 	path = Benchmark-Models-PEtab
 	url = https://github.com/Benchmarking-Initiative/Benchmark-Models-PEtab
+[submodule "Hass2019/d2d"]
+	path = Hass2019/d2d
+	url = https://github.com/Data2Dynamics/d2d/

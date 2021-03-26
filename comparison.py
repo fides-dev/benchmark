@@ -1,12 +1,12 @@
 import os
-import numpy as np
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from evaluate import (
-    load_results_from_hdf5, get_num_converged_per_grad, get_num_converged,
+    load_results, get_num_converged_per_grad, get_num_converged,
     get_dist, ALGO_COLORS
 )
 from compile_petab import load_problem
@@ -38,8 +38,8 @@ for analysis, algos in {
 
     all_results = []
 
-    for model in ['Boehm_JProteomeRes2014', 'Fiedler_BMC2016',
-                  'Brannmark_JBC2010', 'Crauste_CellSystems2017',
+    for model in ['Brannmark_JBC2010','Boehm_JProteomeRes2014',
+                  'Fiedler_BMC2016', 'Crauste_CellSystems2017',
                   'Weber_BMC2015', 'Zheng_PNAS2012', 'Fujita_SciSignal2010',
                   'Beer_MolBioSystems2014']:
 
@@ -52,58 +52,39 @@ for analysis, algos in {
         set_solver_model_options(problem.objective.amici_solver,
                                  problem.objective.amici_model)
 
-        matlab_alias = {
-            'fmincon': 'trust',
-            'lsqnonlin': 'lsq'
-        }
+        results = {}
+        for optimizer in algos:
+            try:
+                results[optimizer] = load_results(model, optimizer, '1000')
+            except FileNotFoundError:
+                pass
 
-        for matlab_algo, alias in matlab_alias.items():
-            if matlab_algo not in algos:
-                continue
+        fmin = np.min([
+            result.optimize_result.list[0].fval
+            for result in results.values()
+        ])
 
-
+        for optimizer in algos:
+            result = results[optimizer]
             all_results.append(
                 {
                     'model': model,
-                    'optimizer': matlab_algo,
+                    'optimizer': optimizer,
                     'n_converged': get_num_converged(
-                        hass2019_fvals, fmin
+                        result.optimize_result.get_for_key('fval'),
+                        fmin
                     ),
                     'conv_per_grad': get_num_converged_per_grad(
-                        hass2019_fvals, hass2019_iter, fmin
+                        result.optimize_result.get_for_key('fval'),
+                        result.optimize_result.get_for_key('n_grad'),
+                        fmin
                     ),
                     'dist': get_dist(
-                        hass2019_fvals, fmin
+                        result.optimize_result.get_for_key('fval'),
+                        fmin
                     )
                 }
             )
-
-        for optimizer in algos:
-            if optimizer in matlab_alias:
-                continue
-            try:
-                result = load_results_from_hdf5(model, optimizer, '1000')
-                all_results.append(
-                    {
-                        'model': model,
-                        'optimizer': optimizer,
-                        'n_converged': get_num_converged(
-                            result.optimize_result.get_for_key('fval'),
-                            fmin
-                        ),
-                        'conv_per_grad': get_num_converged_per_grad(
-                            result.optimize_result.get_for_key('fval'),
-                            result.optimize_result.get_for_key('n_grad'),
-                            fmin
-                        ),
-                        'dist': get_dist(
-                            result.optimize_result.get_for_key('fval'),
-                            fmin
-                        )
-                    }
-                )
-            except FileNotFoundError:
-                pass
 
     results = pd.DataFrame(all_results)
 

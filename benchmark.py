@@ -19,7 +19,7 @@ def set_solver_model_options(solver, model):
     solver.setAbsoluteTolerance(1e-8)
     solver.setRelativeTolerance(1e-8)
 
-    if model == 'Chen_MSB2009':
+    if model.getName() == 'Chen_MSB2009':
         solver.setMaxSteps(int(2e5))
         solver.setInterpolationType(
             amici.InterpolationType_polynomial
@@ -28,14 +28,7 @@ def set_solver_model_options(solver, model):
             amici.SensitivityMethod.adjoint
         )
 
-    if model == 'Fujita_SciSignal2010':
-        solver.setMaxSteps(int(2e4))
-
-    if model == 'Weber_BMC2015':
-        solver.setAbsoluteTolerance(1e-6)
-        solver.setRelativeTolerance(1e-6)
-
-    if model == 'Brannmark_JBC2010':
+    if model.getName() == 'Brannmark_JBC2010':
         model.setSteadyStateSensitivityMode(
             amici.SteadyStateSensitivityMode.simulationFSA
         )

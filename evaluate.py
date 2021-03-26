@@ -33,10 +33,10 @@ cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'fides.subspace=2D', 'ls_trf', 'ipopt',
+        'fides.subspace=2D',
         'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=BFGS',
-        'fmincon', 'lsqnonlin', 'Hass2019'
+        'fmincon', 'lsqnonlin', 'ls_trf', 'ipopt',
     ])
 }
 
@@ -111,6 +111,8 @@ matlab_alias = {
 
 
 def load_results_from_benchmark(model, optimizer):
+    petab_problem, problem = load_problem(model)
+
     hass_2019_pars = pd.read_excel(os.path.join(
         'Hass2019', f'{model}.xlsx'
     ), sheet_name='Parameters')
@@ -170,28 +172,26 @@ def load_results_from_benchmark(model, optimizer):
     if os.path.exists(fvals_file):
         hass2019_fvals = np.genfromtxt(fvals_file, delimiter=',')
     else:
-        if model == 'Crauste_CellSystems2017':
-            chi2min = 19.6659294289557
-            hass2019_fvals = (hass2019_chis - chi2min) / 2 + fmin
-        else:
-            hass2019_fvals = np.array([
-                problem.objective(p[par_idx])
-                if not np.isnan(p).any() else np.NaN
-                for p in hass2019_ps
-            ])
-            assert np.isfinite(hass2019_fvals[np.nanargmin(hass2019_chis)])
-            assert np.abs(hass2019_chis[np.nanargmin(hass2019_chis)] -
-                          hass2019_chis[np.nanargmin(hass2019_fvals)]) < 0.01
+        hass2019_fvals = np.array([
+            problem.objective(p[par_idx])
+            if not np.isnan(p).any() else np.NaN
+            for p in hass2019_ps
+        ])
+        assert np.isfinite(hass2019_fvals[np.nanargmin(hass2019_chis)])
+        assert np.abs(hass2019_chis[np.nanargmin(hass2019_chis)] -
+                      hass2019_chis[np.nanargmin(hass2019_fvals)]) < 0.05
         np.savetxt(
             fvals_file, hass2019_fvals, delimiter=','
         )
 
     result = pypesto.Result()
     result.optimize_result = pypesto.OptimizeResult()
-    for fval, p, n_grad in zip(hass2019_fvals, hass2019_ps, hass2019_iter):
+    for id, (fval, p, n_grad) in enumerate(zip(hass2019_fvals, hass2019_ps,
+                                               hass2019_iter)):
         if not np.isfinite(fval):
             continue
         result.optimize_result.append(OptimizerResult(
+            id=str(id),
             x=p,
             fval=fval,
             n_grad=n_grad,
@@ -257,7 +257,6 @@ if __name__ == '__main__':
         fval=problem.objective(
             x_ref[np.asarray(petab_problem.x_free_indices)]),
         legend='Hass2019',
-        color=ALGO_COLORS['Hass2019']
     ) + create_references(
         x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
             petab_problem.x_free_indices
@@ -266,7 +265,6 @@ if __name__ == '__main__':
                                    np.asarray(petab_problem.x_free_indices)]
                                ),
         legend='Hass2019',
-        color=ALGO_COLORS['Hass2019']
     )
 
     if EVALUATION_TYPE == 'forward':
@@ -304,7 +302,7 @@ if __name__ == '__main__':
         [r['result'] for r in waterfall_results],
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
-        size=(6, 3.5),
+        size=(5, 3.5),
     )
     plt.tight_layout()
     plt.savefig(os.path.join('evaluation',
@@ -315,7 +313,7 @@ if __name__ == '__main__':
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
         start_indices=range(int(int(n_starts)/10)),
-        size=(6, 3.5),
+        size=(5, 3.5),
     )
     plt.tight_layout()
     plt.savefig(os.path.join(
@@ -327,14 +325,14 @@ if __name__ == '__main__':
         df = pd.DataFrame([
             {
                 'fval': start['fval'],
-                'time': start['time'],
                 'iter': start['n_grad'] + start['n_sres'],
                 'id': start['id'],
                 'optimizer': results['optimizer']
             }
             for results in all_results
             for start in results['result'].optimize_result.list
-            if results['optimizer'] in OPTIMIZER_FORWARD
+            if results['optimizer'] in OPTIMIZER_FORWARD + ['fmincon',
+                                                            'lsqnonlin']
         ])
 
         df['opt_subspace'] = df['optimizer'].apply(
@@ -350,19 +348,27 @@ if __name__ == '__main__':
         )
 
         plt.subplots()
-        g = sns.boxplot(data=df, x='hessian', y='iter', hue='opt_subspace',
-                        order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                               'Hybrid_5', 'BFGS', 'SR1'],
-                        hue_order=['fides 2D', 'fides full', 'ls_trf full'],
-                        )
+        hybrid_algos = ['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
+                        'Hybrid_5', 'BFGS']
+        g = sns.boxplot(
+            data=df[
+                df.opt_subspace == 'fides 2D'
+            ],
+            order=hybrid_algos,
+            palette='Blues',
+            x='hessian', y='iter'
+        )
         g.set_yscale('log')
+        g.set_xticklabels(g.get_xticklabels(), rotation=90)
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
             f'{MODEL_NAME}_iter_{EVALUATION_TYPE}.pdf'
         ))
 
-        df_pivot = df.pivot(index='id', columns=['optimizer'])
+        df_pivot = df[
+            df.optimizer.apply(lambda x: x in OPTIMIZER_FORWARD)
+        ].pivot(index='id', columns=['optimizer'])
 
         df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
 
@@ -409,7 +415,7 @@ if __name__ == '__main__':
                 f'{MODEL_NAME}_fval_{name}_{EVALUATION_TYPE}.pdf'
             ))
 
-        df_time = pd.DataFrame([
+        df_metrics = pd.DataFrame([
             {
                 'convergence_count': get_num_converged(
                     results['result'].optimize_result.get_for_key('fval'),
@@ -426,34 +432,45 @@ if __name__ == '__main__':
                     results['result'].optimize_result.get_for_key('fval'),
                     fmin
                 ),
+
                 'optimizer': results['optimizer']
             }
             for results in all_results
         ])
 
-        df_time['opt_subspace'] = df_time['optimizer'].apply(
+        df_metrics['opt_subspace'] = df_metrics['optimizer'].apply(
             lambda x:
             'fides ' + x.split('.')[1].split('=')[1]
             if len(x.split('.')) > 1
-            else 'ls_trf full'
+            else ''
         )
 
-        df_time['hessian'] = df_time['optimizer'].apply(
+        df_metrics['hessian'] = df_metrics['optimizer'].apply(
             lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
             else 'FIM'
         )
 
         for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
             plt.subplots()
-            g = sns.barplot(data=df_time,
-                            x='hessian', y=metric, hue='opt_subspace',
-                            order=['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                                   'Hybrid_5', 'BFGS', 'SR1'],
-                            hue_order=['fides 2D', 'fides full', 'ls_trf'])
+            g = sns.barplot(data=df_metrics[df_metrics.opt_subspace ==
+                                            'fides 2D'],
+                            x='hessian', y=metric,
+                            order=hybrid_algos,
+                            palette='Blues')
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
-                f'{MODEL_NAME}_{metric}_{EVALUATION_TYPE}.pdf'
+                f'{MODEL_NAME}_{metric}_hybrid_{EVALUATION_TYPE}.pdf'
+            ))
+            plt.subplots()
+            g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
+                            order=[x for x in ALGO_COLORS
+                                   if x in OPTIMIZER_FORWARD + ['lsqnonlin',
+                                                                'fmincon']])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation',
+                f'{MODEL_NAME}_{metric}_algos_{EVALUATION_TYPE}.pdf'
             ))
 
     if EVALUATION_TYPE == 'adjoint':
