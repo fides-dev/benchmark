@@ -40,19 +40,19 @@ ALGO_COLORS = {
     ])
 }
 
-OPTIMIZER_FORWARD = ['fides.subspace=2D', 'fides.subspace=full',
+OPTIMIZER_FORWARD = ['fides.subspace=2D',
+                     'fides.subspace=full',
                      'fides.subspace=2D.hessian=Hybrid_05',
-                     'fides.subspace=full.hessian=Hybrid_05',
                      'fides.subspace=2D.hessian=Hybrid_1',
-                     'fides.subspace=full.hessian=Hybrid_1',
                      'fides.subspace=2D.hessian=Hybrid_2',
-                     'fides.subspace=full.hessian=Hybrid_2',
                      'fides.subspace=2D.hessian=Hybrid_5',
-                     'fides.subspace=full.hessian=Hybrid_5',
                      'fides.subspace=full.hessian=BFGS',
                      'fides.subspace=2D.hessian=BFGS',
                      'fides.subspace=full.hessian=SR1',
                      'fides.subspace=2D.hessian=SR1',
+                     'fides.subspace=2D.stepback=mixed',
+                     'fides.subspace=2D.stepback=truncate',
+                     'fides.subspace=2D.stepback=reflect_single',
                      'ls_trf']
 
 N_STARTS_FORWARD = ['1000']
@@ -348,8 +348,9 @@ if __name__ == '__main__':
         )
 
         plt.subplots()
-        hybrid_algos = ['FIM', 'Hybrid_05', 'Hybrid_1', 'Hybrid_2',
-                        'Hybrid_5', 'BFGS']
+        hybrid_algos = ['FIM', 'Hybrid_5', 'Hybrid_2', 'Hybrid_1',
+                        'Hybrid_05', 'BFGS']
+        df.iter = df.iter.apply(np.log10)
         g = sns.boxplot(
             data=df[
                 df.opt_subspace == 'fides 2D'
@@ -358,7 +359,7 @@ if __name__ == '__main__':
             palette='Blues',
             x='hessian', y='iter'
         )
-        g.set_yscale('log')
+        #g.set_yscale('log')
         g.set_xticklabels(g.get_xticklabels(), rotation=90)
         plt.tight_layout()
         plt.savefig(os.path.join(

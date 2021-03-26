@@ -25,7 +25,8 @@ def load_problem(model, force_compile=False):
     petab_problem = petab.Problem.from_yaml(yaml_config)
     preprocess_problem(petab_problem, model)
     importer = pypesto.petab.PetabImporter(petab_problem)
-    return petab_problem, importer.create_problem(force_compile=force_compile)
+    problem = importer.create_problem(force_compile=force_compile)
+    return petab_problem, problem
 
 
 if __name__ == '__main__':
