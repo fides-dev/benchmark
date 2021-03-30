@@ -68,13 +68,8 @@ rule evaluate_subspace_benchmark:
                     model=['{model}'], optimizer=OPTIMIZER_FORWARD,
                     starts=N_STARTS_FORWARD)
     output:
-        full_waterfall=expand(
-            os.path.join('evaluation',
-                         '{model}_{analysis}_all_starts_forward.pdf'),
-            model=['{model}'], analysis=['all_starts', 'time', 'fval', 'iter',
-                                         *[f'sim_{opt}' for opt
-                                           in OPTIMIZER_FORWARD]]
-        )
+        full_waterfall=os.path.join('evaluation',
+                                    '{model}_all_starts_forward.pdf')
     shell:
         'python3 {input.script} {wildcards.model} subspace'
 
@@ -85,12 +80,8 @@ rule evaluate_adjoint_benchmark:
                     model=['{model}'], optimizer=OPTIMIZER_ADJOINT,
                     starts=N_STARTS_ADJOINT)
     output:
-        full_waterfall=expand(
-            os.path.join('evaluation', '{model}_{analysis}_adjoint.pdf'),
-            model=['{model}'], analysis=['all_starts', 'time', 'fval', 'iter',
-                                         *[f'sim_{opt}' for opt
-                                           in OPTIMIZER_ADJOINT]]
-        )
+        full_waterfall=os.path.join('evaluation',
+                                    '{model}_all_starts_adjoint.pdf')
     shell:
         'python3 {input.script} {wildcards.model} adjoint'
 
