@@ -69,7 +69,8 @@ rule evaluate_subspace_benchmark:
                     starts=N_STARTS_FORWARD)
     output:
         full_waterfall=expand(
-            os.path.join('evaluation', '{model}_{analysis}_forward.pdf'),
+            os.path.join('evaluation',
+                         '{model}_{analysis}_all_starts_forward.pdf'),
             model=['{model}'], analysis=['all_starts', 'time', 'fval', 'iter',
                                          *[f'sim_{opt}' for opt
                                            in OPTIMIZER_FORWARD]]
