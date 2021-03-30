@@ -7,9 +7,9 @@ from evaluate import OPTIMIZER_FORWARD, OPTIMIZER_ADJOINT , N_STARTS_ADJOINT, \
 MODELS_FORWARD = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
                   'Crauste_CellSystems2017',
                   'Brannmark_JBC2010', 'Weber_BMC2015',
-                  'Boehm_JProteomeRes2014']
+                  'Boehm_JProteomeRes2014', 'Fujita_SciSignal2010']
 
-MODELS_ADJOINT = ['Chen_MSB2009']
+MODELS_ADJOINT = []
 
 rule compile_model:
     input:

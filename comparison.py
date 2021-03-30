@@ -66,10 +66,14 @@ for analysis, algos in {
 
     all_results = []
 
-    for model in ['Zheng_PNAS2012', 'Fiedler_BMC2016',
-                  'Crauste_CellSystems2017',
-                  'Brannmark_JBC2010', 'Weber_BMC2015',
-                  'Boehm_JProteomeRes2014']:
+    models = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
+              'Crauste_CellSystems2017',
+              'Brannmark_JBC2010', 'Weber_BMC2015']
+
+    if analysis in ['curv', 'stepback']:
+        models += ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
+
+    for model in models:
 
         hass_alias = {
             'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
@@ -135,6 +139,8 @@ for analysis, algos in {
         palette = 'tab20'
     elif analysis == 'hybrid':
         palette = 'Blues'
+    elif analysis == 'stepback':
+        palette = 'Set2'
 
     plt.subplots()
     g = sns.barplot(
