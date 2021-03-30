@@ -6,8 +6,7 @@ d2d_folder = pwd;
 
 for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
              'Crauste_ImmuneCells_CellSystems2017', 'Fiedler_BMC2016', ...
-             'Fujita_SciSignal2010', 'Weber_BMC2015', 'Zheng_PNAS2012',...
-             'Beer_MolBiosyst2014'}
+             'Fujita_SciSignal2010', 'Weber_BMC2015', 'Zheng_PNAS2012'}
     cd(fullfile(d2d_folder, 'Examples', model{1}))
     
     if strcmp(model{1},'Boehm_JProteomeRes2014')

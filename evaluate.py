@@ -60,7 +60,7 @@ N_STARTS_FORWARD = ['1000']
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
                      'fides.subspace=2D.hessian=BFGS',
                      'fides.subspace=full.hessian=SR1',
-                     'fides.subspace=2D.hessian=SR1'
+                     'fides.subspace=2D.hessian=SR1',
                      'ipopt']
 
 N_STARTS_ADJOINT = ['100']
@@ -281,11 +281,14 @@ if __name__ == '__main__':
                                        'Crauste_CellSystems2017']:
             continue
 
-        result = load_results(MODEL_NAME, optimizer, n_starts)
-        result.problem = problem
-        all_results.append({
-            'result': result, 'model': MODEL_NAME, 'optimizer': optimizer,
-        })
+        try:
+            result = load_results(MODEL_NAME, optimizer, n_starts)
+            result.problem = problem
+            all_results.append({
+                'result': result, 'model': MODEL_NAME, 'optimizer': optimizer,
+            })
+        except FileNotFoundError:
+            pass
 
     all_results = sorted(
         all_results,
@@ -381,8 +384,6 @@ if __name__ == '__main__':
         for name, vals in {
             '2Dvsfull_FIM': ('fval fides.subspace=2D',
                              'fval fides.subspace=full'),
-            '2Dvsfull_Hybrid': ("fval fides.subspace=2D.hessian=Hybrid_2",
-                                "fval fides.subspace=full.hessian=Hybrid_2"),
             'FIMvsBFGS_2D': ("fval fides.subspace=2D",
                              "fval fides.subspace=2D.hessian=BFGS"),
             'FIMvsSR1_2D': ("fval fides.subspace=2D",

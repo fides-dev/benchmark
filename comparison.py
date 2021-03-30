@@ -58,6 +58,10 @@ for analysis, algos in {
                'fides.subspace=2D.hessian=Hybrid_1',
                'fides.subspace=2D.hessian=Hybrid_05',
                'fides.subspace=2D.hessian=BFGS'],
+    'stepback': ['fides.subspace=2D',
+                 'fides.subspace=2D.stepback=mixed',
+                 'fides.subspace=2D.stepback=truncate',
+                 'fides.subspace=2D.stepback=reflect_single']
 }.items():
 
     all_results = []
@@ -89,6 +93,8 @@ for analysis, algos in {
         ])
 
         for optimizer in algos:
+            if optimizer not in results:
+                continue
             result = results[optimizer]
             all_results.append(
                 {
