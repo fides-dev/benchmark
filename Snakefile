@@ -9,7 +9,7 @@ MODELS_FORWARD = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
                   'Brannmark_JBC2010', 'Weber_BMC2015',
                   'Boehm_JProteomeRes2014', 'Fujita_SciSignal2010']
 
-MODELS_ADJOINT = []
+MODELS_ADJOINT = ['Chen_MSB2009']
 
 rule compile_model:
     input:
