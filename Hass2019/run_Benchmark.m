@@ -9,12 +9,15 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
              'Fujita_SciSignal2010', 'Weber_BMC2015', 'Zheng_PNAS2012'}
     cd(fullfile(d2d_folder, 'Examples', model{1}))
     
-    if strcmp(model{1},'Boehm_JProteomeRes2014')
+    if strcmp(model{1}, 'Boehm_JProteomeRes2014')
         Setup_FullModel_Boehm2014
     elseif strcmp(model{1},'Zheng_PNAS2012')
         Setup_Zheng
     else
         Setup
+    end
+    if strcmp(model{1}, 'Fujita_SciSignal2010')
+        ar.config.fiterrors = 0;
     end
     % lsqnonlin
     ar.config.optimizer = 1;
