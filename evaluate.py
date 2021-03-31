@@ -40,20 +40,23 @@ ALGO_COLORS = {
     ])
 }
 
-OPTIMIZER_FORWARD = ['fides.subspace=2D',
-                     'fides.subspace=full',
-                     'fides.subspace=2D.hessian=Hybrid_05',
-                     'fides.subspace=2D.hessian=Hybrid_1',
-                     'fides.subspace=2D.hessian=Hybrid_2',
-                     'fides.subspace=2D.hessian=Hybrid_5',
-                     'fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
-                     'fides.subspace=full.hessian=SR1',
-                     'fides.subspace=2D.hessian=SR1',
-                     'fides.subspace=2D.stepback=mixed',
-                     'fides.subspace=2D.stepback=truncate',
-                     'fides.subspace=2D.stepback=reflect_single',
-                     'ls_trf']
+OPTIMIZER_FORWARD = ['fides.subspace=2D.hessian=Hybrid_0']
+
+# OPTIMIZER_FORWARD = ['fides.subspace=2D',
+#                      'fides.subspace=full',
+#                      'fides.subspace=2D.hessian=Hybrid_0',
+#                      'fides.subspace=2D.hessian=Hybrid_05',
+#                      'fides.subspace=2D.hessian=Hybrid_1',
+#                      'fides.subspace=2D.hessian=Hybrid_2',
+#                      'fides.subspace=2D.hessian=Hybrid_5',
+#                      'fides.subspace=full.hessian=BFGS',
+#                      'fides.subspace=2D.hessian=BFGS',
+#                      'fides.subspace=full.hessian=SR1',
+#                      'fides.subspace=2D.hessian=SR1',
+#                      'fides.subspace=2D.stepback=mixed',
+#                      'fides.subspace=2D.stepback=truncate',
+#                      'fides.subspace=2D.stepback=reflect_single',
+#                      'ls_trf']
 
 N_STARTS_FORWARD = ['1000']
 
@@ -305,7 +308,7 @@ if __name__ == '__main__':
         [r['result'] for r in waterfall_results],
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
-        size=(5, 3.5),
+        size=(4.25, 3.5),
     )
     plt.tight_layout()
     plt.savefig(os.path.join('evaluation',
@@ -316,7 +319,7 @@ if __name__ == '__main__':
         legends=[r['optimizer'] for r in waterfall_results],
         colors=[ALGO_COLORS[r['optimizer']] for r in waterfall_results],
         start_indices=range(int(int(n_starts)/10)),
-        size=(5, 3.5),
+        size=(4.25, 3.5),
     )
     plt.tight_layout()
     plt.savefig(os.path.join(

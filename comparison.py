@@ -6,10 +6,14 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from evaluate import (
-    load_results, get_num_converged_per_grad, ALGO_COLORS
+    load_results, get_num_converged_per_grad, get_num_converged,
+    ALGO_COLORS
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
+
+pd.set_option('max_columns', None)
+pd.set_option('max_rows', None)
 
 
 new_rc_params = {
@@ -66,12 +70,9 @@ for analysis, algos in {
 
     all_results = []
 
-    models = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
-              'Crauste_CellSystems2017',
-              'Brannmark_JBC2010', 'Weber_BMC2015']
-
-    if analysis in ['curv', 'stepback']:
-        models += ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014']
+    models = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014',
+              'Fiedler_BMC2016', 'Crauste_CellSystems2017',
+              'Brannmark_JBC2010', 'Weber_BMC2015', 'Zheng_PNAS2012']
 
     for model in models:
 
@@ -104,27 +105,25 @@ for analysis, algos in {
                 {
                     'model': model,
                     'optimizer': optimizer,
+                    'conv_count': get_num_converged(
+                        result.optimize_result.get_for_key('fval'),
+                        fmin
+                    ),
                     'conv_per_grad': get_num_converged_per_grad(
                         result.optimize_result.get_for_key('fval'),
                         result.optimize_result.get_for_key('n_grad'),
                         fmin
                     ),
-                    'unique_at_boundary': get_unique_starts_at_boundary(
-                        result.optimize_result.get_for_key('x'),
-                        problem.lb if optimizer in []
-                        else problem.lb_full,
-                        problem.ub if optimizer in []
-                        else problem.ub_full
-                    ),
-                    'boundary_minima': get_number_boundary_optima(
-                        result.optimize_result.get_for_key('x'),
-                        result.optimize_result.get_for_key('n_grad'),
-                        result.optimize_result.get_for_key('grad'),
-                        problem.lb if optimizer in []
-                        else problem.lb_full,
-                        problem.ub if optimizer in []
-                        else problem.ub_full
-                    ),
+                    #'unique_at_boundary': get_unique_starts_at_boundary(
+                    #    result.optimize_result.get_for_key('x'),
+                    #    problem.lb_full, problem.ub_full
+                    #),
+                    #'boundary_minima': get_number_boundary_optima(
+                    #    result.optimize_result.get_for_key('x'),
+                    #    result.optimize_result.get_for_key('n_grad'),
+                    #    result.optimize_result.get_for_key('grad'),
+                    #    problem.lb_full, problem.ub_full
+                    #),
                 }
             )
 
@@ -142,6 +141,8 @@ for analysis, algos in {
     elif analysis == 'stepback':
         palette = 'Set2'
 
+    print(results)
+
     plt.subplots()
     g = sns.barplot(
         data=results,
@@ -152,7 +153,7 @@ for analysis, algos in {
         palette=palette,
         bottom=1e-6,
     )
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
+    g.set_xticklabels(g.get_xticklabels(), rotation=45)
     g.set_yscale('log')
 
     plt.tight_layout()
@@ -164,30 +165,48 @@ for analysis, algos in {
     g = sns.barplot(
         data=results,
         x='model',
-        y='unique_at_boundary',
+        y='conv_per_grad',
         hue='optimizer',
         hue_order=algos,
         palette=palette,
+        bottom=1e-6,
     )
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
+    g.set_xticklabels(g.get_xticklabels(), rotation=45)
+    g.set_yscale('log')
 
     plt.tight_layout()
     plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}_boundary.pdf'
+        'evaluation', f'comparison_{analysis}.pdf'
     ))
 
-    plt.subplots()
-    g = sns.barplot(
-        data=results,
-        x='model',
-        y='boundary_minima',
-        hue='optimizer',
-        hue_order=algos,
-        palette=palette,
-    )
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}_boundary_minima.pdf'
-    ))
+    # plt.subplots()
+    # g = sns.barplot(
+    #     data=results,
+    #     x='model',
+    #     y='unique_at_boundary',
+    #     hue='optimizer',
+    #     hue_order=algos,
+    #     palette=palette,
+    # )
+    # g.set_xticklabels(g.get_xticklabels(), rotation=90)
+    #
+    # plt.tight_layout()
+    # plt.savefig(os.path.join(
+    #     'evaluation', f'comparison_{analysis}_boundary.pdf'
+    # ))
+    #
+    # plt.subplots()
+    # g = sns.barplot(
+    #     data=results,
+    #     x='model',
+    #     y='boundary_minima',
+    #     hue='optimizer',
+    #     hue_order=algos,
+    #     palette=palette,
+    # )
+    # g.set_xticklabels(g.get_xticklabels(), rotation=90)
+    #
+    # plt.tight_layout()
+    # plt.savefig(os.path.join(
+    #     'evaluation', f'comparison_{analysis}_boundary_minima.pdf'
+    # ))
