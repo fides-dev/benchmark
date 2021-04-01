@@ -71,7 +71,8 @@ def get_optimizer(optimizer_name: str):
         }
 
         hessian_updates = {
-            'Hybrid_0': fides.HybridUpdate(switch_iteration=0),
+            'Hybrid_0': fides.HybridUpdate(switch_iteration=0,
+                                           init_with_hess=True),
             'Hybrid_05': fides.HybridUpdate(
                 switch_iteration=np.ceil(0.5*problem.dim)),
             'Hybrid_1': fides.HybridUpdate(switch_iteration=problem.dim),
