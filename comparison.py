@@ -61,6 +61,7 @@ for analysis, algos in {
                'fides.subspace=2D.hessian=Hybrid_2',
                'fides.subspace=2D.hessian=Hybrid_1',
                'fides.subspace=2D.hessian=Hybrid_05',
+               'fides.subspace=2D.hessian=Hybrid_0',
                'fides.subspace=2D.hessian=BFGS'],
     'stepback': ['fides.subspace=2D',
                  'fides.subspace=2D.stepback=mixed',
