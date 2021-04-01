@@ -167,6 +167,8 @@ def load_results_from_benchmark(model, optimizer):
         'Hass2019',
         f'{hass_alias.get(model, model)}_{optimizer}_ps.csv',
     ), delimiter=',')
+    if model == 'Fujita_SciSignal2010':
+        hass2019_ps = hass2019_ps[:, :19]
 
     fvals_file = os.path.join(
         'Hass2019',
