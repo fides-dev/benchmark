@@ -41,32 +41,55 @@ ALGO_COLORS = {
 }
 
 OPTIMIZER_FORWARD = [
-    #'fides.subspace=2D',
-    #'fides.subspace=full',
-    #'fides.subspace=2D.hessian=Hybrid_0',
-    #'fides.subspace=2D.hessian=Hybrid_05',
-    #'fides.subspace=2D.hessian=Hybrid_1',
-    #'fides.subspace=2D.hessian=Hybrid_2',
-    #'fides.subspace=2D.hessian=Hybrid_5',
-    #'fides.subspace=full.hessian=BFGS',
-    #'fides.subspace=2D.hessian=BFGS',
-    #'fides.subspace=full.hessian=SR1',
-    #'fides.subspace=2D.hessian=SR1',
+    'fides.subspace=2D',
+    'fides.subspace=full',
+    'fides.subspace=scg',
+    'fides.subspace=2D.hessian=Hybrid_0',
+    'fides.subspace=2D.hessian=Hybrid_05',
+    'fides.subspace=2D.hessian=Hybrid_1',
+    'fides.subspace=2D.hessian=Hybrid_2',
+    'fides.subspace=2D.hessian=Hybrid_5',
+    'fides.subspace=full.hessian=BFGS',
+    'fides.subspace=2D.hessian=BFGS',
+    'fides.subspace=scg.hessian=BFGS',
+    'fides.subspace=full.hessian=SR1',
+    'fides.subspace=2D.hessian=SR1',
+    'fides.subspace=scg.hessian=SR1',
     'fides.subspace=2D.stepback=reflect_single',
     'fides.subspace=2D.refine=True',
     'fides.subspace=2D.hessian=Hybrid_2.refine=True',
-    #'ls_trf'
+    'ls_trf'
 ]
 
 N_STARTS_FORWARD = ['1000']
 
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
+                     'fides.subspace=2D.hessian=SR1',
+                     'fides.subspace=scg.hessian=SR1',
                      'fides.subspace=full.hessian=SR1',
                      'fides.subspace=2D.hessian=SR1',
+                     'fides.subspace=scg.hessian=SR1',
                      'ipopt']
 
 N_STARTS_ADJOINT = ['100']
+
+ANALYSIS_ALGOS = {
+    'matlab': [x for x in ALGO_COLORS if x != 'ipopt'],
+    'curv': ['fides.subspace=2D',
+             'fides.subspace=full',
+             'fides.subspace=2D.hessian=SR1',
+             'fides.subspace=full.hessian=SR1'],
+    'hybrid': ['fides.subspace=2D',
+               'fides.subspace=2D.hessian=Hybrid_5',
+               'fides.subspace=2D.hessian=Hybrid_2',
+               'fides.subspace=2D.hessian=Hybrid_1',
+               'fides.subspace=2D.hessian=Hybrid_05',
+               'fides.subspace=2D.hessian=BFGS'],
+    'stepback': ['fides.subspace=2D.stepback=reflect_single',
+                 'fides.subspace=2D',
+                 'fides.subspace=2D.refine=True',
+                 'fides.subspace=2D.hessian=Hybrid_2.refine=True']
+}
 
 
 def get_num_converged(fvals, fmin):
@@ -355,25 +378,24 @@ if __name__ == '__main__':
             else 'FIM'
         )
 
-        plt.subplots()
-        hybrid_algos = ['FIM', 'Hybrid_5', 'Hybrid_2', 'Hybrid_1',
-                        'Hybrid_05', 'BFGS']
-        df.iter = df.iter.apply(np.log10)
-        g = sns.boxplot(
-            data=df[
-                df.opt_subspace == 'fides 2D'
-            ],
-            order=hybrid_algos,
-            palette='Blues',
-            x='hessian', y='iter'
-        )
-        #g.set_yscale('log')
-        g.set_xticklabels(g.get_xticklabels(), rotation=90)
-        plt.tight_layout()
-        plt.savefig(os.path.join(
-            'evaluation',
-            f'{MODEL_NAME}_iter_{EVALUATION_TYPE}.pdf'
-        ))
+        for analysis, algos in ANALYSIS_ALGOS.items():
+            plt.subplots()
+            hybrid_algos = ['FIM', 'Hybrid_5', 'Hybrid_2', 'Hybrid_1',
+                            'Hybrid_05', 'BFGS']
+            df.iter = df.iter.apply(np.log10)
+            g = sns.boxplot(
+                data=df,
+                order=algos,
+                palette='Blues',
+                x='optimizer', y='iter'
+            )
+            g.set_yscale('log')
+            g.set_xticklabels(g.get_xticklabels(), rotation=90)
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation',
+                f'{MODEL_NAME}_iter_{analysis}_{EVALUATION_TYPE}.pdf'
+            ))
 
         df_pivot = df[
             df.optimizer.apply(lambda x: x in OPTIMIZER_FORWARD)
@@ -399,6 +421,10 @@ if __name__ == '__main__':
                                  "fval fides.subspace=2D.hessian=Hybrid_2"),
             'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
                                  "fval fides.subspace=2D.hessian=Hybrid_5"),
+            'refine': ("fval fides.subspace=2D",
+                       "fval fides.subspace=2D.refine=True"),
+            'reflect': ("fval fides.subspace=2D",
+                        "fval fides.subspace=2D.stepback=reflect_single"),
         }.items():
             lb, ub = [
                 fun([fun(df_pivot[vals[0]]),
@@ -457,28 +483,16 @@ if __name__ == '__main__':
             else 'FIM'
         )
 
-        for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
-            plt.subplots()
-            g = sns.barplot(data=df_metrics[df_metrics.opt_subspace ==
-                                            'fides 2D'],
-                            x='hessian', y=metric,
-                            order=hybrid_algos,
-                            palette='Blues')
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'{MODEL_NAME}_{metric}_hybrid_{EVALUATION_TYPE}.pdf'
-            ))
-            plt.subplots()
-            g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
-                            order=[x for x in ALGO_COLORS
-                                   if x in OPTIMIZER_FORWARD + ['lsqnonlin',
-                                                                'fmincon']])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'{MODEL_NAME}_{metric}_algos_{EVALUATION_TYPE}.pdf'
-            ))
+        for analysis, algos in ANALYSIS_ALGOS.items():
+            for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
+                plt.subplots()
+                g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
+                                order=[x for x in algos])
+                plt.tight_layout()
+                plt.savefig(os.path.join(
+                    'evaluation',
+                    f'{MODEL_NAME}_{metric}_{analysis}_{EVALUATION_TYPE}.pdf'
+                ))
 
     if EVALUATION_TYPE == 'adjoint':
         opt0 = 'ipopt'

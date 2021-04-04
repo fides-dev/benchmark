@@ -7,7 +7,7 @@ import matplotlib as mpl
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
-    ALGO_COLORS
+    ALGO_COLORS, ANALYSIS_ALGOS
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -51,23 +51,7 @@ def get_number_boundary_optima(pars, iters, grads, lb, ub):
     ])
 
 
-for analysis, algos in {
-    'matlab': [x for x in ALGO_COLORS if x != 'ipopt'],
-    'curv': ['fides.subspace=2D',
-             'fides.subspace=full',
-             'fides.subspace=2D.hessian=SR1',
-             'fides.subspace=full.hessian=SR1'],
-    'hybrid': ['fides.subspace=2D', 'fides.subspace=2D.hessian=Hybrid_5',
-               'fides.subspace=2D.hessian=Hybrid_2',
-               'fides.subspace=2D.hessian=Hybrid_1',
-               'fides.subspace=2D.hessian=Hybrid_05',
-               'fides.subspace=2D.hessian=Hybrid_0',
-               'fides.subspace=2D.hessian=BFGS'],
-    'stepback': ['fides.subspace=2D',
-                 'fides.subspace=2D.stepback=mixed',
-                 'fides.subspace=2D.stepback=truncate',
-                 'fides.subspace=2D.stepback=reflect_single']
-}.items():
+for analysis, algos in ANALYSIS_ALGOS.items():
 
     all_results = []
 
@@ -144,70 +128,23 @@ for analysis, algos in {
 
     print(results)
 
-    plt.subplots()
-    g = sns.barplot(
-        data=results,
-        x='model',
-        y='conv_per_grad',
-        hue='optimizer',
-        hue_order=algos,
-        palette=palette,
-        bottom=1e-6,
-    )
-    g.set_xticklabels(g.get_xticklabels(), rotation=45)
-    g.set_yscale('log')
+    for metric in ['conv_count', 'conv_per_grad', 'unique_at_boundary',
+                   'boundary_minima']:
+        plt.subplots()
+        g = sns.barplot(
+            data=results,
+            x='model',
+            y=metric,
+            hue='optimizer',
+            hue_order=algos,
+            palette=palette,
+            bottom=1e-6 if metric == 'conv_per_grad' else 0.5,
+        )
+        g.set_xticklabels(g.get_xticklabels(), rotation=45)
+        if metric in ['conv_count', 'conv_per_grad']:
+            g.set_yscale('log')
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}.pdf'
-    ))
-
-    plt.subplots()
-    g = sns.barplot(
-        data=results,
-        x='model',
-        y='conv_per_grad',
-        hue='optimizer',
-        hue_order=algos,
-        palette=palette,
-        bottom=1e-6,
-    )
-    g.set_xticklabels(g.get_xticklabels(), rotation=45)
-    g.set_yscale('log')
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}.pdf'
-    ))
-
-    plt.subplots()
-    g = sns.barplot(
-        data=results,
-        x='model',
-        y='unique_at_boundary',
-        hue='optimizer',
-        hue_order=algos,
-        palette=palette,
-    )
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}_boundary.pdf'
-    ))
-
-    plt.subplots()
-    g = sns.barplot(
-        data=results,
-        x='model',
-        y='boundary_minima',
-        hue='optimizer',
-        hue_order=algos,
-        palette=palette,
-    )
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(
-        'evaluation', f'comparison_{analysis}_boundary_minima.pdf'
-    ))
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation', f'comparison_{analysis}_{metric}.pdf'
+        ))
