@@ -36,7 +36,7 @@ ALGO_COLORS = {
         'fides.subspace=2D',
         'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=BFGS',
-        'fmincon', 'lsqnonlin', 'ls_trf', 'ipopt',
+        'fmincon', 'lsqnonlin', 'ls_trf', 'ls_trf_2D', 'ipopt',
     ])
 }
 
@@ -58,7 +58,8 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.stepback=reflect_single',
     'fides.subspace=2D.refine=True',
     'fides.subspace=2D.hessian=Hybrid_2.refine=True',
-    'ls_trf'
+    'ls_trf',
+    'ls_trf_2D'
 ]
 
 N_STARTS_FORWARD = ['1000']

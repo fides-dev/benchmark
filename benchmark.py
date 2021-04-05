@@ -101,14 +101,19 @@ def get_optimizer(optimizer_name: str):
             hessian_update=hessian_update
         )
 
-    if optimizer_name == 'ls_trf':
+    if optimizer_name.startswith('ls_trf'):
         # monkeypatch xtol check
         scipy.optimize._lsq.trf.check_termination = check_termination
+
+        options = {'max_nfev': MAX_ITER,
+                   'xtol': 1e-6,
+                   'ftol': 0.0,
+                   'gtol': 0.0}
+        if optimizer_name == 'ls_trf_2D':
+            options['tr_solver'] = 'lsmr'
+
         return optimize.ScipyOptimizer(
-            method='ls_trf', options={'max_nfev': MAX_ITER,
-                                      'xtol': 1e-6,
-                                      'ftol': 0.0,
-                                      'gtol': 0.0}
+            method='ls_trf', options=options
         )
 
     if optimizer_name == 'ipopt':
@@ -145,6 +150,10 @@ if __name__ == '__main__':
     petab_problem, problem = load_problem(MODEL_NAME)
     set_solver_model_options(problem.objective.amici_solver,
                              problem.objective.amici_model)
+    if MODEL_NAME == 'Crauste_CellSystems2017':
+        problem.objective.calculator._known_least_squares_safe = True
+
+    problem.objective.guess_steadystate = False
 
     optimizer = get_optimizer(optimizer_name)
 
