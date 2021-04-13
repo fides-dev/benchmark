@@ -77,7 +77,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             except FileNotFoundError:
                 pass
 
-        fmin = np.min([
+        fmin = np.nanmin([
             result.optimize_result.list[0].fval
             for result in results.values()
         ])
@@ -96,7 +96,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                     ),
                     'conv_per_grad': get_num_converged_per_grad(
                         result.optimize_result.get_for_key('fval'),
-                        result.optimize_result.get_for_key('n_grad'),
+                        np.asarray(result.optimize_result.get_for_key('n_grad')) + np.asarray(result.optimize_result.get_for_key('n_sres')),
                         fmin
                     ),
                     'unique_at_boundary': get_unique_starts_at_boundary(
@@ -105,7 +105,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                     ),
                     'boundary_minima': get_number_boundary_optima(
                         result.optimize_result.get_for_key('x'),
-                        result.optimize_result.get_for_key('n_grad'),
+                        np.asarray(result.optimize_result.get_for_key('n_grad')) + np.asarray(result.optimize_result.get_for_key('n_sres')),
                         result.optimize_result.get_for_key('grad'),
                         problem.lb_full, problem.ub_full
                     ),
@@ -128,6 +128,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     print(results)
 
+    results.to_csv(os.path.join('evaluation', f'comparison_{analysis}.csv'))
+
     for metric in ['conv_count', 'conv_per_grad', 'unique_at_boundary',
                    'boundary_minima']:
         plt.subplots()
@@ -138,10 +140,10 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             hue='optimizer',
             hue_order=algos,
             palette=palette,
-            bottom=1e-6 if metric == 'conv_per_grad' else 0.5,
+            bottom=5e-7 if metric == 'conv_per_grad' else 0,
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=45)
-        if metric in ['conv_count', 'conv_per_grad']:
+        if metric in ['conv_per_grad']:
             g.set_yscale('log')
 
         plt.tight_layout()

@@ -27,7 +27,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLD = 0.5
+CONVERGENCE_THRESHOLD = 0.05
 
 cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
@@ -37,18 +37,30 @@ ALGO_COLORS = {
         'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=BFGS',
         'fmincon', 'lsqnonlin', 'ls_trf', 'ls_trf_2D', 'ipopt',
+        'fides.subspace=2D.hessian=SR1',
+        'fides.subspace=full.hessian=BFGS',
     ])
 }
 
 OPTIMIZER_FORWARD = [
     'fides.subspace=2D',
     'fides.subspace=full',
-    'fides.subspace=scg',
-    'fides.subspace=2D.hessian=Hybrid_0',
-    'fides.subspace=2D.hessian=Hybrid_05',
-    'fides.subspace=2D.hessian=Hybrid_1',
-    'fides.subspace=2D.hessian=Hybrid_2',
-    'fides.subspace=2D.hessian=Hybrid_5',
+    'fides.subspace=2D.hessian=HybridB_05',
+    'fides.subspace=2D.hessian=HybridB_1',
+    'fides.subspace=2D.hessian=HybridB_2',
+    'fides.subspace=2D.hessian=HybridB_5',
+    'fides.subspace=2D.hessian=HybridB0_05',
+    'fides.subspace=2D.hessian=HybridB0_1',
+    'fides.subspace=2D.hessian=HybridB0_2',
+    'fides.subspace=2D.hessian=HybridB0_5',
+    'fides.subspace=2D.hessian=HybridS_05',
+    'fides.subspace=2D.hessian=HybridS_1',
+    'fides.subspace=2D.hessian=HybridS_2',
+    'fides.subspace=2D.hessian=HybridS_5',
+    'fides.subspace=2D.hessian=HybridS0_05',
+    'fides.subspace=2D.hessian=HybridS0_1',
+    'fides.subspace=2D.hessian=HybridS0_2',
+    'fides.subspace=2D.hessian=HybridS0_5',
     'fides.subspace=full.hessian=BFGS',
     'fides.subspace=2D.hessian=BFGS',
     'fides.subspace=scg.hessian=BFGS',
@@ -56,40 +68,43 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=SR1',
     'fides.subspace=scg.hessian=SR1',
     'fides.subspace=2D.stepback=reflect_single',
-    'fides.subspace=2D.refine=True',
-    'fides.subspace=2D.hessian=Hybrid_2.refine=True',
     'ls_trf',
-    'ls_trf_2D'
+    'ls_trf_2D',
+    'fides.subspace=2D.hessian=FIMe',
 ]
 
 N_STARTS_FORWARD = ['1000']
 
 OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=SR1',
-                     'fides.subspace=scg.hessian=SR1',
+                     'fides.subspace=2D.hessian=BFGS',
                      'fides.subspace=full.hessian=SR1',
                      'fides.subspace=2D.hessian=SR1',
-                     'fides.subspace=scg.hessian=SR1',
                      'ipopt']
 
 N_STARTS_ADJOINT = ['100']
 
 ANALYSIS_ALGOS = {
-    'matlab': [x for x in ALGO_COLORS if x != 'ipopt'],
+    'matlab': [x for x in ALGO_COLORS
+               if x not in ['ipopt',  'fides.subspace=2D.hessian=SR1',
+                            'fides.subspace=full.hessian=BFGS']],
     'curv': ['fides.subspace=2D',
              'fides.subspace=full',
              'fides.subspace=2D.hessian=SR1',
              'fides.subspace=full.hessian=SR1'],
-    'hybrid': ['fides.subspace=2D',
-               'fides.subspace=2D.hessian=Hybrid_5',
-               'fides.subspace=2D.hessian=Hybrid_2',
-               'fides.subspace=2D.hessian=Hybrid_1',
-               'fides.subspace=2D.hessian=Hybrid_05',
-               'fides.subspace=2D.hessian=BFGS'],
+    'hybridB': ['fides.subspace=2D',
+                'fides.subspace=2D.hessian=HybridB_5',
+                'fides.subspace=2D.hessian=HybridB_2',
+                'fides.subspace=2D.hessian=HybridB_1',
+                'fides.subspace=2D.hessian=HybridB_05',
+                'fides.subspace=2D.hessian=BFGS'],
+    'hybridS': ['fides.subspace=2D',
+                'fides.subspace=2D.hessian=HybridS_5',
+                'fides.subspace=2D.hessian=HybridS_2',
+                'fides.subspace=2D.hessian=HybridS_1',
+                'fides.subspace=2D.hessian=HybridS_05',
+                'fides.subspace=2D.hessian=SR1'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
-                 'fides.subspace=2D',
-                 'fides.subspace=2D.refine=True',
-                 'fides.subspace=2D.hessian=Hybrid_2.refine=True']
+                 'fides.subspace=2D']
 }
 
 
@@ -304,7 +319,6 @@ if __name__ == '__main__':
         n_starts = N_STARTS_ADJOINT[0]
 
     for optimizer in optimizers:
-
         if optimizer == 'ls_trf' \
                 and MODEL_NAME not in ['Fujita_SciSignal2010',
                                        'Crauste_CellSystems2017']:
@@ -379,19 +393,31 @@ if __name__ == '__main__':
             else 'FIM'
         )
 
+        df.iter = df.iter.apply(np.log10)
+
         for analysis, algos in ANALYSIS_ALGOS.items():
+
+            if analysis == 'matlab':
+                palette = [
+                    ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
+                    for algo in algos
+                ]
+            elif analysis == 'curv':
+                palette = 'tab20'
+            elif analysis in ['hybridB', 'hybridS']:
+                palette = 'Blues'
+            elif analysis == 'stepback':
+                palette = 'Set2'
+
             plt.subplots()
-            hybrid_algos = ['FIM', 'Hybrid_5', 'Hybrid_2', 'Hybrid_1',
-                            'Hybrid_05', 'BFGS']
-            df.iter = df.iter.apply(np.log10)
             g = sns.boxplot(
                 data=df,
                 order=algos,
-                palette='Blues',
+                palette=palette,
                 x='optimizer', y='iter'
             )
-            g.set_yscale('log')
             g.set_xticklabels(g.get_xticklabels(), rotation=90)
+            g.set_ylim([0, 4])
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
@@ -417,13 +443,11 @@ if __name__ == '__main__':
             'FIMvsSR1_2D': ("fval fides.subspace=2D",
                             "fval fides.subspace=2D.hessian=SR1"),
             'FIMvsHybrid_05_2D': ("fval fides.subspace=2D",
-                                  "fval fides.subspace=2D.hessian=Hybrid_05"),
+                                  "fval fides.subspace=2D.hessian=HybridB_05"),
             'FIMvsHybrid_2_2D': ("fval fides.subspace=2D",
-                                 "fval fides.subspace=2D.hessian=Hybrid_2"),
+                                 "fval fides.subspace=2D.hessian=HybridB_2"),
             'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
-                                 "fval fides.subspace=2D.hessian=Hybrid_5"),
-            'refine': ("fval fides.subspace=2D",
-                       "fval fides.subspace=2D.refine=True"),
+                                 "fval fides.subspace=2D.hessian=HybridB_5"),
             'reflect': ("fval fides.subspace=2D",
                         "fval fides.subspace=2D.stepback=reflect_single"),
         }.items():
@@ -497,7 +521,7 @@ if __name__ == '__main__':
 
     if EVALUATION_TYPE == 'adjoint':
         opt0 = 'ipopt'
-        opt1 = 'fides.subspace=full.hessian=BFGS'
+        opt1 = 'fides.subspace=full.hessian=SR1'
         result0 = next(
             r['result'] for r in all_results
             if r['optimizer'] == opt0

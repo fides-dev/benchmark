@@ -71,19 +71,55 @@ def get_optimizer(optimizer_name: str):
         }
 
         hessian_updates = {
-            'Hybrid_0': fides.HybridUpdate(switch_iteration=0,
-                                           init_with_hess=True),
-            'Hybrid_05': fides.HybridUpdate(
-                switch_iteration=np.ceil(0.5*problem.dim)),
-            'Hybrid_1': fides.HybridUpdate(switch_iteration=problem.dim),
-            'Hybrid_2': fides.HybridUpdate(switch_iteration=2*problem.dim),
-            'Hybrid_5': fides.HybridUpdate(switch_iteration=5*problem.dim),
+            'HybridB_05': fides.HybridUpdate(
+                switch_iteration=np.ceil(0.5*problem.dim)
+            ),
+            'HybridB_1': fides.HybridUpdate(switch_iteration=problem.dim),
+            'HybridB_2': fides.HybridUpdate(switch_iteration=2*problem.dim),
+            'HybridB_5': fides.HybridUpdate(switch_iteration=5*problem.dim),
+            'HybridB0_05': fides.HybridUpdate(
+                switch_iteration=np.ceil(0.5 * problem.dim),
+                init_with_hess=True
+            ),
+            'HybridB0_1': fides.HybridUpdate(switch_iteration=problem.dim,
+                                             init_with_hess=True),
+            'HybridB0_2': fides.HybridUpdate(switch_iteration=2 *
+                                                              problem.dim,
+                                             init_with_hess=True),
+            'HybridB0_5': fides.HybridUpdate(switch_iteration=5 *
+                                                              problem.dim,
+                                             init_with_hess=True),
+            'HybridS_05': fides.HybridUpdate(
+                switch_iteration=np.ceil(0.5 * problem.dim),
+                happ=fides.SR1()
+            ),
+            'HybridS_1': fides.HybridUpdate(switch_iteration=problem.dim,
+                                            happ=fides.SR1()),
+            'HybridS_2': fides.HybridUpdate(switch_iteration=2 * problem.dim,
+                                            happ=fides.SR1()),
+            'HybridS_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
+                                            happ=fides.SR1()),
+            'HybridS0_05': fides.HybridUpdate(
+                switch_iteration=np.ceil(0.5 * problem.dim),
+                init_with_hess=True,
+                happ=fides.SR1()
+            ),
+            'HybridS0_1': fides.HybridUpdate(switch_iteration=problem.dim,
+                                             init_with_hess=True,
+                                             happ=fides.SR1()),
+            'HybridS0_2': fides.HybridUpdate(switch_iteration=2 * problem.dim,
+                                             init_with_hess=True,
+                                             happ=fides.SR1()),
+            'HybridS0_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
+                                             init_with_hess=True,
+                                             happ=fides.SR1()),
             'BFGS': fides.BFGS(),
             'SR1': fides.SR1(),
             'FIM': None,
+            'FIMe': None,
         }
 
-        if parsed_options.get('hessian', 'FIM') not in ['FIM', 'Hybrid']:
+        if parsed_options.get('hessian', 'FIM') != 'FIM':
             hessian_update = hessian_updates.get(parsed_options.get('hessian'))
         else:
             hessian_update = hessian_updates.get(parsed_options.get('hessian',
@@ -148,18 +184,19 @@ if __name__ == '__main__':
     }
 
     petab_problem, problem = load_problem(MODEL_NAME)
+    if optimizer_name.startswith('ls_trf') or \
+            parsed_options.get('hessian', 'FIM') == 'FIMe':
+        problem.objective.amici_model.setAddSigmaResiduals(True)
     set_solver_model_options(problem.objective.amici_solver,
                              problem.objective.amici_model)
-    if MODEL_NAME == 'Crauste_CellSystems2017':
-        problem.objective.calculator._known_least_squares_safe = True
 
     problem.objective.guess_steadystate = False
 
     optimizer = get_optimizer(optimizer_name)
 
-    engine = pypesto.engine.MultiThreadEngine(n_threads=20)
+    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
 
-    options = optimize.OptimizeOptions(allow_failed_starts=True,
+    options = optimize.OptimizeOptions(allow_failed_starts=False,
                                        startpoint_resample=True)
 
     # do the optimization
