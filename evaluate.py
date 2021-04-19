@@ -34,41 +34,15 @@ ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
         'fides.subspace=2D',
-        'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=BFGS',
-        'fmincon', 'lsqnonlin', 'ls_trf', 'ls_trf_2D', 'ipopt',
-        'fides.subspace=2D.hessian=SR1',
-        'fides.subspace=full.hessian=BFGS',
+        'fides.subspace=full.hessian=SR1',
+        'fides.subspace=2D.hessian=FIMe',
+        'fmincon', 'lsqnonlin', 'ls_trf', 'ls_trf_2D',
     ])
 }
 
 OPTIMIZER_FORWARD = [
-    'fides.subspace=2D',
-    'fides.subspace=full',
-    'fides.subspace=2D.hessian=HybridB_05',
-    'fides.subspace=2D.hessian=HybridB_1',
-    'fides.subspace=2D.hessian=HybridB_2',
-    'fides.subspace=2D.hessian=HybridB_5',
-    'fides.subspace=2D.hessian=HybridB0_05',
-    'fides.subspace=2D.hessian=HybridB0_1',
-    'fides.subspace=2D.hessian=HybridB0_2',
-    'fides.subspace=2D.hessian=HybridB0_5',
-    'fides.subspace=2D.hessian=HybridS_05',
-    'fides.subspace=2D.hessian=HybridS_1',
-    'fides.subspace=2D.hessian=HybridS_2',
-    'fides.subspace=2D.hessian=HybridS_5',
-    'fides.subspace=2D.hessian=HybridS0_05',
-    'fides.subspace=2D.hessian=HybridS0_1',
-    'fides.subspace=2D.hessian=HybridS0_2',
-    'fides.subspace=2D.hessian=HybridS0_5',
-    'fides.subspace=full.hessian=BFGS',
-    'fides.subspace=2D.hessian=BFGS',
-    'fides.subspace=full.hessian=SR1',
-    'fides.subspace=2D.hessian=SR1',
-    'fides.subspace=2D.stepback=reflect_single',
     'ls_trf',
-    'ls_trf_2D',
-    'fides.subspace=2D.hessian=FIMe',
 ]
 
 N_STARTS_FORWARD = ['1000']
@@ -101,6 +75,18 @@ ANALYSIS_ALGOS = {
                 'fides.subspace=2D.hessian=HybridS_1',
                 'fides.subspace=2D.hessian=HybridS_05',
                 'fides.subspace=2D.hessian=SR1'],
+    'hybridB0': ['fides.subspace=2D',
+                 'fides.subspace=2D.hessian=HybridB0_5',
+                 'fides.subspace=2D.hessian=HybridB0_2',
+                 'fides.subspace=2D.hessian=HybridB0_1',
+                 'fides.subspace=2D.hessian=HybridB0_05',
+                 'fides.subspace=2D.hessian=BFGS'],
+    'hybridS0': ['fides.subspace=2D',
+                 'fides.subspace=2D.hessian=HybridS0_5',
+                 'fides.subspace=2D.hessian=HybridS0_2',
+                 'fides.subspace=2D.hessian=HybridS0_1',
+                 'fides.subspace=2D.hessian=HybridS0_05',
+                 'fides.subspace=2D.hessian=SR1'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
                  'fides.subspace=2D']
 }
@@ -317,11 +303,6 @@ if __name__ == '__main__':
         n_starts = N_STARTS_ADJOINT[0]
 
     for optimizer in optimizers:
-        if optimizer == 'ls_trf' \
-                and MODEL_NAME not in ['Fujita_SciSignal2010',
-                                       'Crauste_CellSystems2017']:
-            continue
-
         try:
             result = load_results(MODEL_NAME, optimizer, n_starts)
             result.problem = problem
@@ -365,6 +346,26 @@ if __name__ == '__main__':
         f'{MODEL_NAME}_{int(int(n_starts)/10)}_starts_{EVALUATION_TYPE}.pdf'
     ))
 
+    waterfall_results_stepback = [
+        r for r in all_results if r['optimizer'] in ANALYSIS_ALGOS['stepback']
+    ]
+
+    waterfall(
+        [r['result'] for r in waterfall_results_stepback],
+        legends=[r['optimizer'] for r in waterfall_results_stepback],
+        colors=[
+            tuple([*c, 1.0]) for c in sns.color_palette('Set2', 2)
+        ],
+        start_indices=range(int(int(n_starts) / 10)),
+        size=(4, 3.5),
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        'evaluation',
+        f'{MODEL_NAME}_{int(int(n_starts) / 10)}_starts_'
+        f'{EVALUATION_TYPE}_stepback.pdf'
+    ))
+
     if EVALUATION_TYPE == 'forward':
         df = pd.DataFrame([
             {
@@ -402,7 +403,7 @@ if __name__ == '__main__':
                 ]
             elif analysis == 'curv':
                 palette = 'tab20'
-            elif analysis in ['hybridB', 'hybridS']:
+            elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
                 palette = 'Blues'
             elif analysis == 'stepback':
                 palette = 'Set2'

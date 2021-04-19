@@ -121,7 +121,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         ]
     elif analysis == 'curv':
         palette = 'tab20'
-    elif analysis == 'hybrid':
+    elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
         palette = 'Blues'
     elif analysis == 'stepback':
         palette = 'Set2'

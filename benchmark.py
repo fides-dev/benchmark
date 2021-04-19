@@ -147,6 +147,8 @@ def get_optimizer(optimizer_name: str):
                    'gtol': 0.0}
         if optimizer_name == 'ls_trf_2D':
             options['tr_solver'] = 'lsmr'
+        elif optimizer_name == 'ls_trf':
+            options['tr_solver'] = 'exact'
 
         return optimize.ScipyOptimizer(
             method='ls_trf', options=options
