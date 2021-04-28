@@ -77,6 +77,7 @@ def get_optimizer(optimizer_name: str):
             'HybridB_1': fides.HybridUpdate(switch_iteration=problem.dim),
             'HybridB_2': fides.HybridUpdate(switch_iteration=2*problem.dim),
             'HybridB_5': fides.HybridUpdate(switch_iteration=5*problem.dim),
+            'HybridB_10': fides.HybridUpdate(switch_iteration=10*problem.dim),
             'HybridB0_05': fides.HybridUpdate(
                 switch_iteration=np.ceil(0.5 * problem.dim),
                 init_with_hess=True
@@ -89,6 +90,9 @@ def get_optimizer(optimizer_name: str):
             'HybridB0_5': fides.HybridUpdate(switch_iteration=5 *
                                                               problem.dim,
                                              init_with_hess=True),
+            'HybridB0_10': fides.HybridUpdate(switch_iteration=10 *
+                                                              problem.dim,
+                                              init_with_hess=True),
             'HybridS_05': fides.HybridUpdate(
                 switch_iteration=np.ceil(0.5 * problem.dim),
                 happ=fides.SR1()
@@ -99,6 +103,8 @@ def get_optimizer(optimizer_name: str):
                                             happ=fides.SR1()),
             'HybridS_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
                                             happ=fides.SR1()),
+            'HybridS_10': fides.HybridUpdate(switch_iteration=10 * problem.dim,
+                                             happ=fides.SR1()),
             'HybridS0_05': fides.HybridUpdate(
                 switch_iteration=np.ceil(0.5 * problem.dim),
                 init_with_hess=True,
@@ -113,6 +119,9 @@ def get_optimizer(optimizer_name: str):
             'HybridS0_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
                                              init_with_hess=True,
                                              happ=fides.SR1()),
+            'HybridS0_10': fides.HybridUpdate(switch_iteration=10*problem.dim,
+                                              init_with_hess=True,
+                                              happ=fides.SR1()),
             'BFGS': fides.BFGS(),
             'SR1': fides.SR1(),
             'FIM': None,
