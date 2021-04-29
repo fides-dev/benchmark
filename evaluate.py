@@ -42,10 +42,36 @@ ALGO_COLORS = {
 }
 
 OPTIMIZER_FORWARD = [
+    'fides.subspace=2D',
+    'fides.subspace=full',
+    'fides.subspace=2D.hessian=HybridB_05',
+    'fides.subspace=2D.hessian=HybridB_1',
+    'fides.subspace=2D.hessian=HybridB_2',
+    'fides.subspace=2D.hessian=HybridB_5',
     'fides.subspace=2D.hessian=HybridB_10',
+    'fides.subspace=2D.hessian=HybridB0_05',
+    'fides.subspace=2D.hessian=HybridB0_1',
+    'fides.subspace=2D.hessian=HybridB0_2',
+    'fides.subspace=2D.hessian=HybridB0_5',
     'fides.subspace=2D.hessian=HybridB0_10',
+    'fides.subspace=2D.hessian=HybridS_05',
+    'fides.subspace=2D.hessian=HybridS_1',
+    'fides.subspace=2D.hessian=HybridS_2',
+    'fides.subspace=2D.hessian=HybridS_5',
     'fides.subspace=2D.hessian=HybridS_10',
+    'fides.subspace=2D.hessian=HybridS0_05',
+    'fides.subspace=2D.hessian=HybridS0_1',
+    'fides.subspace=2D.hessian=HybridS0_2',
+    'fides.subspace=2D.hessian=HybridS0_5',
     'fides.subspace=2D.hessian=HybridS0_10',
+    'fides.subspace=full.hessian=BFGS',
+    'fides.subspace=2D.hessian=BFGS',
+    'fides.subspace=full.hessian=SR1',
+    'fides.subspace=2D.hessian=SR1',
+    'fides.subspace=2D.stepback=reflect_single',
+    'ls_trf',
+    'ls_trf_2D',
+    'fides.subspace=2D.hessian=FIMe',
 ]
 
 N_STARTS_FORWARD = ['1000']
