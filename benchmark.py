@@ -77,10 +77,11 @@ def get_optimizer(optimizer_name: str):
 
         if re.match(r'Hybrid(S|B)0?_[0-9]+', happ):
             hybrid_happ, ndim = happ[6:].split('_')
-            fides.HybridUpdate(switch_iteration=float(ndim) * problem.dim,
-                               happ={'B': fides.BFGS(),
-                                     'S': fides.SR1()}.get(hybrid_happ[0]),
-                               init_with_hess=hybrid_happ.endswith('0'))
+            hessian_update = fides.HybridUpdate(
+                switch_iteration=float(ndim) * problem.dim,
+                happ={'B': fides.BFGS(), 'S': fides.SR1()}.get(hybrid_happ[0]),
+                init_with_hess=hybrid_happ.endswith('0')
+            )
         else:
             hessian_update = {
                 'BFGS': fides.BFGS(),
