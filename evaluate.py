@@ -76,6 +76,7 @@ OPTIMIZER_FORWARD = [
     'ls_trf',
     'ls_trf_2D',
     'fides.subspace=2D.hessian=FIMe',
+    'fides.subspace=2D.scaled_gradient=False',
 ]
 
 N_STARTS_FORWARD = ['1000']
@@ -129,6 +130,7 @@ ANALYSIS_ALGOS = {
                  'fides.subspace=2D.hessian=HybridS0_05',
                  'fides.subspace=2D.hessian=SR1'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
+                 'fides.subspace=2D.scaled_gradient=False',
                  'fides.subspace=2D']
 }
 

@@ -2,6 +2,8 @@ import os
 import sys
 import amici
 import fides
+import re
+import distutils.util
 import pypesto
 import pypesto.optimize as optimize
 from pypesto.objective import HistoryOptions
@@ -68,77 +70,31 @@ def get_optimizer(optimizer_name: str):
             'stepback': fides.Options.STEPBACK_STRAT,
             'subspace': fides.Options.SUBSPACE_DIM,
             'refine': fides.Options.REFINE_STEPBACK,
+            'scaled_gradient': fides.Options.SCALED_GRADIENT,
         }
 
-        hessian_updates = {
-            'HybridB_05': fides.HybridUpdate(
-                switch_iteration=np.ceil(0.5*problem.dim)
-            ),
-            'HybridB_1': fides.HybridUpdate(switch_iteration=problem.dim),
-            'HybridB_2': fides.HybridUpdate(switch_iteration=2*problem.dim),
-            'HybridB_5': fides.HybridUpdate(switch_iteration=5*problem.dim),
-            'HybridB_10': fides.HybridUpdate(switch_iteration=10*problem.dim),
-            'HybridB0_05': fides.HybridUpdate(
-                switch_iteration=np.ceil(0.5 * problem.dim),
-                init_with_hess=True
-            ),
-            'HybridB0_1': fides.HybridUpdate(switch_iteration=problem.dim,
-                                             init_with_hess=True),
-            'HybridB0_2': fides.HybridUpdate(switch_iteration=2 *
-                                                              problem.dim,
-                                             init_with_hess=True),
-            'HybridB0_5': fides.HybridUpdate(switch_iteration=5 *
-                                                              problem.dim,
-                                             init_with_hess=True),
-            'HybridB0_10': fides.HybridUpdate(switch_iteration=10 *
-                                                              problem.dim,
-                                              init_with_hess=True),
-            'HybridS_05': fides.HybridUpdate(
-                switch_iteration=np.ceil(0.5 * problem.dim),
-                happ=fides.SR1()
-            ),
-            'HybridS_1': fides.HybridUpdate(switch_iteration=problem.dim,
-                                            happ=fides.SR1()),
-            'HybridS_2': fides.HybridUpdate(switch_iteration=2 * problem.dim,
-                                            happ=fides.SR1()),
-            'HybridS_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
-                                            happ=fides.SR1()),
-            'HybridS_10': fides.HybridUpdate(switch_iteration=10 * problem.dim,
-                                             happ=fides.SR1()),
-            'HybridS0_05': fides.HybridUpdate(
-                switch_iteration=np.ceil(0.5 * problem.dim),
-                init_with_hess=True,
-                happ=fides.SR1()
-            ),
-            'HybridS0_1': fides.HybridUpdate(switch_iteration=problem.dim,
-                                             init_with_hess=True,
-                                             happ=fides.SR1()),
-            'HybridS0_2': fides.HybridUpdate(switch_iteration=2 * problem.dim,
-                                             init_with_hess=True,
-                                             happ=fides.SR1()),
-            'HybridS0_5': fides.HybridUpdate(switch_iteration=5 * problem.dim,
-                                             init_with_hess=True,
-                                             happ=fides.SR1()),
-            'HybridS0_10': fides.HybridUpdate(switch_iteration=10*problem.dim,
-                                              init_with_hess=True,
-                                              happ=fides.SR1()),
-            'BFGS': fides.BFGS(),
-            'SR1': fides.SR1(),
-            'FIM': None,
-            'FIMe': None,
-        }
+        happ = parsed_options.get('hessian', 'FIM')
 
-        if parsed_options.get('hessian', 'FIM') != 'FIM':
-            hessian_update = hessian_updates.get(parsed_options.get('hessian'))
+        if re.match(r'Hybrid(S|B)0?_[0-9]+', happ):
+            hybrid_happ, ndim = happ[6:].split('_')
+            fides.HybridUpdate(switch_iteration=10 * problem.dim,
+                               happ={'B': fides.BFGS(),
+                                     'S': fides.SR1()}.get(hybrid_happ[0]),
+                               init_with_hess=hybrid_happ.endswith('0'))
         else:
-            hessian_update = hessian_updates.get(parsed_options.get('hessian',
-                                                                    'FIM'))
+            hessian_update = {
+                'BFGS': fides.BFGS(),
+                'SR1': fides.SR1(),
+                'FIM': None,
+                'FIMe': None,
+            }.get(happ)
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
                 value = parsed_options[parse_field]
-                if optim_field == fides.Options.REFINE_STEPBACK:
-                    value = bool(value)
+                if optim_field in [fides.Options.REFINE_STEPBACK,
+                                   fides.Options.SCALED_GRADIENT]:
+                    value = bool(distutils.util.strtobool(value))
                 optim_options[optim_field] = value
 
         return optimize.FidesOptimizer(
