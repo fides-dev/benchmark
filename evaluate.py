@@ -46,7 +46,6 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=HybridB0_20',
     'fides.subspace=2D.hessian=HybridS_20',
     'fides.subspace=2D.hessian=HybridS0_20',
-    'fides.subspace=2D.scaled_gradient=False',
 ]
 
 N_STARTS_FORWARD = ['1000']
