@@ -4,10 +4,7 @@ from benchmark import PREFIX_TEMPLATE
 from evaluate import OPTIMIZER_FORWARD, OPTIMIZER_ADJOINT , N_STARTS_ADJOINT, \
     N_STARTS_FORWARD
 
-MODELS_FORWARD = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
-                  'Crauste_CellSystems2017',
-                  'Brannmark_JBC2010', 'Weber_BMC2015',
-                  'Boehm_JProteomeRes2014', 'Fujita_SciSignal2010']
+MODELS_FORWARD = ['Boehm_JProteomeRes2014']
 
 MODELS_ADJOINT = []
 
