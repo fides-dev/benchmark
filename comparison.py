@@ -126,6 +126,18 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     elif analysis == 'stepback':
         palette = 'Set2'
 
+    for model in models:
+        results.loc[results.model == model, 'improvement'] = \
+            results.loc[results.model == model, 'conv_per_grad'] / \
+            results.loc[(results.model == model) &
+                        (results.optimizer == 'fides.subspace=2D'),
+                        'conv_per_grad'].values[0]
+
+    for optimizer in results.optimizer.unique():
+        results.loc[results.optimizer == optimizer, 'average improvement'] = \
+            10 ** results.loc[results.optimizer == optimizer,
+                              'improvement'].apply(np.log10).mean()
+
     print(results)
 
     results.to_csv(os.path.join('evaluation', f'comparison_{analysis}.csv'))
