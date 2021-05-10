@@ -449,7 +449,7 @@ if __name__ == '__main__':
                 x='optimizer', y='iter'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=90)
-            g.set_ylim([0, 4])
+            g.set_ylim([0, 5])
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',

@@ -132,7 +132,7 @@ def get_optimizer(optimizer_name: str):
 np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
-MAX_ITER = 1e6
+MAX_ITER = 1e5
 MAX_TIME = 7200.0
 
 if __name__ == '__main__':

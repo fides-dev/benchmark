@@ -144,6 +144,21 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     for metric in ['conv_count', 'conv_per_grad', 'unique_at_boundary',
                    'boundary_minima']:
+
+        bottoms = {
+            'conv_per_grad': 5e-7,
+            'conv_count':  0,
+            'unique_at_boundary': 0,
+            'boundary_minima': 0,
+        }
+
+        tops = {
+            'conv_per_grad': 1e-3,
+            'conv_count': 1e2,
+            'unique_at_boundary': 1e3,
+            'boundary_minima': 3e2,
+        }
+
         plt.subplots()
         g = sns.barplot(
             data=results,
@@ -152,11 +167,12 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             hue='optimizer',
             hue_order=algos,
             palette=palette,
-            bottom=5e-7 if metric == 'conv_per_grad' else 0,
+            bottom=bottoms[metric],
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=45)
         if metric in ['conv_per_grad']:
             g.set_yscale('log')
+        g.set(ylim=(bottoms[metric], tops[metric]))
 
         plt.tight_layout()
         plt.savefig(os.path.join(
