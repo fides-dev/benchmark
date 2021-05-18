@@ -10,7 +10,7 @@ folder_base = os.path.join(os.path.dirname(__file__),
 
 def preprocess_problem(problem, model):
     if model == 'Weber_BMC2015':
-        # don't estimate parameters on linear scale
+        # don't estimate certain standard deviation parameters
         problem.parameter_df.loc[
             ['std_yPKDt', 'std_yPI4K3Bt', 'std_yCERTt'],
             petab.ESTIMATE

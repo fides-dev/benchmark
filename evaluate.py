@@ -76,14 +76,6 @@ OPTIMIZER_FORWARD = [
 
 N_STARTS_FORWARD = ['1000']
 
-OPTIMIZER_ADJOINT = ['fides.subspace=full.hessian=BFGS',
-                     'fides.subspace=2D.hessian=BFGS',
-                     'fides.subspace=full.hessian=SR1',
-                     'fides.subspace=2D.hessian=SR1',
-                     'ipopt']
-
-N_STARTS_ADJOINT = ['100']
-
 ANALYSIS_ALGOS = {
     'matlab': [x for x in ALGO_COLORS
                if x not in ['ipopt',  'fides.subspace=2D.hessian=SR1',
@@ -328,12 +320,8 @@ if __name__ == '__main__':
         legend='Hass2019',
     )
 
-    if EVALUATION_TYPE == 'forward':
-        optimizers = ['lsqnonlin', 'fmincon'] + OPTIMIZER_FORWARD
-        n_starts = N_STARTS_FORWARD[0]
-    else:
-        optimizers = OPTIMIZER_ADJOINT
-        n_starts = N_STARTS_ADJOINT[0]
+    optimizers = ['lsqnonlin', 'fmincon'] + OPTIMIZER_FORWARD
+    n_starts = N_STARTS_FORWARD[0]
 
     for optimizer in optimizers:
         try:
@@ -399,237 +387,151 @@ if __name__ == '__main__':
         f'{EVALUATION_TYPE}_stepback.pdf'
     ))
 
-    if EVALUATION_TYPE == 'forward':
-        df = pd.DataFrame([
-            {
-                'fval': start['fval'],
-                'iter': start['n_grad'] + start['n_sres'],
-                'id': start['id'],
-                'optimizer': results['optimizer']
-            }
-            for results in all_results
-            for start in results['result'].optimize_result.list
-            if results['optimizer'] in OPTIMIZER_FORWARD + ['fmincon',
-                                                            'lsqnonlin']
-        ])
+    df = pd.DataFrame([
+        {
+            'fval': start['fval'],
+            'iter': start['n_grad'] + start['n_sres'],
+            'id': start['id'],
+            'optimizer': results['optimizer']
+        }
+        for results in all_results
+        for start in results['result'].optimize_result.list
+        if results['optimizer'] in OPTIMIZER_FORWARD + ['fmincon',
+                                                        'lsqnonlin']
+    ])
 
-        df['opt_subspace'] = df['optimizer'].apply(
-            lambda x:
-            'fides ' + x.split('.')[1].split('=')[1]
-            if len(x.split('.')) > 1
-            else 'ls_trf full'
-        )
+    df['opt_subspace'] = df['optimizer'].apply(
+        lambda x:
+        'fides ' + x.split('.')[1].split('=')[1]
+        if len(x.split('.')) > 1
+        else 'ls_trf full'
+    )
 
-        df['hessian'] = df['optimizer'].apply(
-            lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
-            else 'FIM'
-        )
+    df['hessian'] = df['optimizer'].apply(
+        lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
+        else 'FIM'
+    )
 
-        df.iter = df.iter.apply(np.log10)
+    df.iter = df.iter.apply(np.log10)
 
-        for analysis, algos in ANALYSIS_ALGOS.items():
+    for analysis, algos in ANALYSIS_ALGOS.items():
 
-            if analysis == 'matlab':
-                palette = [
-                    ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
-                    for algo in algos
-                ]
-            elif analysis == 'curv':
-                palette = 'tab20'
-            elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
-                palette = 'Blues'
-            elif analysis == 'stepback':
-                palette = 'Set2'
-
-            plt.subplots()
-            g = sns.boxplot(
-                data=df,
-                order=algos,
-                palette=palette,
-                x='optimizer', y='iter'
-            )
-            g.set_xticklabels(g.get_xticklabels(), rotation=90)
-            g.set_ylim([0, 5])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'{MODEL_NAME}_iter_{analysis}_{EVALUATION_TYPE}.pdf'
-            ))
-
-        df_pivot = df[
-            df.optimizer.apply(lambda x: x in OPTIMIZER_FORWARD)
-        ].pivot(index='id', columns=['optimizer'])
-
-        df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
-
-        df_pivot = df_pivot[(df_pivot.fval < 1e5).all(axis=1)]
-
-        df_pivot.columns = [' '.join(col).strip()
-                            for col in df_pivot.columns.values]
-
-        for name, vals in {
-            '2Dvsfull_FIM': ('fval fides.subspace=2D',
-                             'fval fides.subspace=full'),
-            'FIMvsBFGS_2D': ("fval fides.subspace=2D",
-                             "fval fides.subspace=2D.hessian=BFGS"),
-            'FIMvsSR1_2D': ("fval fides.subspace=2D",
-                            "fval fides.subspace=2D.hessian=SR1"),
-            'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
-                                  "fval fides.subspace=2D.hessian=HybridB_5"),
-            'FIMvsHybrid_25_2D': ("fval fides.subspace=2D",
-                                 "fval fides.subspace=2D.hessian=HybridB_25"),
-            'reflect': ("fval fides.subspace=2D",
-                        "fval fides.subspace=2D.stepback=reflect_single"),
-        }.items():
-            lb, ub = [
-                fun([fun(df_pivot[vals[0]]),
-                     fun(df_pivot[vals[1]])])
-                for fun in [np.nanmin, np.nanmax]
+        if analysis == 'matlab':
+            palette = [
+                ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
+                for algo in algos
             ]
-            lb -= (ub - lb) / 10
-            ub += (ub - lb) / 10
+        elif analysis == 'curv':
+            palette = 'tab20'
+        elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
+            palette = 'Blues'
+        elif analysis == 'stepback':
+            palette = 'Set2'
 
-            sns.jointplot(
-                data=df_pivot,
-                x=vals[0],
-                y=vals[1],
-                kind='scatter', xlim=(lb, ub), ylim=(lb, ub),
-                alpha=0.3,
-                marginal_kws={'bins': 25},
-            )
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'{MODEL_NAME}_fval_{name}_{EVALUATION_TYPE}.pdf'
-            ))
-
-        df_metrics = pd.DataFrame([
-            {
-                'convergence_count': get_num_converged(
-                    results['result'].optimize_result.get_for_key('fval'),
-                    fmin
-                ),
-                'conv_per_grad': get_num_converged_per_grad(
-                    results['result'].optimize_result.get_for_key('fval'),
-                    results['result'].optimize_result.get_for_key('n_sres')
-                    if results['optimizer'] == 'ls_tr' else
-                    results['result'].optimize_result.get_for_key('n_grad'),
-                    fmin
-                ),
-                'consistency': get_dist(
-                    results['result'].optimize_result.get_for_key('fval'),
-                    fmin
-                ),
-
-                'optimizer': results['optimizer']
-            }
-            for results in all_results
-        ])
-
-        df_metrics['opt_subspace'] = df_metrics['optimizer'].apply(
-            lambda x:
-            'fides ' + x.split('.')[1].split('=')[1]
-            if len(x.split('.')) > 1
-            else ''
+        plt.subplots()
+        g = sns.boxplot(
+            data=df,
+            order=algos,
+            palette=palette,
+            x='optimizer', y='iter'
         )
-
-        df_metrics['hessian'] = df_metrics['optimizer'].apply(
-            lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
-            else 'FIM'
-        )
-
-        for analysis, algos in ANALYSIS_ALGOS.items():
-            for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
-                plt.subplots()
-                g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
-                                order=[x for x in algos])
-                plt.tight_layout()
-                plt.savefig(os.path.join(
-                    'evaluation',
-                    f'{MODEL_NAME}_{metric}_{analysis}_{EVALUATION_TYPE}.pdf'
-                ))
-
-    if EVALUATION_TYPE == 'adjoint':
-        opt0 = 'ipopt'
-        opt1 = 'fides.subspace=full.hessian=SR1'
-        result0 = next(
-            r['result'] for r in all_results
-            if r['optimizer'] == opt0
-        )
-        result1 = next(
-            r['result'] for r in all_results
-            if r['optimizer'] == opt1
-        )
-        fig, axes = plt.subplots(1, 2)
-        fval_offset = np.min([
-            np.min(result0.optimize_result.get_for_key('fval')),
-            np.min(result1.optimize_result.get_for_key('fval'))
-        ]) - 1
-        alpha = 0.1
-        for start0 in result0.optimize_result.list:
-            start1 = next(
-                (s for s in result1.optimize_result.list
-                 if s['id'] == start0['id']),
-                None
-            )
-            if start1 is None:
-                continue
-            history0 = CsvHistory(
-                file=os.path.join('results',
-                                  f'{MODEL_NAME}__{opt0}__100__'
-                                  f'trace{start0["id"]}.csv'),
-                load_from_file=True
-            )
-            history1 = CsvHistory(
-                file=os.path.join('results',
-                                  f'{MODEL_NAME}__{opt1}__100__'
-                                  f'trace{start1["id"]}.csv'),
-                load_from_file=True
-            )
-            fvals0 = history0.get_fval_trace() - fval_offset
-            fvals1 = history1.get_fval_trace() - fval_offset
-            times0 = history0.get_time_trace()
-            times1 = history1.get_time_trace()
-            i0 = 0
-            i1 = 0
-            ttrace0 = [start0['fval0'] - fval_offset]
-            ttrace1 = [start1['fval0'] - fval_offset]
-            if times0[i0] < times1[i1]:
-                i0 += 1
-            else:
-                i1 += 1
-            while i0 < len(fvals0) or i1 < len(fvals1):
-                ttrace0.append(np.min(fvals0[:np.min([i0+1,
-                                                      len(fvals0)-1]) + 1]))
-                ttrace1.append(np.min(fvals1[:np.min([i1+1,
-                                                      len(fvals1)-1]) + 1]))
-                if i1 == len(fvals1) or (not(i0 == len(fvals0)) and
-                                         times0[i0] < times1[i1]):
-                    i0 += 1
-                else:
-                    i1 += 1
-            for ax in axes:
-                ax.plot(ttrace0, ttrace1, 'k.-', alpha=alpha)
-                ax.plot(ttrace0[-1], ttrace1[-1], 'r.', zorder=99)
-
-        for iax, ax in enumerate(axes):
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            ax.set_aspect('equal')
-
-            xy_min = np.min([ax.get_xlim()[0], ax.get_ylim()[0]])
-            if iax == 0:
-                xy_max = np.max([ax.get_xlim()[1], ax.get_ylim()[1]])
-            else:
-                xy_max = 1e8
-
-            ax.set_xlim([xy_min, xy_max])
-            ax.set_ylim([xy_min, xy_max])
-            ax.set_xlabel(f'funcion value {opt0}')
-            ax.set_ylabel(f'funcion value {opt1}')
-            ax.plot([xy_min, xy_max], [xy_min, xy_max], 'k:')
-
+        g.set_xticklabels(g.get_xticklabels(), rotation=90)
+        g.set_ylim([0, 5])
         plt.tight_layout()
         plt.savefig(os.path.join(
-            'evaluation', f'{MODEL_NAME}_{EVALUATION_TYPE}.pdf')
+            'evaluation',
+            f'{MODEL_NAME}_iter_{analysis}_{EVALUATION_TYPE}.pdf'
+        ))
+
+    df_pivot = df[
+        df.optimizer.apply(lambda x: x in OPTIMIZER_FORWARD)
+    ].pivot(index='id', columns=['optimizer'])
+
+    df_pivot.fval = np.log10(df_pivot.fval - fmin + 1)
+
+    df_pivot = df_pivot[(df_pivot.fval < 1e5).all(axis=1)]
+
+    df_pivot.columns = [' '.join(col).strip()
+                        for col in df_pivot.columns.values]
+
+    for name, vals in {
+        '2Dvsfull_FIM': ('fval fides.subspace=2D',
+                         'fval fides.subspace=full'),
+        'FIMvsBFGS_2D': ("fval fides.subspace=2D",
+                         "fval fides.subspace=2D.hessian=BFGS"),
+        'FIMvsSR1_2D': ("fval fides.subspace=2D",
+                        "fval fides.subspace=2D.hessian=SR1"),
+        'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
+                              "fval fides.subspace=2D.hessian=HybridB_5"),
+        'FIMvsHybrid_25_2D': ("fval fides.subspace=2D",
+                             "fval fides.subspace=2D.hessian=HybridB_25"),
+        'reflect': ("fval fides.subspace=2D",
+                    "fval fides.subspace=2D.stepback=reflect_single"),
+    }.items():
+        lb, ub = [
+            fun([fun(df_pivot[vals[0]]),
+                 fun(df_pivot[vals[1]])])
+            for fun in [np.nanmin, np.nanmax]
+        ]
+        lb -= (ub - lb) / 10
+        ub += (ub - lb) / 10
+
+        sns.jointplot(
+            data=df_pivot,
+            x=vals[0],
+            y=vals[1],
+            kind='scatter', xlim=(lb, ub), ylim=(lb, ub),
+            alpha=0.3,
+            marginal_kws={'bins': 25},
         )
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'{MODEL_NAME}_fval_{name}_{EVALUATION_TYPE}.pdf'
+        ))
+
+    df_metrics = pd.DataFrame([
+        {
+            'convergence_count': get_num_converged(
+                results['result'].optimize_result.get_for_key('fval'),
+                fmin
+            ),
+            'conv_per_grad': get_num_converged_per_grad(
+                results['result'].optimize_result.get_for_key('fval'),
+                results['result'].optimize_result.get_for_key('n_sres')
+                if results['optimizer'] == 'ls_tr' else
+                results['result'].optimize_result.get_for_key('n_grad'),
+                fmin
+            ),
+            'consistency': get_dist(
+                results['result'].optimize_result.get_for_key('fval'),
+                fmin
+            ),
+
+            'optimizer': results['optimizer']
+        }
+        for results in all_results
+    ])
+
+    df_metrics['opt_subspace'] = df_metrics['optimizer'].apply(
+        lambda x:
+        'fides ' + x.split('.')[1].split('=')[1]
+        if len(x.split('.')) > 1
+        else ''
+    )
+
+    df_metrics['hessian'] = df_metrics['optimizer'].apply(
+        lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
+        else 'FIM'
+    )
+
+    for analysis, algos in ANALYSIS_ALGOS.items():
+        for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
+            plt.subplots()
+            g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
+                            order=[x for x in algos])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation',
+                f'{MODEL_NAME}_{metric}_{analysis}_{EVALUATION_TYPE}.pdf'
+            ))

@@ -6,7 +6,6 @@ import re
 import distutils.util
 import pypesto
 import pypesto.optimize as optimize
-from pypesto.objective import HistoryOptions
 import pypesto.visualize as visualize
 from pypesto.store import OptimizationResultHDF5Writer
 import numpy as np
@@ -181,26 +180,10 @@ if __name__ == '__main__':
 
     hdf_results_file = os.path.join('results', prefix + '.hdf5')
 
-    if MODEL_NAME == 'Chen_MSB2009':
-        history_options = HistoryOptions(
-            trace_record=True,
-            trace_record_hess=False,
-            trace_record_res=False,
-            trace_record_sres=False,
-            trace_record_schi2=False,
-            trace_save_iter=10,
-            storage_file=os.path.join(
-                'results',
-                f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__trace{{id}}.csv'
-            )
-        )
-    else:
-        history_options = None
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
         engine=engine,
         options=options,
-        history_options=history_options
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
