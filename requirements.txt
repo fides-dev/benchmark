@@ -1,8 +1,7 @@
-petab==0.1.17
-git+https://github.com/AMICI-dev/AMICI@develop
-fides==0.4.1
+petab==0.1.18
+amici==0.11.16
+fides==0.5.0
 seaborn==0.11.1
-snakemake==5.32.0
-ipopt==0.3.0
+snakemake==6.0.5
 openpyxl==3.0.6
-git+https://github.com/ICB-DCM/pyPESTO@develop
+pypesto==0.2.5
