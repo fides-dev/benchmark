@@ -64,7 +64,7 @@ rule check_eigenvalues:
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py'),
         h5=rules.run_benchmark.output.h5,
     output:
-        csv=os.path.join('evaluation', '{model}_{optimizer}_{starts}_evs.csv'),
+        csv=os.path.join('evaluation', '{model}__{optimizer}__{starts}__evs.csv'),
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'

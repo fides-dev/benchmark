@@ -33,6 +33,6 @@ for start in result.optimize_result.list:
     )))
 
 evs = np.real(np.asarray(evs))
-np.savetxt(f'./evaluation/{MODEL_NAME}_{OPTIMIZER}_evs.csv',
+np.savetxt(f'./evaluation/{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__evs.csv',
            evs, delimiter=',')
 
