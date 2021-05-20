@@ -1,4 +1,5 @@
 output_folder = pwd;
+copyfile(fullfile(pwd, 'arFit.m'),fullfile(pwd,'d2d','arFramework3','arFit.m'))
 cd(fullfile(pwd,'d2d','arFramework3'))
 arInit
 d2d_folder = pwd;
@@ -49,12 +50,8 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
     ar.config.optim.TolX = 1e-6;
     ar.config.optim.TolFun = 0;
     ar.config.optim.PreconBandWidth = Inf;
-    ar.config.optim.SubproblemAlgorithm = 'cg';
     ar.config.optim.MaxIter = 1e5;
     ar.config.optim.MaxFunEvals = 1e5;
-    ar.config.optim.Algorithm = 'trust-region-reflective';
-    ar.config.optim.Hessian = 'user-supplied';
-    ar.config.optim.GradObj = 'on';
     
     mat_savefile = fullfile(output_folder, strcat(model{1}, '_fmincon.mat'));
     if isfile(mat_savefile)
