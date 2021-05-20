@@ -12,8 +12,7 @@ import seaborn as sns
 import matplotlib as mpl
 
 from pypesto.store import OptimizationResultHDF5Reader
-from pypesto.visualize import waterfall, create_references
-from pypesto.objective.history import CsvHistory
+from pypesto.visualize import waterfall
 from pypesto.optimize.result import OptimizerResult
 from matplotlib import cm
 from compile_petab import load_problem
@@ -262,63 +261,9 @@ if __name__ == '__main__':
     set_solver_model_options(problem.objective.amici_solver,
                              problem.objective.amici_model)
 
-    hass_2019 = pd.read_excel(os.path.join(
-        'Hass2019', f'{MODEL_NAME}.xlsx'
-    ), sheet_name='Parameters')
-    hass_2019.parameter = hass_2019.parameter.apply(
-        lambda x: re.sub(r'log10\(([\w_]+)\)', r'\1', x)
-    )
-    if MODEL_NAME == 'Weber_BMC2015':
-        par_df = petab_problem.parameter_df.reset_index().loc[
-            [32, 33, 34, 35, 36, 37, 38, 39],
-            [petab.PARAMETER_ID, petab.NOMINAL_VALUE,
-             petab.LOWER_BOUND,
-             petab.UPPER_BOUND, petab.PARAMETER_SCALE,
-             petab.ESTIMATE]].rename(
-            columns={
-                petab.PARAMETER_ID: 'parameter',
-                petab.NOMINAL_VALUE: 'value',
-                petab.LOWER_BOUND: 'lower boundary',
-                petab.UPPER_BOUND: 'upper boundary',
-                petab.PARAMETER_SCALE: 'analysis at log-scale',
-                petab.ESTIMATE: 'estimated'
-            }
-        )
-        par_df.value = par_df.value.apply(np.log10)
-        hass_2019 = hass_2019.append(par_df)
-
-    hass_2019_x = dict(hass_2019[['parameter', 'value']].values)
-    x_ref = np.array([
-        hass_2019_x.get(
-            par, hass_2019_x.get(
-                par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
-                    'scaling', 'scaleFactor').replace('_tot', ''),
-                None
-            )
-        )
-        for par in petab_problem.x_ids
-    ])
-
     os.makedirs('evaluation', exist_ok=True)
 
     all_results = []
-
-    refs = create_references(
-        x=x_ref[np.asarray(
-            petab_problem.x_free_indices
-        )],
-        fval=problem.objective(
-            x_ref[np.asarray(petab_problem.x_free_indices)]),
-        legend='Hass2019',
-    ) + create_references(
-        x=np.asarray(petab_problem.x_nominal_scaled)[np.asarray(
-            petab_problem.x_free_indices
-        )],
-        fval=problem.objective(np.asarray(petab_problem.x_nominal_scaled)[
-                                   np.asarray(petab_problem.x_free_indices)]
-                               ),
-        legend='Hass2019',
-    )
 
     optimizers = ['lsqnonlin', 'fmincon'] + OPTIMIZER_FORWARD
     n_starts = N_STARTS_FORWARD[0]
@@ -328,7 +273,7 @@ if __name__ == '__main__':
             result = load_results(MODEL_NAME, optimizer, n_starts)
             result.problem = problem
             all_results.append({
-                'result': result, 'model': MODEL_NAME, 'optimizer': optimizer,
+                'result': result, 'optimizer': optimizer,
             })
         except FileNotFoundError:
             pass
