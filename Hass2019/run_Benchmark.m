@@ -28,8 +28,8 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
     ar.config.optim.TolFun = 0;
     ar.config.optim.PreconBandWidth = Inf;
     ar.config.optim.SubproblemAlgorithm = 'factorization';
-    ar.config.optim.MaxIter = 1e6;
-    ar.config.optim.MaxFunEvals = 1e6;
+    ar.config.optim.MaxIter = 1e5;
+    ar.config.optim.MaxFunEvals = 1e5;
     mat_savefile = fullfile(output_folder, strcat(model{1}, '_lsqnonlin.mat'));
     if isfile(mat_savefile)
         load(mat_savefile)
@@ -50,8 +50,8 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
     ar.config.optim.TolFun = 0;
     ar.config.optim.PreconBandWidth = Inf;
     ar.config.optim.SubproblemAlgorithm = 'cg';
-    ar.config.optim.MaxIter = 10000;
-    ar.config.optim.MaxFunEvals = 10000;
+    ar.config.optim.MaxIter = 1e5;
+    ar.config.optim.MaxFunEvals = 1e5;
     ar.config.optim.Algorithm = 'trust-region-reflective';
     ar.config.optim.Hessian = 'user-supplied';
     ar.config.optim.GradObj = 'on';
