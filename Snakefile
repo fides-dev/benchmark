@@ -91,7 +91,7 @@ rule benchmark:
 rule eigenvalues:
     input:
         expand(rules.check_eigenvalues.output.csv,
-               model=['{model}'],
+               model=MODELS_FORWARD,
                optimizer=[
                     'fides.subspace=2D',
                     'fides.subspace=full',
