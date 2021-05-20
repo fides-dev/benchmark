@@ -58,6 +58,17 @@ rule run_benchmark:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
+rule check_eigenvalues:
+    input:
+        script='check_eigenvalues.py',
+        model=os.path.join('amici_models', '{model}', '{model}', '{model}.py'),
+        h5=rules.run_benchmark.output.h5,
+    output:
+        csv=os.path.join('evaluation', '{model}_{optimizer}_{starts}_evs.csv'),
+    shell:
+         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         '{wildcards.starts}'
+
 rule evaluate_subspace_benchmark:
     input:
         script='evaluate.py',
@@ -68,7 +79,7 @@ rule evaluate_subspace_benchmark:
         full_waterfall=os.path.join('evaluation',
                                     '{model}_all_starts_forward.pdf')
     shell:
-        'python3 {input.script} {wildcards.model} subspace'
+        'python3 {input.script} {wildcards.model} forward'
 
 rule benchmark:
     input:
@@ -76,5 +87,23 @@ rule benchmark:
             os.path.join('evaluation', '{model}_all_starts_forward.pdf'),
             model=MODELS_FORWARD
         )
+
+rule eigenvalues:
+    input:
+        expand(rules.check_eigenvalues.output.csv,
+               model=['{model}'],
+               optimizer=[
+                    'fides.subspace=2D',
+                    'fides.subspace=full',
+                    'fides.subspace=full.hessian=BFGS',
+                    'fides.subspace=2D.hessian=BFGS',
+                    'fides.subspace=full.hessian=SR1',
+                    'fides.subspace=2D.hessian=SR1',
+                    'ls_trf',
+                    'ls_trf_2D',
+                    'fmincon',
+                    'lsqnonlin',
+               ],
+               starts=N_STARTS_FORWARD)
 
 ruleorder: run_benchmark_long > run_benchmark_short > run_benchmark
