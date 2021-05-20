@@ -25,6 +25,8 @@ result = load_results(MODEL_NAME, OPTIMIZER, N_STARTS)
 evs = []
 
 for start in result.optimize_result.list:
+    if start.x is None:
+        continue
     hess = fd_obj.get_hess(start.x)
     if np.isnan(hess).any():
         continue
