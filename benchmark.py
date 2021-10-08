@@ -4,7 +4,6 @@ import amici
 import fides
 import re
 import distutils.util
-import pypesto
 import pypesto.optimize as optimize
 import pypesto.visualize as visualize
 from pypesto.store import OptimizationResultHDF5Writer
@@ -76,15 +75,28 @@ def get_optimizer(optimizer_name: str):
 
         if re.match(r'Hybrid[SB]0?_[0-9]+', happ):
             hybrid_happ, ndim = happ[6:].split('_')
-            hessian_update = fides.HybridUpdate(
+
+            happs = {
+                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0')),
+                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
+            }
+
+            hessian_update = fides.HybridFixed(
                 switch_iteration=int(float(ndim)),
-                happ={'B': fides.BFGS(), 'S': fides.SR1()}.get(hybrid_happ[0]),
-                init_with_hess=hybrid_happ.endswith('0')
+                happ=happs.get(hybrid_happ[0]),
             )
         else:
             hessian_update = {
                 'BFGS': fides.BFGS(),
                 'SR1': fides.SR1(),
+                'FX': fides.FX(),
+                'GNSBFGS': fides.GNSBFGS(),
+                'PSB': fides.PSB(),
+                'BB': fides.BB(),
+                'BG': fides.BG(),
+                'DFP': fides.DFP(),
+                'SSM': fides.SSM(),
+                'TSSM': fides.TSSM(),
                 'FIM': None,
                 'FIMe': None,
             }.get(happ)
@@ -150,7 +162,11 @@ if __name__ == '__main__':
         for option in OPTIMIZER.split('.')[1:]
     }
 
-    petab_problem, problem = load_problem(MODEL_NAME)
+    petab_problem, problem = load_problem(
+        MODEL_NAME, extend_bounds=bool(distutils.util.strtobool(
+            parsed_options.get('ebounds', 'False')
+        ))
+    )
     if optimizer_name.startswith('ls_trf') or \
             parsed_options.get('hessian', 'FIM') == 'FIMe':
         problem.objective.amici_model.setAddSigmaResiduals(True)
@@ -160,8 +176,6 @@ if __name__ == '__main__':
     problem.objective.guess_steadystate = False
 
     optimizer = get_optimizer(optimizer_name)
-
-    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=True)
@@ -182,7 +196,6 @@ if __name__ == '__main__':
 
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
-        engine=engine,
         options=options,
     )
 

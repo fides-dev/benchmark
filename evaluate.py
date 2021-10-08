@@ -33,10 +33,8 @@ ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
         'fides.subspace=2D',
-        'fides.subspace=2D.hessian=BFGS',
-        'fides.subspace=full.hessian=SR1',
         'fides.subspace=2D.hessian=FIMe',
-        'fmincon', 'lsqnonlin', 'ls_trf', 'ls_trf_2D',
+        'fmincon', 'lsqnonlin', 'ls_trf_2D',
     ])
 }
 
@@ -67,7 +65,24 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=BFGS',
     'fides.subspace=full.hessian=SR1',
     'fides.subspace=2D.hessian=SR1',
+    'fides.subspace=full.hessian=PSB',
+    'fides.subspace=2D.hessian=PSB',
+    'fides.subspace=full.hessian=DFP',
+    'fides.subspace=2D.hessian=DFP',
+    'fides.subspace=full.hessian=BB',
+    'fides.subspace=2D.hessian=BB',
+    'fides.subspace=full.hessian=BG',
+    'fides.subspace=2D.hessian=BG',
+    'fides.subspace=full.hessian=FX',
+    'fides.subspace=2D.hessian=FX',
+    'fides.subspace=full.hessian=SSM',
+    'fides.subspace=2D.hessian=SSM',
+    'fides.subspace=full.hessian=TSSM',
+    'fides.subspace=2D.hessian=TSSM',
+    'fides.subspace=full.hessian=GNSBFGS',
+    'fides.subspace=2D.hessian=GNSBFGS',
     'fides.subspace=2D.stepback=reflect_single',
+    'fides.subspace=2D.ebounds=True',
     'ls_trf',
     'ls_trf_2D',
     'fides.subspace=2D.hessian=FIMe',
@@ -81,6 +96,8 @@ ANALYSIS_ALGOS = {
                             'fides.subspace=full.hessian=BFGS']],
     'curv': ['fides.subspace=2D',
              'fides.subspace=full',
+             'fides.subspace=2D.hessian=BFGS',
+             'fides.subspace=full.hessian=BFGS',
              'fides.subspace=2D.hessian=SR1',
              'fides.subspace=full.hessian=SR1'],
     'hybridB': ['fides.subspace=2D',
@@ -112,7 +129,8 @@ ANALYSIS_ALGOS = {
                  'fides.subspace=2D.hessian=HybridS0_5',
                  'fides.subspace=2D.hessian=SR1'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
-                 'fides.subspace=2D']
+                 'fides.subspace=2D',
+                 'fides.subspace=2D.ebounds=True']
 }
 
 
