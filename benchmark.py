@@ -181,7 +181,7 @@ if __name__ == '__main__':
     optimizer = get_optimizer(optimizer_name)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
-                                       startpoint_resample=True)
+                                       startpoint_resample=False)
 
     # do the optimization
     ref = visualize.create_references(
