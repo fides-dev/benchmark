@@ -38,9 +38,14 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
         arFitLHS(1000, 0)
         save(mat_savefile, 'ar')
     end
-    for field = {'iter', 'chi2s', 'ps'}
+    for field = {'iter', 'chi2s', 'ps', 'ps_start'}
         dlmwrite(fullfile(output_folder, strcat(model{1}, '_lsqnonlin_',field{1},'.csv')), ar.(field{1}), 'delimiter', ',', 'precision', 12)
     end
+    fid = fopen(fullfile(output_folder, strcat(model{1}, '_lsqnonlin_pLabel.csv')), 'w');
+    for row = 1:length(ar.pLabel)
+        fprintf(fid, '%s,', ar.pLabel{row});
+    end
+    fclose(fid);
     
     % fmincon
     ar.config.optimizer = 2;
@@ -60,9 +65,14 @@ for model = {'Boehm_JProteomeRes2014','Brannmark_JBC2010', ...
         arFitLHS(1000, 0)
         save(mat_savefile, 'ar')
     end
-    for field = {'iter', 'chi2s', 'ps'}
+    for field = {'iter', 'chi2s', 'ps', 'ps_start'}
         dlmwrite(fullfile(output_folder, strcat(model{1}, '_fmincon_',field{1},'.csv')), ar.(field{1}), 'delimiter', ',', 'precision', 12)
     end
+    fid = fopen(fullfile(output_folder, strcat(model{1}, '_fmincon_pLabel.csv')), 'w');
+    for row = 1:length(ar.pLabel)
+        fprintf(fid, '%s,', ar.pLabel{row});
+    end
+    fclose(fid);
     
     cd(d2d_folder)
 end
