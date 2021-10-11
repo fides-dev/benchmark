@@ -180,6 +180,8 @@ if __name__ == '__main__':
 
     optimizer = get_optimizer(optimizer_name)
 
+    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
+
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=False)
 
@@ -199,7 +201,7 @@ if __name__ == '__main__':
 
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
-        options=options,
+        engine=engine, options=options,
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
