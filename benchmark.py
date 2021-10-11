@@ -110,7 +110,7 @@ def get_optimizer(optimizer_name: str):
                 optim_options[optim_field] = value
 
         return optimize.FidesOptimizer(
-            options=optim_options, verbose=logging.WARNING,
+            options=optim_options, verbose=logging.ERROR,
             hessian_update=hessian_update
         )
 
@@ -138,6 +138,8 @@ def get_optimizer(optimizer_name: str):
                      'acceptable_tol': 1e-100,
                      'max_cpu_time': MAX_TIME}
         )
+
+    raise ValueError('Unknown optimizer name.')
 
 
 np.random.seed(0)
@@ -168,7 +170,8 @@ if __name__ == '__main__':
         ))
     )
     if optimizer_name.startswith('ls_trf') or \
-            parsed_options.get('hessian', 'FIM') == 'FIMe':
+            parsed_options.get('hessian', 'FIM') in ('FIMe', 'FX', 'GNSBFGS',
+                                                     'SSM', 'TSSM'):
         problem.objective.amici_model.setAddSigmaResiduals(True)
     set_solver_model_options(problem.objective.amici_solver,
                              problem.objective.amici_model)
