@@ -1,7 +1,6 @@
 function run_Benchmark(model, optimizer)
 
 output_folder = pwd;
-print(pwd)
 copyfile(fullfile(pwd, 'arFit.m'), ...
          fullfile(pwd,'d2d','arFramework3','arFit.m'))
 cd(fullfile(pwd,'d2d','arFramework3'))
