@@ -143,7 +143,7 @@ ANALYSIS_ALGOS = {
                'fides.subspace=2D.hessian=TSSM',
                'fides.subspace=full.hessian=TSSM',
                'fides.subspace=2D.hessian=GNSBFGS',
-               'fides.subspace=full.hessian=GNSBFGS',]
+               'fides.subspace=full.hessian=GNSBFGS'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
                  'fides.subspace=2D',
                  'fides.subspace=2D.ebounds=True']
