@@ -33,7 +33,6 @@ ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
         'fides.subspace=2D',
-        'fides.subspace=2D.hessian=FIMe',
         'fmincon', 'lsqnonlin', 'ls_trf_2D',
     ])
 }
@@ -99,7 +98,15 @@ ANALYSIS_ALGOS = {
              'fides.subspace=2D.hessian=BFGS',
              'fides.subspace=full.hessian=BFGS',
              'fides.subspace=2D.hessian=SR1',
-             'fides.subspace=full.hessian=SR1'],
+             'fides.subspace=full.hessian=SR1',
+             'fides.subspace=2D.hessian=PSB',
+             'fides.subspace=full.hessian=PSB',
+             'fides.subspace=2D.hessian=DFP',
+             'fides.subspace=full.hessian=DFP',
+             'fides.subspace=2D.hessian=BB',
+             'fides.subspace=full.hessian=BB',
+             'fides.subspace=2D.hessian=BG',
+             'fides.subspace=full.hessian=BG'],
     'hybridB': ['fides.subspace=2D',
                 'fides.subspace=2D.hessian=HybridB_25',
                 'fides.subspace=2D.hessian=HybridB_20',
@@ -128,6 +135,15 @@ ANALYSIS_ALGOS = {
                  'fides.subspace=2D.hessian=HybridS0_10',
                  'fides.subspace=2D.hessian=HybridS0_5',
                  'fides.subspace=2D.hessian=SR1'],
+    'hybrid': ['fides.subspace=2D',
+               'fides.subspace=2D.hessian=FX',
+               'fides.subspace=full.hessian=FX',
+               'fides.subspace=2D.hessian=SSM',
+               'fides.subspace=full.hessian=SSM',
+               'fides.subspace=2D.hessian=TSSM',
+               'fides.subspace=full.hessian=TSSM',
+               'fides.subspace=2D.hessian=GNSBFGS',
+               'fides.subspace=full.hessian=GNSBFGS',]
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
                  'fides.subspace=2D',
                  'fides.subspace=2D.ebounds=True']
@@ -385,7 +401,7 @@ if __name__ == '__main__':
                 for algo in algos
             ]
         elif analysis == 'curv':
-            palette = 'tab20'
+            palette = 'Dark2'
         elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
             palette = 'Blues'
         elif analysis == 'stepback':
