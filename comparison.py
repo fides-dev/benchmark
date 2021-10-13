@@ -74,7 +74,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         for optimizer in algos:
             try:
                 results[optimizer] = load_results(model, optimizer, '1000')
-            except FileNotFoundError:
+            except (FileNotFoundError, IOError):
                 pass
 
         fmin = np.nanmin([
