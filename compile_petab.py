@@ -30,12 +30,12 @@ def load_problem(model, force_compile=False, extend_bounds=False):
         'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017'
     }.get(model, model)
 
-    plabel = pd.read_csv(os.path.join('Hass2019',
-                                      f'{matlab_model}_fmincon_pLabel.csv'))
+    #plabel = pd.read_csv(os.path.join('Hass2019',
+    #                                  f'{matlab_model}_fmincon_pLabel.csv'))
 
-    pstart = pd.read_csv(os.path.join('Hass2019',
-                                      f'{matlab_model}_fmincon_ps_start.csv'),
-                         names=plabel.columns[:-1])
+    #pstart = pd.read_csv(os.path.join('Hass2019',
+    #                                  f'{matlab_model}_fmincon_ps_start.csv'),
+    #                     names=plabel.columns[:-1])
 
     pnames = problem.x_names
     if model == 'Fujita_SciSignal2010':
@@ -53,7 +53,7 @@ def load_problem(model, force_compile=False, extend_bounds=False):
             for name in pnames
         ]
 
-    problem.x_guesses_full = pstart[pnames].values
+    #problem.x_guesses_full = pstart[pnames].values
 
     return petab_problem, problem
 
