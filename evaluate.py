@@ -309,7 +309,7 @@ if __name__ == '__main__':
             all_results.append({
                 'result': result, 'optimizer': optimizer,
             })
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             pass
 
     all_results = sorted(
