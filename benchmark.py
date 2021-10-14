@@ -29,7 +29,7 @@ def set_solver_model_options(solver, model):
             amici.SensitivityMethod.adjoint
         )
 
-    if model.getName() == 'Brannmark_JBC2010':
+    if model.getName() in ('Brannmark_JBC2010', 'Isensee_JCB2018'):
         model.setSteadyStateSensitivityMode(
             amici.SteadyStateSensitivityMode.simulationFSA
         )
@@ -72,7 +72,7 @@ def get_optimizer(optimizer_name: str):
             'scaled_gradient': fides.Options.SCALED_GRADIENT,
         }
 
-        happ = parsed_options.get('hessian', 'FIM')
+        happ = parsed_options.pop('hessian', 'FIM')
 
         if re.match(r'Hybrid[SB]0?_[0-9]+', happ):
             hybrid_happ, ndim = happ[6:].split('_')
@@ -84,31 +84,31 @@ def get_optimizer(optimizer_name: str):
 
             hessian_update = fides.HybridFixed(
                 switch_iteration=int(float(ndim)),
-                happ=happs.get(hybrid_happ[0]),
+                happ=happs[hybrid_happ[0]],
             )
         else:
+
             hessian_update = {
                 'BFGS': fides.BFGS(),
                 'SR1': fides.SR1(),
                 'FX': fides.FX(),
                 'GNSBFGS': fides.GNSBFGS(),
-                'PSB': fides.PSB(),
-                'BB': fides.BB(),
-                'BG': fides.BG(),
-                'DFP': fides.DFP(),
                 'SSM': fides.SSM(),
                 'TSSM': fides.TSSM(),
                 'FIM': None,
                 'FIMe': None,
-            }.get(happ)
+            }[happ]
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
-                value = parsed_options[parse_field]
+                value = parsed_options.pop(parse_field)
                 if optim_field in [fides.Options.REFINE_STEPBACK,
                                    fides.Options.SCALED_GRADIENT]:
                     value = bool(distutils.util.strtobool(value))
                 optim_options[optim_field] = value
+
+        if parsed_options:
+            raise ValueError(f'Unknown options {parsed_options.keys()}')
 
         return optimize.FidesOptimizer(
             options=optim_options, verbose=logging.ERROR,

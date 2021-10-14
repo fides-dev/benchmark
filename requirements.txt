@@ -1,7 +1,7 @@
 petab==0.1.18
-amici==0.11.16
+amici==0.11.19
 fides==0.6.1
 seaborn==0.11.1
 snakemake==6.3.0
 openpyxl==3.0.7
-pypesto==0.2.6
+pypesto==0.2.8

@@ -3,10 +3,10 @@ import os
 from benchmark import PREFIX_TEMPLATE
 from evaluate import OPTIMIZER_FORWARD, N_STARTS_FORWARD
 
-MODELS_FORWARD = ['Zheng_PNAS2012', 'Fiedler_BMC2016',
-                  'Crauste_CellSystems2017', 'Brannmark_JBC2010',
-                  'Weber_BMC2015', 'Boehm_JProteomeRes2014',
-                  'Fujita_SciSignal2010']
+MODELS_FORWARD = ['Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
+                  'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
+                  'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+                  'Schwen_PONE2014', 'Weber_BMC2015']
 
 rule compile_model:
     input:
@@ -41,7 +41,7 @@ rule run_benchmark_short:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5')
     wildcard_constraints:
-        model='(Crauste_CellSystems2017|Boehm_JProteomeRes2014)'
+        model='(Crauste_CellSystems2017|Boehm_JProteomeRes2014|Bruno_JExpBot2016)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
