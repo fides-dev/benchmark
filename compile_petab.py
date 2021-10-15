@@ -5,6 +5,8 @@ import sys
 
 import pandas as pd
 
+from .evaluate import PARAMETER_ALIASES, MODEL_ALIASES
+
 folder_base = os.path.join(os.path.dirname(__file__),
                            'Benchmark-Models-PEtab',
                            'Benchmark-Models')
@@ -26,12 +28,7 @@ def load_problem(model, force_compile=False, extend_bounds=False):
     importer = pypesto.petab.PetabImporter(petab_problem)
     problem = importer.create_problem(force_compile=force_compile)
 
-    matlab_model = {
-        'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
-        'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
-        'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
-        'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
-    }.get(model, model)
+    matlab_model = MODEL_ALIASES.get(model, model)
 
     for init in ['lsqnonlin', 'fmincon']:
         try:
@@ -46,28 +43,8 @@ def load_problem(model, force_compile=False, extend_bounds=False):
             pass
 
     pnames = problem.x_names
-    if model == 'Fujita_SciSignal2010':
-        palias = {'init_AKT': 'init_Akt',
-                  'scaling_pAkt_tot': 'scaleFactor_pAkt',
-                  'scaling_pEGFR_tot': 'scaleFactor_pEGFR',
-                  'scaling_pS6_tot': 'scaleFactor_pS6'}
 
-    elif model == 'Zheng_PNAS2012':
-        palias = {'sigma': 'noise'}
-
-    elif model == 'Bruno_JExpBot2016':
-        palias = {'init_b10_1': 'init_b10',
-                  'init_bcry_1': 'init_bcar1',
-                  'init_zea_1': 'init_bcry',
-                  'init_ohb10_1': 'init_ohb10'}
-
-    elif model == 'Isensee_JCB2018':
-        palias = {'rho_pRII_Western': 'sigma_pRII_Western',
-                  'rho_Calpha_Microscopy': 'sigma_Calpha',
-                  'rho_pRII_Microscopy': 'sigma_pRII'}
-
-    else:
-        palias = {}
+    palias = PARAMETER_ALIASES.get(model, {})
 
     pnames = [
         palias.get(name, name)

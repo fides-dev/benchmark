@@ -37,6 +37,36 @@ ALGO_COLORS = {
     ])
 }
 
+PARAMETER_ALIASES = {
+    'Fujita_SciSignal2010': {
+        'init_AKT': 'init_Akt',
+        'scaling_pAkt_tot': 'scaleFactor_pAkt',
+        'scaling_pEGFR_tot': 'scaleFactor_pEGFR',
+        'scaling_pS6_tot': 'scaleFactor_pS6'
+    },
+    'Zheng_PNAS2012': {
+        'sigma': 'noise'
+    },
+    'Bruno_JExpBot2016': {
+        'init_b10_1': 'init_b10',
+        'init_bcry_1': 'init_bcar1',
+        'init_zea_1': 'init_bcry',
+        'init_ohb10_1': 'init_ohb10'
+    },
+    'Isensee_JCB2018' : {
+        'rho_pRII_Western': 'sigma_pRII_Western',
+        'rho_Calpha_Microscopy': 'sigma_Calpha',
+        'rho_pRII_Microscopy': 'sigma_pRII'
+    }
+}
+
+MODEL_ALIASES = {
+    'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
+    'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
+    'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
+    'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
+}
+
 OPTIMIZER_FORWARD = [
     'fides.subspace=2D',
     'fides.subspace=full',
@@ -152,11 +182,6 @@ def load_results_from_hdf5(model, optimizer, n_starts):
     return reader.read()
 
 
-hass_alias = {
-    'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
-    'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
-}
-
 matlab_alias = {
     'fmincon': 'trust',
     'lsqnonlin': 'lsq'
@@ -194,35 +219,33 @@ def load_results_from_benchmark(model, optimizer):
 
     par_names = list(hass_2019_pars.parameter)
 
+    palias = PARAMETER_ALIASES.get(model, {})
+
     par_idx = np.array([
-        par_names.index(par)
-        if par in par_names
-        else par_names.index(
-            par.replace('sigma', 'noise').replace('AKT', 'Akt').replace(
-                'scaling', 'scaleFactor').replace('_tot', '')
-        )
+        par_names.index(palias.get(par, par))
         for par in [
             petab_problem.x_ids[ix] for ix in petab_problem.x_free_indices
         ]
     ])
+    hass_model = MODEL_ALIASES.get(model, model)
     hass2019_chis = np.genfromtxt(os.path.join(
         'Hass2019',
-        f'{hass_alias.get(model, model)}_{optimizer}_chi2s.csv',
+        f'{hass_model}_{optimizer}_chi2s.csv',
     ), delimiter=',')
     hass2019_iter = np.genfromtxt(os.path.join(
         'Hass2019',
-        f'{hass_alias.get(model, model)}_{optimizer}_iter.csv',
+        f'{hass_model}_{optimizer}_iter.csv',
     ), delimiter=',')
     hass2019_ps = np.genfromtxt(os.path.join(
         'Hass2019',
-        f'{hass_alias.get(model, model)}_{optimizer}_ps.csv',
+        f'{hass_model}_{optimizer}_ps.csv',
     ), delimiter=',')
     if model == 'Fujita_SciSignal2010':
         hass2019_ps = hass2019_ps[:, :19]
 
     fvals_file = os.path.join(
         'Hass2019',
-        f'{hass_alias.get(model, model)}_{optimizer}_fvals.csv',
+        f'{hass_model}_{optimizer}_fvals.csv',
     )
     if os.path.exists(fvals_file):
         hass2019_fvals = np.genfromtxt(fvals_file, delimiter=',')
