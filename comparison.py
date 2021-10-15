@@ -55,15 +55,18 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     all_results = []
 
-    models = ['Fujita_SciSignal2010', 'Boehm_JProteomeRes2014',
-              'Fiedler_BMC2016', 'Crauste_CellSystems2017',
-              'Brannmark_JBC2010', 'Weber_BMC2015', 'Zheng_PNAS2012']
+    models = ['Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
+              'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
+              'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+              'Schwen_PONE2014', 'Weber_BMC2015']
 
     for model in models:
 
         hass_alias = {
             'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
             'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
+            'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
+            'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
         }
 
         petab_problem, problem = load_problem(model)
