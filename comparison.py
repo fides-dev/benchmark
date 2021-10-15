@@ -24,6 +24,12 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
+MODELS = ['Bachmann_MSB2011', 'Boehm_JProteomeRes2014',
+          'Brannmark_JBC2010', 'Bruno_JExpBot2016',
+          'Crauste_CellSystems2017', 'Fiedler_BMC2016',
+          'Fujita_SciSignal2010', 'Isensee_JCB2018',
+          'Schwen_PONE2014', 'Weber_BMC2015']
+
 
 def get_unique_starts_at_boundary(pars, lb, ub):
     return len(
@@ -55,20 +61,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     all_results = []
 
-    models = ['Bachmann_MSB2011' 'Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
-              'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-              'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
-              'Schwen_PONE2014', 'Weber_BMC2015']
-
-    for model in models:
-
-        hass_alias = {
-            'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
-            'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
-            'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
-            'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
-        }
-
+    for model in MODELS:
         petab_problem, problem = load_problem(model)
         set_solver_model_options(problem.objective.amici_solver,
                                  problem.objective.amici_model)
@@ -82,7 +75,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
         fmin = np.nanmin([
             result.optimize_result.list[0].fval
-            for result in results.values()
+            for optimizer, result in results.items()
+            if optimizer != 'fides.subspace=2D.ebounds=True'
         ])
 
         for optimizer in algos:
@@ -130,11 +124,14 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         palette = 'Set2'
 
     for model in models:
-        results.loc[results.model == model, 'improvement'] = \
-            results.loc[results.model == model, 'conv_per_grad'] / \
-            results.loc[(results.model == model) &
+        if results.loc[(results.model == model) &
                         (results.optimizer == 'fides.subspace=2D'),
-                        'conv_per_grad'].values[0]
+                        'conv_per_grad'].values:
+            results.loc[results.model == model, 'improvement'] = \
+                results.loc[results.model == model, 'conv_per_grad'] / \
+                results.loc[(results.model == model) &
+                            (results.optimizer == 'fides.subspace=2D'),
+                            'conv_per_grad'].values[0]
 
     for optimizer in results.optimizer.unique():
         results.loc[results.optimizer == optimizer, 'average improvement'] = \

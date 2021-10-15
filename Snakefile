@@ -2,12 +2,8 @@ import os
 
 from benchmark import PREFIX_TEMPLATE
 from evaluate import OPTIMIZER_FORWARD, N_STARTS_FORWARD
+from comparison import MODELS
 
-MODELS_FORWARD = ['Bachmann_MSB2011', 'Boehm_JProteomeRes2014',
-                  'Brannmark_JBC2010', 'Bruno_JExpBot2016',
-                  'Crauste_CellSystems2017', 'Fiedler_BMC2016',
-                  'Fujita_SciSignal2010', 'Isensee_JCB2018',
-                  'Schwen_PONE2014', 'Weber_BMC2015']
 
 rule compile_model:
     input:
@@ -85,13 +81,13 @@ rule benchmark:
     input:
         expand(
             os.path.join('evaluation', '{model}_all_starts_forward.pdf'),
-            model=MODELS_FORWARD
+            model=MODELS
         )
 
 rule eigenvalues:
     input:
         expand(rules.check_eigenvalues.output.csv,
-               model=MODELS_FORWARD,
+               model=MODELS,
                optimizer=[
                     'fides.subspace=2D',
                     'fides.subspace=full',
