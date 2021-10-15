@@ -21,7 +21,7 @@ PARAMETER_ALIASES = {
         'init_zea_1': 'init_bcry',
         'init_ohb10_1': 'init_ohb10'
     },
-    'Isensee_JCB2018' : {
+    'Isensee_JCB2018': {
         'rho_pRII_Western': 'sigma_pRII_Western',
         'rho_Calpha_Microscopy': 'sigma_Calpha',
         'rho_pRII_Microscopy': 'sigma_pRII'
