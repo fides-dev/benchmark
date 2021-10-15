@@ -5,7 +5,35 @@ import sys
 
 import pandas as pd
 
-from .evaluate import PARAMETER_ALIASES, MODEL_ALIASES
+PARAMETER_ALIASES = {
+    'Fujita_SciSignal2010': {
+        'init_AKT': 'init_Akt',
+        'scaling_pAkt_tot': 'scaleFactor_pAkt',
+        'scaling_pEGFR_tot': 'scaleFactor_pEGFR',
+        'scaling_pS6_tot': 'scaleFactor_pS6'
+    },
+    'Zheng_PNAS2012': {
+        'sigma': 'noise'
+    },
+    'Bruno_JExpBot2016': {
+        'init_b10_1': 'init_b10',
+        'init_bcry_1': 'init_bcar1',
+        'init_zea_1': 'init_bcry',
+        'init_ohb10_1': 'init_ohb10'
+    },
+    'Isensee_JCB2018' : {
+        'rho_pRII_Western': 'sigma_pRII_Western',
+        'rho_Calpha_Microscopy': 'sigma_Calpha',
+        'rho_pRII_Microscopy': 'sigma_pRII'
+    }
+}
+
+MODEL_ALIASES = {
+    'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
+    'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
+    'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
+    'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
+}
 
 folder_base = os.path.join(os.path.dirname(__file__),
                            'Benchmark-Models-PEtab',
