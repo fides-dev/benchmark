@@ -3,9 +3,10 @@ import os
 from benchmark import PREFIX_TEMPLATE
 from evaluate import OPTIMIZER_FORWARD, N_STARTS_FORWARD
 
-MODELS_FORWARD = ['Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
-                  'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-                  'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+MODELS_FORWARD = ['Bachmann_MSB2011', 'Boehm_JProteomeRes2014',
+                  'Brannmark_JBC2010', 'Bruno_JExpBot2016',
+                  'Crauste_CellSystems2017', 'Fiedler_BMC2016',
+                  'Fujita_SciSignal2010', 'Isensee_JCB2018',
                   'Schwen_PONE2014', 'Weber_BMC2015']
 
 rule compile_model:

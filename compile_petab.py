@@ -30,15 +30,20 @@ def load_problem(model, force_compile=False, extend_bounds=False):
         'Crauste_CellSystems2017': 'Crauste_ImmuneCells_CellSystems2017',
         'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
         'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
-
+        'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
     }.get(model, model)
 
-    plabel = pd.read_csv(os.path.join('Hass2019',
-                                      f'{matlab_model}_fmincon_pLabel.csv'))
+    for init in ['lsqnonlin', 'fmincon']:
+        try:
+            plabel = pd.read_csv(os.path.join(
+                'Hass2019', f'{matlab_model}_{init}_pLabel.csv'
+            ))
 
-    pstart = pd.read_csv(os.path.join('Hass2019',
-                                      f'{matlab_model}_fmincon_ps_start.csv'),
-                         names=plabel.columns[:-1])
+            pstart = pd.read_csv(os.path.join(
+                'Hass2019', f'{matlab_model}_{init}_ps_start.csv'
+            ), names=plabel.columns[:-1])
+        except:
+            pass
 
     pnames = problem.x_names
     if model == 'Fujita_SciSignal2010':
@@ -55,6 +60,11 @@ def load_problem(model, force_compile=False, extend_bounds=False):
                   'init_bcry_1': 'init_bcar1',
                   'init_zea_1': 'init_bcry',
                   'init_ohb10_1': 'init_ohb10'}
+
+    elif model == 'Isensee_JCB2018':
+        palias = {'rho_pRII_Western': 'sigma_pRII_Western',
+                  'rho_Calpha_Microscopy': 'sigma_Calpha',
+                  'rho_pRII_Microscopy': 'sigma_pRII'}
 
     else:
         palias = {}

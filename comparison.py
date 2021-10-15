@@ -55,9 +55,9 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     all_results = []
 
-    models = ['Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
+    models = ['Bachmann_MSB2011' 'Boehm_JProteomeRes2014', 'Brannmark_JBC2010',
               'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-              'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+              'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
               'Schwen_PONE2014', 'Weber_BMC2015']
 
     for model in models:
