@@ -12,7 +12,9 @@ from evaluate import (
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
 
-MODELS = ['Bachmann_MSB2011', 'Boehm_JProteomeRes2014',
+MODELS = [
+          #'Bachmann_MSB2011',
+          'Boehm_JProteomeRes2014',
           'Brannmark_JBC2010', 'Bruno_JExpBot2016',
           'Crauste_CellSystems2017', 'Fiedler_BMC2016',
           'Fujita_SciSignal2010', 'Isensee_JCB2018',
