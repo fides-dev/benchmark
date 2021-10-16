@@ -83,31 +83,31 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             if optimizer not in results:
                 continue
             result = results[optimizer]
-            all_results.append(
-                {
-                    'model': model,
-                    'optimizer': optimizer,
-                    'conv_count': get_num_converged(
-                        result.optimize_result.get_for_key('fval'),
-                        fmin
-                    ),
-                    'conv_per_grad': get_num_converged_per_grad(
-                        result.optimize_result.get_for_key('fval'),
-                        np.asarray(result.optimize_result.get_for_key('n_grad')) + np.asarray(result.optimize_result.get_for_key('n_sres')),
-                        fmin
-                    ),
-                    'unique_at_boundary': get_unique_starts_at_boundary(
-                        result.optimize_result.get_for_key('x'),
-                        problem.lb_full, problem.ub_full
-                    ),
-                    'boundary_minima': get_number_boundary_optima(
-                        result.optimize_result.get_for_key('x'),
-                        np.asarray(result.optimize_result.get_for_key('n_grad')) + np.asarray(result.optimize_result.get_for_key('n_sres')),
-                        result.optimize_result.get_for_key('grad'),
-                        problem.lb_full, problem.ub_full
-                    ),
-                }
-            )
+            all_results.append({
+                'model': model,
+                'optimizer': optimizer,
+                'conv_count': get_num_converged(
+                    result.optimize_result.get_for_key('fval'),
+                    fmin
+                ),
+                'conv_per_grad': get_num_converged_per_grad(
+                    result.optimize_result.get_for_key('fval'),
+                    np.asarray(result.optimize_result.get_for_key('n_grad'))
+                    + np.asarray(result.optimize_result.get_for_key('n_sres')),
+                    fmin
+                ),
+                'unique_at_boundary': get_unique_starts_at_boundary(
+                    result.optimize_result.get_for_key('x'),
+                    problem.lb_full, problem.ub_full
+                ),
+                'boundary_minima': get_number_boundary_optima(
+                    result.optimize_result.get_for_key('x'),
+                    np.asarray(result.optimize_result.get_for_key('n_grad'))
+                    + np.asarray(result.optimize_result.get_for_key('n_sres')),
+                    result.optimize_result.get_for_key('grad'),
+                    problem.lb_full, problem.ub_full
+                ),
+            })
 
     results = pd.DataFrame(all_results)
 
@@ -123,10 +123,10 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     elif analysis == 'stepback':
         palette = 'Set2'
 
-    for model in models:
+    for model in MODELS:
         if results.loc[(results.model == model) &
-                        (results.optimizer == 'fides.subspace=2D'),
-                        'conv_per_grad'].values:
+                       (results.optimizer == 'fides.subspace=2D'),
+                       'conv_per_grad'].values:
             results.loc[results.model == model, 'improvement'] = \
                 results.loc[results.model == model, 'conv_per_grad'] / \
                 results.loc[(results.model == model) &
@@ -134,9 +134,11 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                             'conv_per_grad'].values[0]
 
     for optimizer in results.optimizer.unique():
-        results.loc[results.optimizer == optimizer, 'average improvement'] = \
-            10 ** results.loc[results.optimizer == optimizer,
-                              'improvement'].apply(np.log10).mean()
+        if 'improvement' in results:
+            results.loc[results.optimizer == optimizer,
+                        'average improvement'] = \
+                10 ** results.loc[results.optimizer == optimizer,
+                                  'improvement'].apply(np.log10).mean()
 
     print(results)
 

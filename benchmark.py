@@ -34,10 +34,6 @@ def set_solver_model_options(solver, model):
             amici.SteadyStateSensitivityMode.simulationFSA
         )
 
-    if model.getName() == 'Isensee_JCB2018':
-        solver.setAbsoluteTolerance(1e-10)
-        solver.setRelativeTolerance(1e-10)
-
 
 def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
     """
