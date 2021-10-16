@@ -120,8 +120,8 @@ if __name__ == '__main__':
                 ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
                 for algo in algos
             ]
-        elif analysis == 'curv':
-            palette = 'tab20'
+        elif analysis in ('curv', 'hybrid'):
+            palette = 'tab10'
         elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
             palette = 'Blues'
         elif analysis == 'stepback':
@@ -159,7 +159,7 @@ if __name__ == '__main__':
             }
 
             tops = {
-                'conv_per_grad': 1e-3,
+                'conv_per_grad': 1e-2,
                 'conv_count': 1e2,
                 'unique_at_boundary': 1e3,
                 'boundary_minima': 3e2,

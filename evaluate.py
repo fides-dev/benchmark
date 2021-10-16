@@ -81,6 +81,7 @@ ANALYSIS_ALGOS = {
                 'fides.subspace=2D.hessian=HybridB_5',
                 'fides.subspace=2D.hessian=BFGS'],
     'hybrid': ['fides.subspace=2D',
+               'fides.subspace=full',
                'fides.subspace=2D.hessian=FX',
                'fides.subspace=full.hessian=FX',
                'fides.subspace=2D.hessian=SSM',
@@ -343,8 +344,8 @@ if __name__ == '__main__':
                 ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
                 for algo in algos
             ]
-        elif analysis == 'curv':
-            palette = 'Dark2'
+        elif analysis in ('curv', 'hybrid'):
+            palette = 'tab10'
         elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
             palette = 'Blues'
         elif analysis == 'stepback':
