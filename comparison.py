@@ -159,7 +159,7 @@ if __name__ == '__main__':
             }
 
             tops = {
-                'conv_per_grad': 1e-2,
+                'conv_per_grad': 1e-1,
                 'conv_count': 1e2,
                 'unique_at_boundary': 1e3,
                 'boundary_minima': 3e2,
