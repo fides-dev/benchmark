@@ -32,8 +32,7 @@ cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'fides.subspace=2D',
-        'fmincon', 'lsqnonlin', 'ls_trf_2D',
+        'fides.subspace=2D', 'fmincon', 'lsqnonlin', 'ls_trf_2D',
     ])
 }
 
@@ -67,9 +66,7 @@ OPTIMIZER_FORWARD = [
 N_STARTS_FORWARD = ['1000']
 
 ANALYSIS_ALGOS = {
-    'matlab': [x for x in ALGO_COLORS
-               if x not in ['ipopt',  'fides.subspace=2D.hessian=SR1',
-                            'fides.subspace=full.hessian=BFGS']],
+    'matlab': ALGO_COLORS,
     'curv': ['fides.subspace=2D',
              'fides.subspace=full',
              'fides.subspace=2D.hessian=BFGS',
@@ -83,27 +80,6 @@ ANALYSIS_ALGOS = {
                 'fides.subspace=2D.hessian=HybridB_10',
                 'fides.subspace=2D.hessian=HybridB_5',
                 'fides.subspace=2D.hessian=BFGS'],
-    'hybridS': ['fides.subspace=2D',
-                'fides.subspace=2D.hessian=HybridS_25',
-                'fides.subspace=2D.hessian=HybridS_20',
-                'fides.subspace=2D.hessian=HybridS_15',
-                'fides.subspace=2D.hessian=HybridS_10',
-                'fides.subspace=2D.hessian=HybridS_5',
-                'fides.subspace=2D.hessian=SR1'],
-    'hybridB0': ['fides.subspace=2D',
-                 'fides.subspace=2D.hessian=HybridB0_25',
-                 'fides.subspace=2D.hessian=HybridB0_20',
-                 'fides.subspace=2D.hessian=HybridB0_15',
-                 'fides.subspace=2D.hessian=HybridB0_10',
-                 'fides.subspace=2D.hessian=HybridB0_5',
-                 'fides.subspace=2D.hessian=BFGS'],
-    'hybridS0': ['fides.subspace=2D',
-                 'fides.subspace=2D.hessian=HybridS0_25',
-                 'fides.subspace=2D.hessian=HybridS0_20',
-                 'fides.subspace=2D.hessian=HybridS0_15',
-                 'fides.subspace=2D.hessian=HybridS0_10',
-                 'fides.subspace=2D.hessian=HybridS0_5',
-                 'fides.subspace=2D.hessian=SR1'],
     'hybrid': ['fides.subspace=2D',
                'fides.subspace=2D.hessian=FX',
                'fides.subspace=full.hessian=FX',
