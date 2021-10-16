@@ -71,8 +71,8 @@ if __name__ == '__main__':
             for optimizer in algos:
                 try:
                     results[optimizer] = load_results(model, optimizer, '1000')
-                except (FileNotFoundError, IOError):
-                    pass
+                except (FileNotFoundError, IOError) as err:
+                    print(f'Failed loading: {err}')
 
             fmin = np.nanmin([
                 result.optimize_result.list[0].fval

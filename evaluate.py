@@ -125,6 +125,7 @@ def load_results(model, optimizer, n_starts):
 def load_results_from_hdf5(model, optimizer, n_starts):
     file = f'{model}__{optimizer}__{n_starts}.hdf5'
     reader = OptimizationResultHDF5Reader(os.path.join('results', file))
+    print(f'Loaded results from {file}')
     return reader.read()
 
 
@@ -224,6 +225,8 @@ def load_results_from_benchmark(model, optimizer):
             n_sres=0,
         ))
     result.optimize_result.sort()
+
+    print(f'Loaded results from {fvals_file}.')
     return result
 
 
