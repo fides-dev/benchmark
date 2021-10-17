@@ -48,13 +48,9 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=BFGS',
     'fides.subspace=full.hessian=SR1',
     'fides.subspace=2D.hessian=SR1',
-    'fides.subspace=full.hessian=FX',
     'fides.subspace=2D.hessian=FX',
-    'fides.subspace=full.hessian=SSM',
     'fides.subspace=2D.hessian=SSM',
-    'fides.subspace=full.hessian=TSSM',
     'fides.subspace=2D.hessian=TSSM',
-    'fides.subspace=full.hessian=GNSBFGS',
     'fides.subspace=2D.hessian=GNSBFGS',
     'fides.subspace=2D.stepback=reflect_single',
     'fides.subspace=2D.ebounds=True',
@@ -81,15 +77,11 @@ ANALYSIS_ALGOS = {
                 'fides.subspace=2D.hessian=HybridB_5',
                 'fides.subspace=2D.hessian=BFGS'],
     'hybrid': ['fides.subspace=2D',
-               'fides.subspace=full',
+               'fides.subspace=2D.hessian=HybridB_20',
                'fides.subspace=2D.hessian=FX',
-               'fides.subspace=full.hessian=FX',
                'fides.subspace=2D.hessian=SSM',
-               'fides.subspace=full.hessian=SSM',
                'fides.subspace=2D.hessian=TSSM',
-               'fides.subspace=full.hessian=TSSM',
-               'fides.subspace=2D.hessian=GNSBFGS',
-               'fides.subspace=full.hessian=GNSBFGS'],
+               'fides.subspace=2D.hessian=GNSBFGS'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
                  'fides.subspace=2D',
                  'fides.subspace=2D.ebounds=True']
@@ -344,8 +336,10 @@ if __name__ == '__main__':
                 ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
                 for algo in algos
             ]
-        elif analysis in ('curv', 'hybrid'):
-            palette = 'tab10'
+        elif analysis == 'curv':
+            palette = 'tab20'
+        elif analysis == 'hybrid':
+            palette = 'Dark2'
         elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
             palette = 'Blues'
         elif analysis == 'stepback':

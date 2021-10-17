@@ -12,12 +12,9 @@ from evaluate import (
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
 
-MODELS = [
-          #'Bachmann_MSB2011',
-          'Boehm_JProteomeRes2014',
+MODELS = ['Bachmann_MSB2011', 'Boehm_JProteomeRes2014',
           'Brannmark_JBC2010', 'Bruno_JExpBot2016',
-          'Crauste_CellSystems2017',
-           #'Fiedler_BMC2016',
+          'Crauste_CellSystems2017', 'Fiedler_BMC2016',
           'Fujita_SciSignal2010', 'Isensee_JCB2018',
           'Schwen_PONE2014', 'Weber_BMC2015']
 
@@ -120,13 +117,14 @@ if __name__ == '__main__':
                 ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
                 for algo in algos
             ]
-        elif analysis in ('curv', 'hybrid'):
-            palette = 'tab10'
+        elif analysis == 'curv':
+            palette = 'tab20'
+        elif analysis == 'hybrid':
+            palette = 'Dark2'
         elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
             palette = 'Blues'
         elif analysis == 'stepback':
             palette = 'Set2'
-
         for model in MODELS:
             if results.loc[(results.model == model) &
                            (results.optimizer == 'fides.subspace=2D'),
