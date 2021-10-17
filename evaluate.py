@@ -26,7 +26,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLD = 0.05
+CONVERGENCE_THRESHOLD = 1.0
 
 cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
