@@ -12,13 +12,12 @@ from evaluate import (
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
 
-MODELS = [
-          #'Bachmann_MSB2011',
-          'Boehm_JProteomeRes2014',
-          'Brannmark_JBC2010', 'Bruno_JExpBot2016',
+MODELS = ['Bachmann_MSB2011', 'Beer_MolBioSystems2014',
+          'Boehm_JProteomeRes2014', 'Brannmark_JBC2010', 'Bruno_JExpBot2016',
           'Crauste_CellSystems2017', 'Fiedler_BMC2016',
           'Fujita_SciSignal2010', 'Isensee_JCB2018',
-          'Schwen_PONE2014', 'Weber_BMC2015']
+          'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
+          'Zheng_PNAS2012']
 
 
 def get_unique_starts_at_boundary(pars, lb, ub):

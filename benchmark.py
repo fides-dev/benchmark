@@ -167,7 +167,7 @@ if __name__ == '__main__':
 
     petab_problem, problem = load_problem(
         MODEL_NAME, extend_bounds=bool(distutils.util.strtobool(
-            parsed_options.get('ebounds', 'False')
+            parsed_options.pop('ebounds', 'False')
         ))
     )
     if optimizer_name.startswith('ls_trf') or \

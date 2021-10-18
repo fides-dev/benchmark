@@ -33,6 +33,7 @@ MODEL_ALIASES = {
     'Bruno_JExpBot2016': 'Bruno_Carotines_JExpBio2016',
     'Schwen_PONE2014': 'Schwen_InsulinMouseHepatocytes_PlosOne2014',
     'Beer_MolBioSystems2014': 'Beer_MolBiosyst2014',
+    'Lucarelli_CellSystems2018': 'Lucarelli_TGFb_2017'
 }
 
 folder_base = os.path.join(os.path.dirname(__file__),
