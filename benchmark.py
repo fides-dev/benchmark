@@ -202,7 +202,8 @@ if __name__ == '__main__':
 
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
-        engine=engine, options=options,
+        engine=engine,
+        options=options,
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
@@ -216,6 +217,9 @@ if __name__ == '__main__':
     visualize.optimizer_convergence(result)
     plt.tight_layout()
     plt.savefig(os.path.join('results', prefix + '_convergence.pdf'))
+
+    for r in result.optimize_result.list:
+        r.sres = None
 
     writer = OptimizationResultHDF5Writer(hdf_results_file)
     writer.write(result, overwrite=True)
