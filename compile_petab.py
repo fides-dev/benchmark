@@ -17,8 +17,8 @@ PARAMETER_ALIASES = {
     },
     'Bruno_JExpBot2016': {
         'init_b10_1': 'init_b10',
-        'init_bcry_1': 'init_bcar1',
-        'init_zea_1': 'init_bcry',
+        'init_bcry_1': 'init_bcry',
+        'init_zea_1': 'init_zea',
         'init_ohb10_1': 'init_ohb10'
     },
     'Isensee_JCB2018': {
