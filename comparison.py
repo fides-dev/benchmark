@@ -80,7 +80,7 @@ if __name__ == '__main__':
             fmin_all = np.nanmin([
                 result.optimize_result.list[0].fval
                 for optimizer, result in results.items()
-                if 'ebounds=True' in optimizer.split('.')
+                if 'ebounds=True' not in optimizer.split('.')
             ])
 
             for optimizer in algos:
@@ -201,7 +201,7 @@ if __name__ == '__main__':
                 palette=palette,
                 bottom=bottoms[metric],
             )
-            g.set_xticklabels(g.get_xticklabels(), rotation=45)
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             if metric in ['conv_per_grad']:
                 g.set_yscale('log')
             g.set(ylim=(bottoms[metric], tops[metric]))
