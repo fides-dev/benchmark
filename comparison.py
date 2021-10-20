@@ -15,7 +15,8 @@ from benchmark import set_solver_model_options
 MODELS = [
     'Bachmann_MSB2011', 'Beer_MolBioSystems2014', 'Boehm_JProteomeRes2014',
     'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-    'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
+    'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+    #'Isensee_JCB2018',
     'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
     'Zheng_PNAS2012'
 ]
@@ -76,18 +77,43 @@ if __name__ == '__main__':
                 except (FileNotFoundError, IOError) as err:
                     print(f'Failed loading: {err}')
 
-            fmin = np.nanmin([
+            fmin_all = np.nanmin([
                 result.optimize_result.list[0].fval
                 for optimizer, result in results.items()
-                if optimizer != 'fides.subspace=2D.ebounds=True'
+                if 'ebounds=True' in optimizer.split('.')
             ])
 
             for optimizer in algos:
                 if optimizer not in results:
                     continue
                 result = results[optimizer]
+
+                if 'ebounds=True' in optimizer.split('.'):
+                    ubs = np.asarray([
+                        ub + 1 if scale == 'log10'
+                        else ub*10
+                        for ub, scale in zip(
+                            problem.ub_full, problem.x_scales
+                        )
+                    ])
+                    lbs = np.asarray([
+                        lb + 1 if scale == 'log10'
+                        else lb*10
+                        for lb, scale in zip(
+                            problem.lb_full, problem.x_scales
+                        )
+                    ])
+                    fmin = np.min([
+                        results[optimizer].optimize_result.list[0].fval,
+                        fmin_all
+                    ])
+                else:
+                    ubs = problem.ub_full
+                    lbs = problem.lb_full
+                    fmin = fmin_all
+
                 all_results.append({
-                    'model': model,
+                    'model': model.split('_')[0],
                     'optimizer': optimizer,
                     'conv_count': get_num_converged(
                         result.optimize_result.get_for_key('fval'),
@@ -101,14 +127,14 @@ if __name__ == '__main__':
                     ),
                     'unique_at_boundary': get_unique_starts_at_boundary(
                         result.optimize_result.get_for_key('x'),
-                        problem.lb_full, problem.ub_full
+                        lbs, ubs
                     ),
                     'boundary_minima': get_number_boundary_optima(
                         result.optimize_result.get_for_key('x'),
                         np.asarray(result.optimize_result.get_for_key('n_grad'))
                         + np.asarray(result.optimize_result.get_for_key('n_sres')),
                         result.optimize_result.get_for_key('grad'),
-                        problem.lb_full, problem.ub_full
+                        lbs, ubs
                     ),
                 })
 
@@ -160,7 +186,7 @@ if __name__ == '__main__':
 
             tops = {
                 'conv_per_grad': 1e-1,
-                'conv_count': 1e2,
+                'conv_count': 1e3,
                 'unique_at_boundary': 1e3,
                 'boundary_minima': 3e2,
             }
