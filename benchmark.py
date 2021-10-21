@@ -170,14 +170,20 @@ if __name__ == '__main__':
             parsed_options.pop('ebounds', 'False')
         ))
     )
+
+    if isinstance(problem.objective, pypesto.AmiciObjective):
+        objective = problem.objective
+    else:
+        objective = problem.objective._objectives[0]
+
     if optimizer_name.startswith('ls_trf') or \
             parsed_options.get('hessian', 'FIM') in ('FIMe', 'FX', 'GNSBFGS',
                                                      'SSM', 'TSSM'):
-        problem.objective.amici_model.setAddSigmaResiduals(True)
-    set_solver_model_options(problem.objective.amici_solver,
-                             problem.objective.amici_model)
+        objective.amici_model.setAddSigmaResiduals(True)
+    set_solver_model_options(objective.amici_solver,
+                             objective.amici_model)
 
-    problem.objective.guess_steadystate = False
+    objective.guess_steadystate = False
 
     optimizer = get_optimizer(optimizer_name)
 
@@ -203,7 +209,7 @@ if __name__ == '__main__':
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
         engine=engine,
-        options=options,
+        options=options, progress_bar=False
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
