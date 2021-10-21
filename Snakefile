@@ -24,7 +24,7 @@ rule run_benchmark_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5')
     wildcard_constraints:
-        model='(Chen_MSB2009|Beer_MolBioSystems2014)'
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Lucarelli_CellSystems2018)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
