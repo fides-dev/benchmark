@@ -130,8 +130,12 @@ matlab_alias = {
 
 def load_results_from_benchmark(model, optimizer):
     petab_problem, problem = load_problem(model)
-    set_solver_model_options(problem.objective.amici_solver,
-                             problem.objective.amici_model)
+    if isinstance(problem.objective, pypesto.AmiciObjective):
+        objective = problem.objective
+    else:
+        objective = problem.objective._objectives[0]
+    set_solver_model_options(objective.amici_solver,
+                             objective.amici_model)
 
     hass_2019_pars = pd.read_excel(os.path.join(
         'Hass2019', f'{model}.xlsx'
