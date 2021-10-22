@@ -4,6 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import pypesto
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
@@ -66,8 +67,12 @@ if __name__ == '__main__':
 
         for model in MODELS:
             petab_problem, problem = load_problem(model)
-            set_solver_model_options(problem.objective.amici_solver,
-                                     problem.objective.amici_model)
+            if isinstance(problem.objective, pypesto.AmiciObjective):
+                objective = problem.objective
+            else:
+                objective = problem.objective._objectives[0]
+            set_solver_model_options(objective.amici_solver,
+                                     objective.amici_model)
 
             results = {}
             for optimizer in algos:
