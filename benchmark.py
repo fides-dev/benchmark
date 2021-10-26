@@ -57,7 +57,6 @@ def get_optimizer(optimizer_name: str):
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: MAX_ITER,
-            fides.Options.MAXTIME: MAX_TIME,
             fides.Options.FATOL: 0.0,
             fides.Options.FRTOL: 0.0,
             fides.Options.XTOL: 1e-6,
@@ -132,14 +131,6 @@ def get_optimizer(optimizer_name: str):
             method='ls_trf', options=options
         )
 
-    if optimizer_name == 'ipopt':
-        return optimize.IpoptOptimizer(
-            options={'max_iter': int(MAX_ITER),
-                     'tol': 1e-8,
-                     'acceptable_tol': 1e-100,
-                     'max_cpu_time': MAX_TIME}
-        )
-
     raise ValueError('Unknown optimizer name.')
 
 
@@ -147,7 +138,6 @@ np.random.seed(0)
 
 PREFIX_TEMPLATE = '__'.join(['{model}', '{optimizer}', '{starts}'])
 MAX_ITER = 1e5
-MAX_TIME = 7200.0
 
 if __name__ == '__main__':
     MODEL_NAME = sys.argv[1]
