@@ -26,7 +26,10 @@ rule run_benchmark_very_long:
     wildcard_constraints:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018'
               '|Lucarelli_CellSystems2018)',
-        optimizer='(FX, GNSFGS, SSM, TSSM)'
+        optimizer='(fides\.subspace=2D\.hessian=FX|'
+                  'fides\.subspace=2D\.hessian=GNSFGS|'
+                  'fides\.subspace=2D\.hessian=SSM|'
+                  'fides\.subspace=2D\.hessian=TSSM)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
@@ -40,7 +43,10 @@ rule run_benchmark_quite_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5')
     wildcard_constraints:
-        optimizer='(FX, GNSFGS, SSM, TSSM)'
+        optimizer='(fides\.subspace=2D\.hessian=FX|'
+                  'fides\.subspace=2D\.hessian=GNSFGS|'
+                  'fides\.subspace=2D\.hessian=SSM|'
+                  'fides\.subspace=2D\.hessian=TSSM)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
