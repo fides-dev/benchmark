@@ -27,7 +27,7 @@ rule run_benchmark_very_long:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018'
               '|Lucarelli_CellSystems2018)',
         optimizer='(fides\.subspace=2D\.hessian=FX|'
-                  'fides\.subspace=2D\.hessian=GNSFGS|'
+                  'fides\.subspace=2D\.hessian=GNSBFGS|'
                   'fides\.subspace=2D\.hessian=SSM|'
                   'fides\.subspace=2D\.hessian=TSSM)'
     shell:
@@ -44,7 +44,7 @@ rule run_benchmark_quite_long:
         ) + '.hdf5')
     wildcard_constraints:
         optimizer='(fides\.subspace=2D\.hessian=FX|'
-                  'fides\.subspace=2D\.hessian=GNSFGS|'
+                  'fides\.subspace=2D\.hessian=GNSBFGS|'
                   'fides\.subspace=2D\.hessian=SSM|'
                   'fides\.subspace=2D\.hessian=TSSM)'
     shell:
