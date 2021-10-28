@@ -160,7 +160,7 @@ if __name__ == '__main__':
         elif analysis == 'stepback':
             palette = 'Set2'
         for model in MODELS:
-            print(model)
+            model = model.split('_')[0]
             results.loc[results.model == model, 'improvement'] = \
                 results.loc[results.model == model, 'conv_per_grad'] / \
                 results.loc[(results.model == model) &
