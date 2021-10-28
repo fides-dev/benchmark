@@ -118,17 +118,22 @@ if __name__ == '__main__':
                     lbs = problem.lb_full
                     fmin = fmin_all
 
+                n_iter = np.asarray(
+                    result.optimize_result.get_for_key('n_grad')
+                ) + np.asarray(
+                    result.optimize_result.get_for_key('n_sres')
+                )
+
                 all_results.append({
                     'model': model.split('_')[0],
                     'optimizer': optimizer,
+                    'iter': n_iter,
                     'conv_count': get_num_converged(
                         result.optimize_result.get_for_key('fval'),
                         fmin
                     ),
                     'conv_per_grad': get_num_converged_per_grad(
-                        result.optimize_result.get_for_key('fval'),
-                        np.asarray(result.optimize_result.get_for_key('n_grad'))
-                        + np.asarray(result.optimize_result.get_for_key('n_sres')),
+                        result.optimize_result.get_for_key('fval'), n_iter,
                         fmin
                     ),
                     'unique_at_boundary': get_unique_starts_at_boundary(
@@ -137,8 +142,7 @@ if __name__ == '__main__':
                     ),
                     'boundary_minima': get_number_boundary_optima(
                         result.optimize_result.get_for_key('x'),
-                        np.asarray(result.optimize_result.get_for_key('n_grad'))
-                        + np.asarray(result.optimize_result.get_for_key('n_sres')),
+                        n_iter,
                         result.optimize_result.get_for_key('grad'),
                         lbs, ubs
                     ),
@@ -214,3 +218,21 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_{metric}.pdf'
             ))
+
+        df_iter = pd.DataFrame(
+            [(d, tup.model, tup.optimizer)
+             for tup in results.itertuples() for d in tup.iter],
+            columns=['iter', 'model', 'optimizer']
+        )
+        df_iter.iter = df_iter.iter.apply(np.log10)
+        plt.subplots()
+        g = sns.boxplot(
+            data=df_iter, hue_order=algos, palette=palette,
+            x='model', hue='optimizer', y='iter',
+        )
+        g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+        g.set_ylim([0, 5])
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation', f'comparison_{analysis}_iter.pdf'
+        ))
