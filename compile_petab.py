@@ -45,12 +45,11 @@ def preprocess_problem(problem, model, extend_bounds):
     if model in ['Brannmark_JBC2010', 'Fiedler_BMC2016']:
         petab.flatten_timepoint_specific_output_overrides(problem)
 
-    if extend_bounds:
-        problem.parameter_df[petab.LOWER_BOUND] /= 10
-        problem.parameter_df[petab.UPPER_BOUND] *= 10
+    problem.parameter_df[petab.LOWER_BOUND] /= extend_bounds
+    problem.parameter_df[petab.UPPER_BOUND] *= extend_bounds
 
 
-def load_problem(model, force_compile=False, extend_bounds=False):
+def load_problem(model, force_compile=False, extend_bounds=1.0):
     yaml_config = os.path.join(folder_base, model, model + '.yaml')
     petab_problem = petab.Problem.from_yaml(yaml_config)
     preprocess_problem(petab_problem, model, extend_bounds)

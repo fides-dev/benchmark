@@ -25,24 +25,7 @@ rule run_benchmark_very_long:
         ) + '.hdf5')
     wildcard_constraints:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018'
-              '|Lucarelli_CellSystems2018)',
-        optimizer='(fides\.subspace=2D\.hessian=FX|'
-                  'fides\.subspace=2D\.hessian=GNSBFGS|'
-                  'fides\.subspace=2D\.hessian=SSM|'
-                  'fides\.subspace=2D\.hessian=TSSM)'
-    shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
-         '{wildcards.starts}'
-
-rule run_benchmark_quite_long:
-    input:
-        script='benchmark.py',
-        model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
-    output:
-        h5=os.path.join('results', PREFIX_TEMPLATE.format(
-            model='{model}', optimizer='{optimizer}', starts='{starts}'
-        ) + '.hdf5')
-    wildcard_constraints:
+              '|Lucarelli_CellSystems2018|Bachmann_MSB2011)',
         optimizer='(fides\.subspace=2D\.hessian=FX|'
                   'fides\.subspace=2D\.hessian=GNSBFGS|'
                   'fides\.subspace=2D\.hessian=SSM|'
@@ -61,7 +44,8 @@ rule run_benchmark_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5')
     wildcard_constraints:
-        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Lucarelli_CellSystems2018)'
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018'
+              '|Lucarelli_CellSystems2018|Bachmann_MSB2011)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
@@ -139,4 +123,4 @@ rule eigenvalues:
                ],
                starts=N_STARTS_FORWARD)
 
-ruleorder: run_benchmark_very_long > run_benchmark_quite_long > run_benchmark_long > run_benchmark_short > run_benchmark
+ruleorder: run_benchmark_very_long > run_benchmark_long > run_benchmark_short > run_benchmark

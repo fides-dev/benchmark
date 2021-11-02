@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import logging
 from compile_petab import load_problem
 import scipy.optimize._lsq.trf
+from typing import Dict
 
 
 def set_solver_model_options(solver, model):
@@ -53,7 +54,8 @@ def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
         return None
 
 
-def get_optimizer(optimizer_name: str):
+def get_optimizer(optimizer_name: str, history_file: str,
+                  parsed_options: Dict):
     if optimizer_name == 'fides':
         optim_options = {
             fides.Options.MAXITER: MAX_ITER,
@@ -62,6 +64,7 @@ def get_optimizer(optimizer_name: str):
             fides.Options.XTOL: 1e-6,
             fides.Options.GATOL: 0.0,
             fides.Options.GRTOL: 0.0,
+            fides.Options.HISTORY_FILE: history_file
         }
 
         parsed2optim = {
@@ -69,16 +72,22 @@ def get_optimizer(optimizer_name: str):
             'subspace': fides.Options.SUBSPACE_DIM,
             'refine': fides.Options.REFINE_STEPBACK,
             'scaled_gradient': fides.Options.SCALED_GRADIENT,
+            'restrict': fides.Options.RESTRICT_HESS_APPROX,
         }
 
         happ = parsed_options.pop('hessian', 'FIM')
+        enforce_curv = bool(distutils.util.strtobool(
+            parsed_options.pop('enforce_curv', 'True')
+        ))
 
         if re.match(r'Hybrid[SB]0?_[0-9]+', happ):
             hybrid_happ, ndim = happ[6:].split('_')
 
             happs = {
-                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0')),
-                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
+                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
+                                enforce_curv_cond=enforce_curv),
+                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'),
+                               enforce_curv_cond=enforce_curv)
             }
 
             hessian_update = fides.HybridFixed(
@@ -88,12 +97,12 @@ def get_optimizer(optimizer_name: str):
         else:
 
             hessian_update = {
-                'BFGS': fides.BFGS(),
+                'BFGS': fides.BFGS(enforce_curv_cond=enforce_curv),
                 'SR1': fides.SR1(),
-                'FX': fides.FX(),
-                'GNSBFGS': fides.GNSBFGS(),
-                'SSM': fides.SSM(),
-                'TSSM': fides.TSSM(),
+                'FX': fides.FX(fides.BFGS(enforce_curv_cond=enforce_curv)),
+                'GNSBFGS': fides.GNSBFGS(enforce_curv_cond=enforce_curv),
+                'SSM': fides.SSM(enforce_curv_cond=enforce_curv),
+                'TSSM': fides.TSSM(enforce_curv_cond=enforce_curv),
                 'FIM': None,
                 'FIMe': None,
             }[happ]
@@ -102,7 +111,8 @@ def get_optimizer(optimizer_name: str):
             if parse_field in parsed_options:
                 value = parsed_options.pop(parse_field)
                 if optim_field in [fides.Options.REFINE_STEPBACK,
-                                   fides.Options.SCALED_GRADIENT]:
+                                   fides.Options.SCALED_GRADIENT,
+                                   fides.Options.RESTRICT_HESS_APPROX]:
                     value = bool(distutils.util.strtobool(value))
                 optim_options[optim_field] = value
 
@@ -156,9 +166,7 @@ if __name__ == '__main__':
     }
 
     petab_problem, problem = load_problem(
-        MODEL_NAME, extend_bounds=bool(distutils.util.strtobool(
-            parsed_options.pop('ebounds', 'False')
-        ))
+        MODEL_NAME, extend_bounds=float(parsed_options.pop('ebounds', 1.0))
     )
 
     if isinstance(problem.objective, pypesto.AmiciObjective):
@@ -175,12 +183,18 @@ if __name__ == '__main__':
 
     objective.guess_steadystate = False
 
-    optimizer = get_optimizer(optimizer_name)
+    optimizer = get_optimizer(
+        optimizer_name,
+        os.path.join('results',
+                     f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__STATS.hdf5'),
+        parsed_options
+    )
 
     engine = pypesto.engine.MultiThreadEngine(n_threads=10)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
-                                       startpoint_resample=False)
+                                       startpoint_resample=False,
+                                       report_sres=False, report_hess=False)
 
     # do the optimization
     ref = visualize.create_references(
@@ -213,9 +227,6 @@ if __name__ == '__main__':
     visualize.optimizer_convergence(result)
     plt.tight_layout()
     plt.savefig(os.path.join('results', prefix + '_convergence.pdf'))
-
-    for r in result.optimize_result.list:
-        r.sres = None
 
     writer = OptimizationResultHDF5Writer(hdf_results_file)
     writer.write(result, overwrite=True)
