@@ -86,8 +86,7 @@ def get_optimizer(optimizer_name: str, history_file: str,
             happs = {
                 'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
                                 enforce_curv_cond=enforce_curv),
-                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'),
-                               enforce_curv_cond=enforce_curv)
+                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
             }
 
             hessian_update = fides.HybridFixed(
