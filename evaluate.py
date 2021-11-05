@@ -69,7 +69,7 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=SSM.enforce_curv=False',
     'fides.subspace=2D.hessian=TSSM',
     'fides.subspace=2D.hessian=TSSM.restrict=True',
-    'fides.subspace=2D.hessian=TSSM.restrict=True',
+    'fides.subspace=2D.hessian=TSSM.enforce_curv=False',
     'fides.subspace=2D.hessian=GNSBFGS',
     'fides.subspace=2D.hessian=GNSBFGS.restrict=True',
     'fides.subspace=2D.hessian=GNSBFGS.enforce_curv=False',
