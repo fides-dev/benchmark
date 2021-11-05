@@ -17,8 +17,12 @@ def get_stats_file(model_name, optimizer):
     )
 
 
+def glen(grouper):
+    return sum(1 for _ in grouper)
+
+
 def max_streak(vector):
-    return max(len(run) for val, run in groupby(vector) if val)
+    return max(glen(run) for val, run in groupby(vector) if val)
 
 
 def read_stats(model_name, optimizer):
