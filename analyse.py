@@ -58,17 +58,34 @@ def read_stats(model_name, optimizer):
                 data['hess_struct_update_max_ev'][:] == 0.0,
                 data['reflections'][:] > 0
             )).sum() / data['fval'].size,
-            'frac_no_tr_update': np.logical_and.reduce((
+            'frac_no_tr_update_int_sol': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
                 data['iterations_since_tr_update'][:] > 0,
             )).sum() / data['fval'].size,
-            'frac_no_tr_update_internal': np.logical_and.reduce((
+            'frac_no_tr_update_int_sol_internal': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
                 data['iterations_since_tr_update'][:] > 0,
                 data['reflections'][:] == 0
             )).sum() / data['fval'].size,
-            'frac_no_tr_update_border': np.logical_and.reduce((
+            'frac_no_tr_update_int_sol_border': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
+                data['iterations_since_tr_update'][:] > 0,
+                data['reflections'][:] > 0
+            )).sum() / data['fval'].size,
+            'frac_no_tr_update_tr_ratio': np.logical_and.reduce((
+                data['tr_ratio'][:] < 0.75,
+                data['tr_ratio'][:] > 0.25,
+                data['iterations_since_tr_update'][:] > 0,
+            )).sum() / data['fval'].size,
+            'frac_no_tr_update__tr_ratio_internal': np.logical_and.reduce((
+                data['tr_ratio'][:] < 0.75,
+                data['tr_ratio'][:] > 0.25,
+                data['iterations_since_tr_update'][:] > 0,
+                data['reflections'][:] == 0
+            )).sum() / data['fval'].size,
+            'frac_no_tr_update_tr_ratio_border': np.logical_and.reduce((
+                data['tr_ratio'][:] < 0.75,
+                data['tr_ratio'][:] > 0.25,
                 data['iterations_since_tr_update'][:] > 0,
                 data['reflections'][:] > 0
             )).sum() / data['fval'].size,
@@ -100,9 +117,12 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'frac_no_hess_update',
                              'frac_no_hess_update_internal',
                              'frac_no_hess_update_border',
-                             'frac_no_tr_update',
-                             'frac_no_tr_update_internal',
-                             'frac_no_tr_update_border',
+                             'frac_no_tr_update_int_sol',
+                             'frac_no_tr_update_int_sol_internal',
+                             'frac_no_tr_update_int_sol_border',
+                             'frac_no_tr_update_tr_ratio',
+                             'frac_no_tr_update_tr_ratio_internal',
+                             'frac_no_tr_update_tr_ratio_border',
                              'frac_no_hess_struct_update',
                              'frac_no_hess_struct_update_internal',
                              'frac_no_hess_struct_update_border',
