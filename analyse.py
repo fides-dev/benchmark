@@ -22,7 +22,10 @@ def glen(grouper):
 
 
 def max_streak(vector):
-    return max(glen(run) for val, run in groupby(vector) if val)
+    run_len = [glen(run) for val, run in groupby(vector) if val]
+    if not run_len:
+        return 0
+    return np.max(run_len)
 
 
 def read_stats(model_name, optimizer):
