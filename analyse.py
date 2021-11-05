@@ -143,6 +143,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'frac_no_tr_update_tr_ratio',
                              'frac_no_tr_update_tr_ratio_internal',
                              'frac_no_tr_update_tr_ratio_border',
+                             'frac_streak_no_tr_update_tr_ratio',
                              'frac_no_hess_struct_update',
                              'frac_no_hess_struct_update_internal',
                              'frac_no_hess_struct_update_border',
