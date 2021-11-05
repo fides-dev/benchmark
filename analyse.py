@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from itertools import groupby
 
 
 def get_stats_file(model_name, optimizer):
@@ -14,6 +15,10 @@ def get_stats_file(model_name, optimizer):
         'results',
         f'{model_name}__{optimizer}__{N_STARTS_FORWARD[0]}__STATS.hdf5'
     )
+
+
+def max_streak(vector):
+    return max(len(run) for val, run in groupby(vector) if val)
 
 
 def read_stats(model_name, optimizer):
@@ -89,9 +94,17 @@ def read_stats(model_name, optimizer):
                 data['iterations_since_tr_update'][:] > 0,
                 data['reflections'][:] > 0
             )).sum() / data['fval'].size,
+            'frac_streak_no_tr_update_tr_ratio':  max_streak(
+                np.logical_and.reduce((
+                    data['tr_ratio'][:] < 0.75,
+                    data['tr_ratio'][:] > 0.25,
+                    data['iterations_since_tr_update'][:] > 0,
+                )
+            )) / data['fval'].size,
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
-            'frac_neg_ev': np.sum(data['hess_min_ev'][:] < -np.spacing(1)) /
-                data['fval'].size,
+            'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
+                                  -np.sqrt(np.spacing(1))*data['hess_max_ev'])
+                / data['fval'].size,
             'frac_posdef_newt': np.sum(data['posdef_newt'][:]) /
                 data['fval'].size,
             'frac_subspace_dim': np.logical_and.reduce((
