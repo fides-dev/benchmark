@@ -77,7 +77,7 @@ def read_stats(model_name, optimizer):
                 data['tr_ratio'][:] > 0.25,
                 data['iterations_since_tr_update'][:] > 0,
             )).sum() / data['fval'].size,
-            'frac_no_tr_update__tr_ratio_internal': np.logical_and.reduce((
+            'frac_no_tr_update_tr_ratio_internal': np.logical_and.reduce((
                 data['tr_ratio'][:] < 0.75,
                 data['tr_ratio'][:] > 0.25,
                 data['iterations_since_tr_update'][:] > 0,
