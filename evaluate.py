@@ -32,7 +32,8 @@ cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
     legend: tuple([*cmap.colors[il], 1.0])
     for il, legend in enumerate([
-        'fides.subspace=2D', 'fmincon', 'lsqnonlin', 'ls_trf_2D',
+        'fides.subspace=2D', 'fides.subspace=2D.hessian=FIMe', 'fmincon',
+        'lsqnonlin', 'ls_trf_2D',
     ])
 }
 
@@ -83,7 +84,7 @@ OPTIMIZER_FORWARD = [
 N_STARTS_FORWARD = ['1000']
 
 ANALYSIS_ALGOS = {
-    'matlab': ALGO_COLORS,
+    'matlab': list(ALGO_COLORS.keys()),
     'curv': ['fides.subspace=2D',
              'fides.subspace=full',
              'fides.subspace=2D.hessian=BFGS',
@@ -97,15 +98,54 @@ ANALYSIS_ALGOS = {
                 'fides.subspace=2D.hessian=HybridB_20',
                 'fides.subspace=2D.hessian=HybridB_10',
                 'fides.subspace=2D.hessian=BFGS'],
+    'hybridBr': ['fides.subspace=2D',
+                 'fides.subspace=2D.hessian=HybridB_50.restrict=True',
+                 'fides.subspace=2D.hessian=HybridB_40.restrict=True',
+                 'fides.subspace=2D.hessian=HybridB_30.restrict=True',
+                 'fides.subspace=2D.hessian=HybridB_20.restrict=True',
+                 'fides.subspace=2D.hessian=HybridB_10.restrict=True',
+                 'fides.subspace=2D.hessian=BFGS.restrict=True'],
+    'hybridBc': ['fides.subspace=2D',
+                 'fides.subspace=2D.hessian=HybridB_50.enforce_curv=False',
+                 'fides.subspace=2D.hessian=HybridB_40.enforce_curv=False',
+                 'fides.subspace=2D.hessian=HybridB_30.enforce_curv=False',
+                 'fides.subspace=2D.hessian=HybridB_20.enforce_curv=False',
+                 'fides.subspace=2D.hessian=HybridB_10.enforce_curv=False',
+                 'fides.subspace=2D.hessian=BFGS.enforce_curv=False'],
     'hybrid': ['fides.subspace=2D',
                'fides.subspace=2D.hessian=HybridB_30',
                'fides.subspace=2D.hessian=FX',
                'fides.subspace=2D.hessian=SSM',
                'fides.subspace=2D.hessian=TSSM',
                'fides.subspace=2D.hessian=GNSBFGS'],
+    'hybridr': ['fides.subspace=2D',
+                'fides.subspace=2D.hessian=HybridB_30.restrict=True',
+                'fides.subspace=2D.hessian=FX.restrict=True',
+                'fides.subspace=2D.hessian=SSM.restrict=True',
+                'fides.subspace=2D.hessian=TSSM.restrict=True',
+                'fides.subspace=2D.hessian=GNSBFGS.restrict=True'],
+    'hybridc': ['fides.subspace=2D',
+                'fides.subspace=2D.hessian=HybridB_30.enforce_curv=False',
+                'fides.subspace=2D.hessian=FX.enforce_curv=False',
+                'fides.subspace=2D.hessian=SSM.enforce_curv=False',
+                'fides.subspace=2D.hessian=TSSM.enforce_curv=False',
+                'fides.subspace=2D.hessian=GNSBFGS.enforce_curv=False'],
     'stepback': ['fides.subspace=2D.stepback=reflect_single',
                  'fides.subspace=2D',
-                 'fides.subspace=2D.ebounds=True']
+                 'fides.subspace=2D.ebounds=10',
+                 'fides.subspace=2D.ebounds=100']
+}
+
+ALGO_PALETTES = {
+    'matlab': ALGO_COLORS,
+    'curv': 'tab20',
+    'hybrid': 'Dark2',
+    'hybridr': 'Dark2',
+    'hybridc': 'Dark2',
+    'hybridB': 'Blues',
+    'hybridBr': 'Blues',
+    'hybridBc': 'Blues',
+    'stepback': 'Set2',
 }
 
 
@@ -356,19 +396,7 @@ if __name__ == '__main__':
 
     for analysis, algos in ANALYSIS_ALGOS.items():
 
-        if analysis == 'matlab':
-            palette = [
-                ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
-                for algo in algos
-            ]
-        elif analysis == 'curv':
-            palette = 'tab20'
-        elif analysis == 'hybrid':
-            palette = 'Dark2'
-        elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
-            palette = 'Blues'
-        elif analysis == 'stepback':
-            palette = 'Set2'
+        palette = ALGO_PALETTES[analysis]
 
         plt.subplots()
         g = sns.boxplot(

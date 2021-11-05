@@ -8,7 +8,7 @@ import pypesto
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
-    ALGO_COLORS, ANALYSIS_ALGOS
+    ALGO_COLORS, ANALYSIS_ALGOS, ALGO_PALETTES
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -16,10 +16,11 @@ from benchmark import set_solver_model_options
 MODELS = [
     # 'Bachmann_MSB2011', 'Beer_MolBioSystems2014',
     'Boehm_JProteomeRes2014',
-    'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-    'Fiedler_BMC2016', 'Fujita_SciSignal2010',
+    #'Brannmark_JBC2010',
+    'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
+    #'Fiedler_BMC2016', 'Fujita_SciSignal2010',
     # 'Isensee_JCB2018', 'Lucarelli_CellSystems2018',
-    'Schwen_PONE2014', 'Weber_BMC2015', 'Zheng_PNAS2012'
+    #'Schwen_PONE2014', 'Weber_BMC2015', 'Zheng_PNAS2012'
 ]
 
 
@@ -149,19 +150,8 @@ if __name__ == '__main__':
 
         results = pd.DataFrame(all_results)
 
-        if analysis == 'matlab':
-            palette = [
-                ALGO_COLORS.get(algo, ALGO_COLORS.get('ipopt'))
-                for algo in algos
-            ]
-        elif analysis == 'curv':
-            palette = 'tab20'
-        elif analysis == 'hybrid':
-            palette = 'Dark2'
-        elif analysis in ['hybridB', 'hybridS', 'hybridB0', 'hybridS0']:
-            palette = 'Blues'
-        elif analysis == 'stepback':
-            palette = 'Set2'
+        palette = ALGO_PALETTES[analysis]
+
         for model in MODELS:
             model = model.split('_')[0]
             results.loc[results.model == model, 'improvement'] = \
