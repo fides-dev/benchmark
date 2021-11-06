@@ -129,14 +129,14 @@ def read_stats(model_name, optimizer):
                     data['tr_ratio'][10:] > 0.25,
                     data['iterations_since_tr_update'][10:] > 0,
                 ))) / np.arange(11, data['fval'].size + 1)
-            ),
+            ) if data['fval'].size > 10 else 0,
             'max100_frac_no_tr_update_tr_ratio': np.max(
                 np.cumsum(np.logical_and.reduce((
                     data['tr_ratio'][100:] < 0.75,
                     data['tr_ratio'][100:] > 0.25,
                     data['iterations_since_tr_update'][100:] > 0,
                 ))) / np.arange(101, data['fval'].size + 1)
-            ),
+            ) if data['fval'].size > 100 else 0,
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
             'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
