@@ -125,15 +125,15 @@ def read_stats(model_name, optimizer):
             ),
             'max10_frac_no_tr_update_tr_ratio': np.max(
                 np.cumsum(np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
+                    data['tr_ratio'][10:] < 0.75,
+                    data['tr_ratio'][10:] > 0.25,
                     data['iterations_since_tr_update'][10:] > 0,
                 ))) / np.arange(11, data['fval'].size + 1)
             ),
             'max100_frac_no_tr_update_tr_ratio': np.max(
                 np.cumsum(np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
+                    data['tr_ratio'][100:] < 0.75,
+                    data['tr_ratio'][100:] > 0.25,
                     data['iterations_since_tr_update'][100:] > 0,
                 ))) / np.arange(101, data['fval'].size + 1)
             ),
