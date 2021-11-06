@@ -31,7 +31,9 @@ def max_streak(vector):
 
 
 def read_stats(model_name, optimizer):
-    with h5py.File(get_stats_file(model_name, optimizer), 'r') as f:
+    stats_file = get_stats_file(model_name, optimizer)
+    print(f'loading {stats_file}')
+    with h5py.File(stats_file, 'r') as f:
         fmin = np.min([
             np.min(data['fval'][:])
             for data in f.values()
