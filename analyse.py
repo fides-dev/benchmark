@@ -1,5 +1,7 @@
 from comparison import MODELS
-from evaluate import ANALYSIS_ALGOS, N_STARTS_FORWARD, ALGO_PALETTES
+from evaluate import (
+    ANALYSIS_ALGOS, N_STARTS_FORWARD, ALGO_PALETTES, CONVERGENCE_THRESHOLD
+)
 
 import h5py
 import os
@@ -30,6 +32,10 @@ def max_streak(vector):
 
 def read_stats(model_name, optimizer):
     with h5py.File(get_stats_file(model_name, optimizer), 'r') as f:
+        fmin = np.min([
+            np.min(data['fval'][:])
+            for data in f.values()
+        ])
         stats = pd.DataFrame([{
             'model': model_name,
             'optimizer': optimizer,
@@ -119,6 +125,7 @@ def read_stats(model_name, optimizer):
             )).sum() / data['fval'].size,
             'frac_gradient_steps': np.sum(data['step_type'][:] == 1) /
                 data['fval'].size,
+            'converged': np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLD
         } for data in f.values()])
     return stats
 
@@ -132,7 +139,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             get_stats_file(model, opt)
         )
     ])
-    df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter'],
+    df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
+                                     'converged'],
                  value_vars=['frac_max_iter_tr',
                              'frac_no_hess_update',
                              'frac_no_hess_update_internal',
@@ -160,11 +168,14 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         hue_order=algos,
         palette=ALGO_PALETTES[analysis],
         margin_titles=True,
+        legend_out=True,
+        despine=True,
     )
-    grid.map(
+    grid.map_dataframe(
         sns.scatterplot,
-        'iter',
-        'value',
+        x='iter',
+        y='value',
+        markers='converged',
         alpha=0.2,
         s=8,
     ).set(xscale='log')
