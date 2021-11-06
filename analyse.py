@@ -202,7 +202,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         x='iter',
         y='value',
         style='converged',
-        markers={True: 's', False: 'x'},
+        markers={True: 's', False: 'X'},
         alpha=0.2,
         s=8,
     ).set(xscale='log')
