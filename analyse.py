@@ -116,6 +116,27 @@ def read_stats(model_name, optimizer):
                     data['iterations_since_tr_update'][:] > 0,
                 )
             )) / data['fval'].size,
+            'max_frac_no_tr_update_tr_ratio': np.max(
+                np.cumsum(np.logical_and.reduce((
+                    data['tr_ratio'][:] < 0.75,
+                    data['tr_ratio'][:] > 0.25,
+                    data['iterations_since_tr_update'][:] > 0,
+                ))) / np.arange(1, data['fval'].size + 1)
+            ),
+            'max10_frac_no_tr_update_tr_ratio': np.max(
+                np.cumsum(np.logical_and.reduce((
+                    data['tr_ratio'][:] < 0.75,
+                    data['tr_ratio'][:] > 0.25,
+                    data['iterations_since_tr_update'][10:] > 0,
+                ))) / np.arange(11, data['fval'].size + 1)
+            ),
+            'max100_frac_no_tr_update_tr_ratio': np.max(
+                np.cumsum(np.logical_and.reduce((
+                    data['tr_ratio'][:] < 0.75,
+                    data['tr_ratio'][:] > 0.25,
+                    data['iterations_since_tr_update'][100:] > 0,
+                ))) / np.arange(101, data['fval'].size + 1)
+            ),
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
             'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
@@ -154,6 +175,9 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'frac_no_tr_update_tr_ratio_internal',
                              'frac_no_tr_update_tr_ratio_border',
                              'frac_streak_no_tr_update_tr_ratio',
+                             'max_frac_no_tr_update_tr_ratio',
+                             'max10_frac_no_tr_update_tr_ratio',
+                             'max100_frac_no_tr_update_tr_ratio',
                              'frac_no_hess_struct_update',
                              'frac_no_hess_struct_update_internal',
                              'frac_no_hess_struct_update_border',
@@ -177,7 +201,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sns.scatterplot,
         x='iter',
         y='value',
-        markers='converged',
+        style='converged',
+        markers={True: 's', False: 'x'},
         alpha=0.2,
         s=8,
     ).set(xscale='log')
