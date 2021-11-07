@@ -91,7 +91,7 @@ def get_optimizer(optimizer_name: str, history_file: str,
                 switch_iteration=int(float(nswitch)),
                 happ=happs[hybrid_happ[0]],
             )
-        elif re.match(r'HybridF[SB]0?_[0-9]+', happ):
+        elif re.match(r'HybridF[SB]0?_[0-9\-]+', happ):
             hybrid_happ, tswitch = happ[7:].split('_')
 
             happs = {
@@ -100,7 +100,7 @@ def get_optimizer(optimizer_name: str, history_file: str,
                 'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
             }
 
-            hessian_update = fides.HybridFrac(
+            hessian_update = fides.HybridFraction(
                 switch_threshold=float(tswitch.replace('-', '.')),
                 happ=happs[hybrid_happ[0]],
             )
