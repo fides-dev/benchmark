@@ -119,9 +119,7 @@ def get_optimizer(optimizer_name: str, history_file: str,
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
                 value = parsed_options.pop(parse_field)
-                if optim_field in [fides.Options.REFINE_STEPBACK,
-                                   fides.Options.SCALED_GRADIENT,
-                                   fides.Options.RESTRICT_HESS_APPROX]:
+                if optim_field in [fides.Options.REFINE_STEPBACK]:
                     value = bool(distutils.util.strtobool(value))
                 optim_options[optim_field] = value
 
