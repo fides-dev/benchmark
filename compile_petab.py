@@ -65,7 +65,7 @@ def load_problem(model, force_compile=False, extend_bounds=1.0):
     yaml_config = os.path.join(folder_base, model, model + '.yaml')
     petab_problem = petab.Problem.from_yaml(yaml_config)
     preprocess_problem(petab_problem, model, extend_bounds)
-    importer = pypesto.petab.PetabImporter(petab_problem)
+    importer = pypesto.petab.PetabImporter(petab_problem, validate_petab=False)
     problem = importer.create_problem(force_compile=force_compile)
 
     matlab_model = MODEL_ALIASES.get(model, model)
