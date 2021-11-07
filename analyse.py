@@ -154,14 +154,17 @@ def read_stats(model_name, optimizer):
 
 
 for analysis, algos in ANALYSIS_ALGOS.items():
-    all_stats = pd.concat([
+    stats = [
         read_stats(model, opt)
         for model in MODELS
         for opt in algos
         if opt.startswith('fides') and os.path.exists(
             get_stats_file(model, opt)
         )
-    ])
+    ]
+    if not stats:
+        continue
+    all_stats = pd.concat(stats)
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
                  value_vars=['frac_max_iter_tr',
