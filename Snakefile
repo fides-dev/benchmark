@@ -22,7 +22,10 @@ rule run_benchmark_very_long:
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
-        ) + '.hdf5')
+        ) + '.hdf5'),
+        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '__STATS.hdf5')
     wildcard_constraints:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018'
               '|Lucarelli_CellSystems2018|Bachmann_MSB2011)',
@@ -42,7 +45,10 @@ rule run_benchmark_long:
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
-        ) + '.hdf5')
+        ) + '.hdf5'),
+        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '__STATS.hdf5')
     wildcard_constraints:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018'
               '|Lucarelli_CellSystems2018|Bachmann_MSB2011)'
@@ -57,7 +63,10 @@ rule run_benchmark_short:
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
-        ) + '.hdf5')
+        ) + '.hdf5'),
+        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '__STATS.hdf5')
     wildcard_constraints:
         model='(Crauste_CellSystems2017|Boehm_JProteomeRes2014|Bruno_JExpBot2016)'
     shell:
@@ -71,7 +80,10 @@ rule run_benchmark:
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
-        ) + '.hdf5')
+        ) + '.hdf5'),
+        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '__STATS.hdf5')
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'

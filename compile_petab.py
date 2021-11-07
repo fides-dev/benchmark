@@ -4,6 +4,7 @@ import os
 import sys
 
 import pandas as pd
+import numpy as np
 
 PARAMETER_ALIASES = {
     'Fujita_SciSignal2010': {
@@ -45,8 +46,19 @@ def preprocess_problem(problem, model, extend_bounds):
     if model in ['Brannmark_JBC2010', 'Fiedler_BMC2016']:
         petab.flatten_timepoint_specific_output_overrides(problem)
 
-    problem.parameter_df[petab.LOWER_BOUND] /= extend_bounds
-    problem.parameter_df[petab.UPPER_BOUND] *= extend_bounds
+    if np.isfinite(extend_bounds):
+        problem.parameter_df[petab.LOWER_BOUND] /= extend_bounds
+        problem.parameter_df[petab.UPPER_BOUND] *= extend_bounds
+    else:
+        problem.parameter_df.loc[
+            problem.parameter_df[petab.PARAMETER_SCALE] == petab.LIN,
+            petab.LOWER_BOUND
+        ] = - np.inf
+        problem.parameter_df.loc[
+            problem.parameter_df[petab.PARAMETER_SCALE] != petab.LIN,
+            petab.LOWER_BOUND
+        ] = 0
+        problem.parameter_df[petab.UPPER_BOUND] = np.inf
 
 
 def load_problem(model, force_compile=False, extend_bounds=1.0):

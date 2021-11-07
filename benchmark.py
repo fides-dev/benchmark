@@ -81,7 +81,7 @@ def get_optimizer(optimizer_name: str, history_file: str,
         ))
 
         if re.match(r'Hybrid[SB]0?_[0-9]+', happ):
-            hybrid_happ, ndim = happ[6:].split('_')
+            hybrid_happ, nswitch = happ[6:].split('_')
 
             happs = {
                 'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
@@ -90,11 +90,23 @@ def get_optimizer(optimizer_name: str, history_file: str,
             }
 
             hessian_update = fides.HybridFixed(
-                switch_iteration=int(float(ndim)),
+                switch_iteration=int(float(nswitch)),
+                happ=happs[hybrid_happ[0]],
+            )
+        elif re.match(r'HybridF[SB]0?_[0-9]+', happ):
+            hybrid_happ, tswitch = happ[7:].split('_')
+
+            happs = {
+                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
+                                enforce_curv_cond=enforce_curv),
+                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
+            }
+
+            hessian_update = fides.HybridFrac(
+                switch_threshold=float(tswitch.replace('-', '.')),
                 happ=happs[hybrid_happ[0]],
             )
         else:
-
             hessian_update = {
                 'BFGS': fides.BFGS(enforce_curv_cond=enforce_curv),
                 'SR1': fides.SR1(),
@@ -182,10 +194,13 @@ if __name__ == '__main__':
 
     objective.guess_steadystate = False
 
+    os.makedirs('stats', exist_ok=True)
+
     optimizer = get_optimizer(
         optimizer_name,
-        os.path.join('results',
-                     f'{MODEL_NAME}__{OPTIMIZER}__{N_STARTS}__STATS.hdf5'),
+        os.path.join('stats', PREFIX_TEMPLATE.format(
+            model=MODEL_NAME, optimizer=OPTIMIZER, starts=str(N_STARTS)
+        ) + '__STATS.hdf5'),
         parsed_options
     )
 
@@ -212,20 +227,12 @@ if __name__ == '__main__':
     result = optimize.minimize(
         problem=problem, optimizer=optimizer, n_starts=N_STARTS,
         engine=engine,
-        options=options, progress_bar=False
+        options=options, progress_bar=False, filename=None,
     )
 
     visualize.waterfall(result, reference=ref, scale_y='log10')
     plt.tight_layout()
     plt.savefig(os.path.join('results', prefix + '_waterfall.pdf'))
-
-    visualize.parameters(result, reference=ref)
-    plt.tight_layout()
-    plt.savefig(os.path.join('results', prefix + '_parameters.pdf'))
-
-    visualize.optimizer_convergence(result)
-    plt.tight_layout()
-    plt.savefig(os.path.join('results', prefix + '_convergence.pdf'))
 
     writer = OptimizationResultHDF5Writer(hdf_results_file)
     writer.write(result, overwrite=True)
