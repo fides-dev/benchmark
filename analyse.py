@@ -14,7 +14,7 @@ from itertools import groupby
 
 def get_stats_file(model_name, optimizer):
     return os.path.join(
-        'results',
+        'stats',
         f'{model_name}__{optimizer}__{N_STARTS_FORWARD[0]}__STATS.hdf5'
     )
 
