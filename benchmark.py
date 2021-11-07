@@ -11,6 +11,7 @@ from pypesto.store import OptimizationResultHDF5Writer
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
+import h5py
 from compile_petab import load_problem
 import scipy.optimize._lsq.trf
 from typing import Dict
@@ -34,24 +35,6 @@ def set_solver_model_options(solver, model):
         model.setSteadyStateSensitivityMode(
             amici.SteadyStateSensitivityMode.simulationFSA
         )
-
-
-def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
-    """
-    Check termination condition for nonlinear least squares.
-    Custom monkeypatch implementation that fixes xtol check
-    """
-    ftol_satisfied = dF < ftol * F and ratio > 0.25
-    xtol_satisfied = dx_norm < xtol * (1 + x_norm)
-
-    if ftol_satisfied and xtol_satisfied:
-        return 4
-    elif ftol_satisfied:
-        return 2
-    elif xtol_satisfied:
-        return 3
-    else:
-        return None
 
 
 def get_optimizer(optimizer_name: str, history_file: str,
@@ -133,7 +116,11 @@ def get_optimizer(optimizer_name: str, history_file: str,
 
     if optimizer_name.startswith('ls_trf'):
         # monkeypatch xtol check
-        scipy.optimize._lsq.trf.check_termination = check_termination
+        from monkeypatch_ls_trf import trf_bounds
+        scipy.optimize._lsq.trf.trf_bounds = trf_bounds
+
+        with h5py.File(history_file, 'w') as f:
+            pass
 
         options = {'max_nfev': MAX_ITER,
                    'xtol': 1e-6,
