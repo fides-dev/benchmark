@@ -85,8 +85,8 @@ if __name__ == '__main__':
                 fmin_all = np.nanmin([
                     result.optimize_result.list[0].fval
                     for optimizer, result in results.items()
-                    if not np.any(o.startswith('ebounds=')
-                                  for o in optimizer.split('.'))
+                    if not np.any([o.startswith('ebounds=')
+                                   for o in optimizer.split('.')])
                 ])
             else:
                 fmin_all = 0
