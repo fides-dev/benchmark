@@ -81,11 +81,15 @@ if __name__ == '__main__':
                 except (FileNotFoundError, IOError) as err:
                     print(f'Failed loading: {err}')
 
-            fmin_all = np.nanmin([
-                result.optimize_result.list[0].fval
-                for optimizer, result in results.items()
-                if 'ebounds=True' not in optimizer.split('.')
-            ])
+            if results:
+                fmin_all = np.nanmin([
+                    result.optimize_result.list[0].fval
+                    for optimizer, result in results.items()
+                    if not np.any(o.startswith('ebounds=')
+                                  for o in optimizer.split('.'))
+                ])
+            else:
+                fmin_all = 0
 
             for optimizer in algos:
                 if optimizer not in results:
