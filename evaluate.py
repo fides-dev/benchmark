@@ -135,11 +135,11 @@ ALGO_PALETTES = {
     'matlab': ALGO_COLORS,
     'curv': 'tab20',
     'hybrid': 'Dark2',
-    'hybridr': 'Dark2',
     'hybridc': 'Dark2',
     'hybridB': 'Blues',
-    'hybridBr': 'Blues',
     'hybridBc': 'Blues',
+    'hybridFB': 'Blues',
+    'hybridFBc': 'Blues',
     'stepback': 'Set2',
 }
 
