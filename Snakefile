@@ -23,7 +23,7 @@ rule run_benchmark_very_long:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5'),
-        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+        stats=os.path.join('stats', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
@@ -46,7 +46,7 @@ rule run_benchmark_long:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5'),
-        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+        stats=os.path.join('stats', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
@@ -64,7 +64,7 @@ rule run_benchmark_short:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5'),
-        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+        stats=os.path.join('stats', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
@@ -81,7 +81,7 @@ rule run_benchmark:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '.hdf5'),
-        stats=os.path.join('results', PREFIX_TEMPLATE.format(
+        stats=os.path.join('stats', PREFIX_TEMPLATE.format(
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     shell:
