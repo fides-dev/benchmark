@@ -71,8 +71,6 @@ def get_optimizer(optimizer_name: str, history_file: str,
             'stepback': fides.Options.STEPBACK_STRAT,
             'subspace': fides.Options.SUBSPACE_DIM,
             'refine': fides.Options.REFINE_STEPBACK,
-            'scaled_gradient': fides.Options.SCALED_GRADIENT,
-            'restrict': fides.Options.RESTRICT_HESS_APPROX,
         }
 
         happ = parsed_options.pop('hessian', 'FIM')
