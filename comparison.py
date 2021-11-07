@@ -8,7 +8,7 @@ import pypesto
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
-    ALGO_COLORS, ANALYSIS_ALGOS, ALGO_PALETTES
+    ANALYSIS_ALGOS, ALGO_PALETTES
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -152,11 +152,13 @@ if __name__ == '__main__':
 
         for model in MODELS:
             model = model.split('_')[0]
-            results.loc[results.model == model, 'improvement'] = \
-                results.loc[results.model == model, 'conv_per_grad'] / \
-                results.loc[(results.model == model) &
-                            (results.optimizer == 'fides.subspace=2D'),
-                            'conv_per_grad'].values[0]
+            if np.any((results.model == model) &
+                      (results.optimizer == 'fides.subspace=2D')):
+                results.loc[results.model == model, 'improvement'] = \
+                    results.loc[results.model == model, 'conv_per_grad'] / \
+                    results.loc[(results.model == model) &
+                                (results.optimizer == 'fides.subspace=2D'),
+                                'conv_per_grad'].values[0]
 
         for optimizer in results.optimizer.unique():
             if 'improvement' in results:
