@@ -53,8 +53,8 @@ def get_optimizer(optimizer_name: str, history_file: str,
         parsed2optim = {
             'stepback': fides.Options.STEPBACK_STRAT,
             'subspace': fides.Options.SUBSPACE_DIM,
-            'refine': fides.Options.REFINE_STEPBACK,
         }
+
 
         happ = parsed_options.pop('hessian', 'FIM')
         enforce_curv = bool(distutils.util.strtobool(
@@ -102,15 +102,14 @@ def get_optimizer(optimizer_name: str, history_file: str,
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:
                 value = parsed_options.pop(parse_field)
-                if optim_field in [fides.Options.REFINE_STEPBACK]:
-                    value = bool(distutils.util.strtobool(value))
                 optim_options[optim_field] = value
 
         if parsed_options:
             raise ValueError(f'Unknown options {parsed_options.keys()}')
 
         return optimize.FidesOptimizer(
-            options=optim_options, verbose=logging.ERROR,
+            options=optim_options,
+            verbose=logging.ERROR,
             hessian_update=hessian_update
         )
 
