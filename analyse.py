@@ -42,8 +42,6 @@ def read_stats(model_name, optimizer):
             'model': model_name,
             'optimizer': optimizer,
             'iter': data['fval'].size,
-            'frac_max_iter_tr': np.max(data['iterations_since_tr_update'][:]) /
-                data['fval'].size,
             'frac_no_hess_update': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
@@ -66,31 +64,9 @@ def read_stats(model_name, optimizer):
                 data['hess_struct_update_min_ev'][:] == 0.0,
                 data['hess_struct_update_max_ev'][:] == 0.0,
             )).sum() / data['fval'].size,
-            'frac_no_hess_struct_update_internal': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_struct_update_min_ev'][:] == 0.0,
-                data['hess_struct_update_max_ev'][:] == 0.0,
-                data['reflections'][:] == 0
-            )).sum() / data['fval'].size,
-            'frac_no_hess_struct_update_border': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_struct_update_min_ev'][:] == 0.0,
-                data['hess_struct_update_max_ev'][:] == 0.0,
-                data['reflections'][:] > 0
-            )).sum() / data['fval'].size,
             'frac_no_tr_update_int_sol': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
                 data['iterations_since_tr_update'][:] > 0,
-            )).sum() / data['fval'].size,
-            'frac_no_tr_update_int_sol_internal': np.logical_and.reduce((
-                data['tr_ratio'][:] > 0.75,
-                data['iterations_since_tr_update'][:] > 0,
-                data['reflections'][:] == 0
-            )).sum() / data['fval'].size,
-            'frac_no_tr_update_int_sol_border': np.logical_and.reduce((
-                data['tr_ratio'][:] > 0.75,
-                data['iterations_since_tr_update'][:] > 0,
-                data['reflections'][:] > 0
             )).sum() / data['fval'].size,
             'frac_no_tr_update_tr_ratio': np.logical_and.reduce((
                 data['tr_ratio'][:] < 0.75,
@@ -130,23 +106,22 @@ def read_stats(model_name, optimizer):
                     data['iterations_since_tr_update'][:] > 0,
                 )))[10:] / np.arange(11, data['fval'].size + 1)
             ) if data['fval'].size > 10 else 0,
-            'max100_frac_no_tr_update_tr_ratio': np.max(
-                np.cumsum(np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
-                    data['iterations_since_tr_update'][:] > 0,
-                )))[100:] / np.arange(101, data['fval'].size + 1)
-            ) if data['fval'].size > 100 else 0,
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
             'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
                 / data['fval'].size,
             'frac_posdef_newt': np.sum(data['posdef_newt'][:]) /
-                data['fval'].size,
+                np.sum(data['step_type'][:] == '2d'),
             'frac_subspace_dim': np.logical_and.reduce((
-                data['subspace_dim'][:] == 1, data['reflections'][:] == 0
-            )).sum() / data['fval'].size,
-            'frac_gradient_steps': np.sum(data['step_type'][:] == 1) /
+                data['subspace_dim'][:] == 1,
+                data['step_type'][:] == '2d',
+            )).sum() / np.sum(data['step_type'][:] == '2d'),
+            'frac_gradient_steps': np.sum(data['step_type'][:] == 'g') /
+                data['fval'].size,
+            'frac_border_steps': np.sum(np.logical_and(
+                data['step_type'][:] != '2d',
+                data['step_type'][:] != 'nd',
+            )) /
                 data['fval'].size,
             'converged': np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLD
         } for data in f.values()])
@@ -167,27 +142,22 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     all_stats = pd.concat(stats)
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
-                 value_vars=['frac_max_iter_tr',
-                             'frac_no_hess_update',
+                 value_vars=['frac_no_hess_update',
                              'frac_no_hess_update_internal',
                              'frac_no_hess_update_border',
                              'frac_no_tr_update_int_sol',
-                             'frac_no_tr_update_int_sol_internal',
-                             'frac_no_tr_update_int_sol_border',
                              'frac_no_tr_update_tr_ratio',
                              'frac_no_tr_update_tr_ratio_internal',
                              'frac_no_tr_update_tr_ratio_border',
                              'frac_streak_no_tr_update_tr_ratio',
                              'max_frac_no_tr_update_tr_ratio',
                              'max10_frac_no_tr_update_tr_ratio',
-                             'max100_frac_no_tr_update_tr_ratio',
                              'frac_no_hess_struct_update',
-                             'frac_no_hess_struct_update_internal',
-                             'frac_no_hess_struct_update_border',
                              'frac_neg_ev',
                              'frac_posdef_newt',
-                             'frac_subspace_dim',
-                             'frac_gradient_steps'])
+                             'frac_degenerate_subspace',
+                             'frac_gradient_steps',
+                             'frac_border_steps'])
 
     grid = sns.FacetGrid(
         data=df,
