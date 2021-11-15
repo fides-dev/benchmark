@@ -111,16 +111,16 @@ def read_stats(model_name, optimizer):
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
                 / data['fval'].size,
             'frac_posdef_newt': np.sum(data['posdef_newt'][:]) /
-                np.sum(data['step_type'][:] == '2d'),
+                np.sum(data['step_type'][:] == b'2d'),
             'frac_degenerate_subspace': np.logical_and.reduce((
                 data['subspace_dim'][:] == 1,
-                data['step_type'][:] == '2d',
-            )).sum() / np.sum(data['step_type'][:] == '2d'),
-            'frac_gradient_steps': np.sum(data['step_type'][:] == 'g') /
+                data['step_type'][:] == b'2d',
+            )).sum() / np.sum(data['step_type'][:] == b'2d'),
+            'frac_gradient_steps': np.sum(data['step_type'][:] == b'g') /
                 data['fval'].size,
             'frac_border_steps': np.sum(np.logical_and(
-                data['step_type'][:] != '2d',
-                data['step_type'][:] != 'nd',
+                data['step_type'][:] != b'2d',
+                data['step_type'][:] != b'nd',
             )) /
                 data['fval'].size,
             'converged': np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLD
