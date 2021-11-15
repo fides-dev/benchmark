@@ -42,6 +42,7 @@ def read_stats(model_name, optimizer):
             'model': model_name,
             'optimizer': optimizer,
             'iter': data['fval'].size,
+            'frac_accepted': np.sum(data['accept'][:]) / data['fval'].size,
             'frac_no_hess_update': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
@@ -142,7 +143,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     all_stats = pd.concat(stats)
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
-                 value_vars=['frac_no_hess_update',
+                 value_vars=['frac_accepted',
+                             'frac_no_hess_update',
                              'frac_no_hess_update_internal',
                              'frac_no_hess_update_border',
                              'frac_no_tr_update_int_sol',
