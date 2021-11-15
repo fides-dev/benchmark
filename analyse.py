@@ -46,24 +46,24 @@ def read_stats(model_name, optimizer):
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
-            )).sum() / data['fval'].size,
+            )).sum() / np.sum(data['accept'][:]),
             'frac_no_hess_update_internal': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
                 data['reflections'][:] == 0
-            )).sum() / data['fval'].size,
+            )).sum() / np.sum(data['accept'][:]),
             'frac_no_hess_update_border': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
                 data['reflections'][:] > 0
-            )).sum() / data['fval'].size,
+            )).sum() / np.sum(data['accept'][:]),
             'frac_no_hess_struct_update': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_struct_update_min_ev'][:] == 0.0,
                 data['hess_struct_update_max_ev'][:] == 0.0,
-            )).sum() / data['fval'].size,
+            )).sum() / np.sum(data['accept'][:]),
             'frac_no_tr_update_int_sol': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
                 data['iterations_since_tr_update'][:] > 0,
@@ -112,7 +112,7 @@ def read_stats(model_name, optimizer):
                 / data['fval'].size,
             'frac_posdef_newt': np.sum(data['posdef_newt'][:]) /
                 np.sum(data['step_type'][:] == '2d'),
-            'frac_subspace_dim': np.logical_and.reduce((
+            'frac_degenerate_subspace': np.logical_and.reduce((
                 data['subspace_dim'][:] == 1,
                 data['step_type'][:] == '2d',
             )).sum() / np.sum(data['step_type'][:] == '2d'),
