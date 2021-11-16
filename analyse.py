@@ -100,7 +100,7 @@ def read_stats(model_name, optimizer):
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
                 / data['fval'].size,
             'frac_singular_shess':
-                np.sum(data['cond_shess'][:] > 1/np.spacing) /
+                np.sum(data['cond_shess'][:] > 1 / np.spacing(1)) /
                 data['fval'].size,
             'frac_posdef_newt': np.sum(data['posdef'][:]) /
                 np.sum(data['step_type'][:] == b'2d'),
