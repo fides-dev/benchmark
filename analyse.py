@@ -149,7 +149,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'max_frac_no_tr_update_tr_ratio',
                              'max25_frac_no_tr_update_tr_ratio',
                              'frac_no_hess_struct_update',
-                             'frac_singular_hess'
+                             'frac_singular_hess',
                              'frac_neg_ev',
                              'frac_posdef_newt',
                              'frac_degenerate_subspace',
