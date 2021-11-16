@@ -74,18 +74,6 @@ def read_stats(model_name, optimizer):
                 data['tr_ratio'][:] > 0.25,
                 data['iterations_since_tr_update'][:] > 0,
             )).sum() / data['fval'].size,
-            'frac_no_tr_update_tr_ratio_internal': np.logical_and.reduce((
-                data['tr_ratio'][:] < 0.75,
-                data['tr_ratio'][:] > 0.25,
-                data['iterations_since_tr_update'][:] > 0,
-                data['reflections'][:] == 0
-            )).sum() / data['fval'].size,
-            'frac_no_tr_update_tr_ratio_border': np.logical_and.reduce((
-                data['tr_ratio'][:] < 0.75,
-                data['tr_ratio'][:] > 0.25,
-                data['iterations_since_tr_update'][:] > 0,
-                data['reflections'][:] > 0
-            )).sum() / data['fval'].size,
             'frac_streak_no_tr_update_tr_ratio':  max_streak(
                 np.logical_and.reduce((
                     data['tr_ratio'][:] < 0.75,
@@ -100,21 +88,30 @@ def read_stats(model_name, optimizer):
                     data['iterations_since_tr_update'][:] > 0,
                 ))) / np.arange(1, data['fval'].size + 1)
             ),
-            'max10_frac_no_tr_update_tr_ratio': np.max(
+            'max25_frac_no_tr_update_tr_ratio': np.max(
                 np.cumsum(np.logical_and.reduce((
                     data['tr_ratio'][:] < 0.75,
                     data['tr_ratio'][:] > 0.25,
                     data['iterations_since_tr_update'][:] > 0,
-                )))[10:] / np.arange(11, data['fval'].size + 1)
+                )))[25:] / np.arange(26, data['fval'].size + 1)
             ) if data['fval'].size > 10 else 0,
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
             'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
                 / data['fval'].size,
-            'frac_posdef_newt': np.sum(data['posdef_newt'][:]) /
+            'frac_singular_shess':
+                np.sum(data['cond_shess'][:] > 1/np.spacing) /
+                data['fval'].size,
+            'frac_posdef_newt': np.sum(data['posdef'][:]) /
                 np.sum(data['step_type'][:] == b'2d'),
             'frac_degenerate_subspace': np.logical_and.reduce((
                 data['subspace_dim'][:] == 1,
+                np.logical_not(data['newton'][:]),
+                data['step_type'][:] == b'2d',
+            )).sum() / np.sum(data['step_type'][:] == b'2d'),
+            'frac_newton_steps': np.logical_and.reduce((
+                data['subspace_dim'][:] == 1,
+                data['newton'][:],
                 data['step_type'][:] == b'2d',
             )).sum() / np.sum(data['step_type'][:] == b'2d'),
             'frac_gradient_steps': np.sum(data['step_type'][:] == b'g') /
@@ -149,15 +146,14 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'frac_no_hess_update_border',
                              'frac_no_tr_update_int_sol',
                              'frac_no_tr_update_tr_ratio',
-                             'frac_no_tr_update_tr_ratio_internal',
-                             'frac_no_tr_update_tr_ratio_border',
                              'frac_streak_no_tr_update_tr_ratio',
                              'max_frac_no_tr_update_tr_ratio',
-                             'max10_frac_no_tr_update_tr_ratio',
+                             'max25_frac_no_tr_update_tr_ratio',
                              'frac_no_hess_struct_update',
                              'frac_neg_ev',
                              'frac_posdef_newt',
                              'frac_degenerate_subspace',
+                             'frac_newton_steps',
                              'frac_gradient_steps',
                              'frac_border_steps'])
 
