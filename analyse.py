@@ -94,7 +94,7 @@ def read_stats(model_name, optimizer):
                     data['tr_ratio'][:] > 0.25,
                     data['iterations_since_tr_update'][:] > 0,
                 )))[25:] / np.arange(26, data['fval'].size + 1)
-            ) if data['fval'].size > 10 else 0,
+            ) if data['fval'].size > 25 else 0,
             'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
             'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
                                   -np.sqrt(np.spacing(1))*data['hess_max_ev'])
@@ -109,11 +109,10 @@ def read_stats(model_name, optimizer):
                 np.logical_not(data['newton'][:]),
                 data['step_type'][:] == b'2d',
             )).sum() / np.sum(data['step_type'][:] == b'2d'),
-            'frac_newton_steps': np.logical_and.reduce((
-                data['subspace_dim'][:] == 1,
+            'frac_newton_steps': np.logical_and(
                 data['newton'][:],
                 data['step_type'][:] == b'2d',
-            )).sum() / np.sum(data['step_type'][:] == b'2d'),
+            ).sum() / np.sum(data['step_type'][:] == b'2d'),
             'frac_gradient_steps': np.sum(data['step_type'][:] == b'g') /
                 data['fval'].size,
             'frac_border_steps': np.sum(np.logical_and(
