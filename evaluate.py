@@ -100,7 +100,7 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.hessian=HybridB_75',
         'fides.subspace=2D.hessian=HybridB_50',
         'fides.subspace=2D.hessian=HybridB_25',
-        'fides.subspace=2D.hessian=BFGS.enforce_curv=False'
+        'fides.subspace=2D.hessian=BFGS'
     ],
     'hybridFB': [
         'fides.subspace=2D',
