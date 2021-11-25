@@ -96,17 +96,24 @@ if __name__ == '__main__':
                     continue
                 result = results[optimizer]
 
-                if 'ebounds=True' in optimizer.split('.'):
+                ebound_option = next((
+                    option
+                    for option in optimizer.split('.')
+                    if option.startswith('ebounds=')
+                ), None)
+
+                if ebound_option is not None:
+                    ebound = float(ebound_option.split('=')[1])
                     ubs = np.asarray([
-                        ub + 1 if scale == 'log10'
-                        else ub*10
+                        ub + np.log10(ebound) if scale == 'log10'
+                        else ub * ebound
                         for ub, scale in zip(
                             problem.ub_full, problem.x_scales
                         )
                     ])
                     lbs = np.asarray([
-                        lb + 1 if scale == 'log10'
-                        else lb*10
+                        lb - np.log10(ebound) if scale == 'log10'
+                        else lb * ebound
                         for lb, scale in zip(
                             problem.lb_full, problem.x_scales
                         )
