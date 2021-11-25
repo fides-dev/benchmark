@@ -27,12 +27,36 @@ rule run_benchmark_very_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
-        model='(Beer_MolBioSystems2014|Isensee_JCB2018'
-              '|Lucarelli_CellSystems2018|Bachmann_MSB2011)',
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018)',
+    shell:
+         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         '{wildcards.starts}'
+
+
+rule run_benchmark_extended:
+    input:
+        script='benchmark.py',
+        model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
+    output:
+        h5=os.path.join('results', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '.hdf5'),
+        stats=os.path.join('stats', PREFIX_TEMPLATE.format(
+            model='{model}', optimizer='{optimizer}', starts='{starts}'
+        ) + '__STATS.hdf5')
+    wildcard_constraints:
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Bachmann_MSB2011|Lucarelli_CellSystems2018)',
         optimizer='(fides\.subspace=2D\.hessian=FX|'
+                  'fides\.subspace=2D\.hessian=FX\.enforce_curv=False|'
                   'fides\.subspace=2D\.hessian=GNSBFGS|'
+                  'fides\.subspace=2D\.hessian=GNSBFGS\.enforce_curv=False|'
                   'fides\.subspace=2D\.hessian=SSM|'
-                  'fides\.subspace=2D\.hessian=TSSM)'
+                  'fides\.subspace=2D\.hessian=SSM\.enforce_curv=False|'
+                  'fides\.subspace=2D\.hessian=TSSM|'
+                  'fides\.subspace=2D\.hessian=TSSM\.enforce_curv=False|'
+                  'fides\.subspace=2D\.ebounds=1000|'
+                  'fides\.subspace=2D\.ebounds=100|'
+                  'fides\.subspace=2D\.ebounds=Inf)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
@@ -50,8 +74,7 @@ rule run_benchmark_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
-        model='(Beer_MolBioSystems2014|Isensee_JCB2018'
-              '|Lucarelli_CellSystems2018|Bachmann_MSB2011)'
+        model='(Bachmann_MSB2011|Lucarelli_CellSystems2018)'
     shell:
          'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
