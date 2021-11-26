@@ -147,7 +147,6 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D',
         'fides.subspace=2D.stepback=truncate',
         'fides.subspace=2D.stepback=mixed',
-        'fides.subspace=2D.stepback=refine',
         'fides.subspace=2D.ebounds=10',
         'fides.subspace=2D.ebounds=100',
         'fides.subspace=2D.ebounds=1000',
@@ -309,7 +308,6 @@ def load_results_from_benchmark(model, optimizer):
 
 if __name__ == '__main__':
     MODEL_NAME = sys.argv[1]
-    EVALUATION_TYPE = sys.argv[2]
 
     petab_problem, problem = load_problem(MODEL_NAME)
     set_solver_model_options(problem.objective.amici_solver,
@@ -319,7 +317,7 @@ if __name__ == '__main__':
 
     all_results = []
 
-    optimizers = ['lsqnonlin', 'fmincon'] + OPTIMIZER_FORWARD
+    optimizers = OPTIMIZER_FORWARD + ['fmincon', 'lsqnonlin']
     n_starts = N_STARTS_FORWARD[0]
 
     for optimizer in optimizers:
@@ -351,7 +349,7 @@ if __name__ == '__main__':
     )
     plt.tight_layout()
     plt.savefig(os.path.join('evaluation',
-                             f'{MODEL_NAME}_all_starts_{EVALUATION_TYPE}.pdf'))
+                             f'{MODEL_NAME}_all_starts.pdf'))
 
     waterfall(
         [r['result'] for r in waterfall_results],
@@ -363,7 +361,7 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'{MODEL_NAME}_{int(int(n_starts)/10)}_starts_{EVALUATION_TYPE}.pdf'
+        f'{MODEL_NAME}_{int(int(n_starts)/10)}_starts.pdf'
     ))
 
     waterfall_results_stepback = [
@@ -374,7 +372,9 @@ if __name__ == '__main__':
         [r['result'] for r in waterfall_results_stepback],
         legends=[r['optimizer'] for r in waterfall_results_stepback],
         colors=[
-            tuple([*c, 1.0]) for c in sns.color_palette('Set2', 2)
+            tuple([*c, 1.0]) for c in sns.color_palette(
+                ALGO_PALETTES['stepback'], len(waterfall_results_stepback)
+            )
         ],
         start_indices=range(int(int(n_starts) / 10)),
         size=(4, 3.5),
@@ -382,8 +382,7 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'{MODEL_NAME}_{int(int(n_starts) / 10)}_starts_'
-        f'{EVALUATION_TYPE}_stepback.pdf'
+        f'{MODEL_NAME}_{int(int(n_starts) / 10)}_starts_stepback.pdf'
     ))
 
     df = pd.DataFrame([
@@ -429,7 +428,7 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
-            f'{MODEL_NAME}_iter_{analysis}_{EVALUATION_TYPE}.pdf'
+            f'{MODEL_NAME}_iter_{analysis}.pdf'
         ))
 
     df_pivot = df[
@@ -443,23 +442,16 @@ if __name__ == '__main__':
     df_pivot.columns = [' '.join(col).strip()
                         for col in df_pivot.columns.values]
 
-    for name, vals in {
-        '2Dvsfull_FIM': ('fval fides.subspace=2D',
-                         'fval fides.subspace=full'),
-        'FIMvsBFGS_2D': ("fval fides.subspace=2D",
-                         "fval fides.subspace=2D.hessian=BFGS"),
-        'FIMvsSR1_2D': ("fval fides.subspace=2D",
-                        "fval fides.subspace=2D.hessian=SR1"),
-        'FIMvsHybrid_5_2D': ("fval fides.subspace=2D",
-                              "fval fides.subspace=2D.hessian=HybridB_5"),
-        'FIMvsHybrid_25_2D': ("fval fides.subspace=2D",
-                             "fval fides.subspace=2D.hessian=HybridB_25"),
-        'reflect': ("fval fides.subspace=2D",
-                    "fval fides.subspace=2D.stepback=reflect_single"),
-    }.items():
+    for optimizer in optimizers:
+        if optimizer == 'fval fides.subspace=2D':
+            continue
+
+        x = 'fval fides.subspace=2D'
+        y = f'fval {optimizer}'
+        if y not in df_pivot:
+            continue
         lb, ub = [
-            fun([fun(df_pivot[vals[0]]),
-                 fun(df_pivot[vals[1]])])
+            fun([fun(df_pivot[x]), fun(df_pivot[y])])
             for fun in [np.nanmin, np.nanmax]
         ]
         lb -= (ub - lb) / 10
@@ -467,8 +459,8 @@ if __name__ == '__main__':
 
         sns.jointplot(
             data=df_pivot,
-            x=vals[0],
-            y=vals[1],
+            x=x,
+            y=y,
             kind='scatter', xlim=(lb, ub), ylim=(lb, ub),
             alpha=0.3,
             marginal_kws={'bins': 25},
@@ -476,51 +468,5 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
-            f'{MODEL_NAME}_fval_{name}_{EVALUATION_TYPE}.pdf'
+            f'{MODEL_NAME}_fval_{optimizer}.pdf'
         ))
-
-    df_metrics = pd.DataFrame([
-        {
-            'convergence_count': get_num_converged(
-                results['result'].optimize_result.get_for_key('fval'),
-                fmin
-            ),
-            'conv_per_grad': get_num_converged_per_grad(
-                results['result'].optimize_result.get_for_key('fval'),
-                results['result'].optimize_result.get_for_key('n_sres')
-                if results['optimizer'] == 'ls_tr' else
-                results['result'].optimize_result.get_for_key('n_grad'),
-                fmin
-            ),
-            'consistency': get_dist(
-                results['result'].optimize_result.get_for_key('fval'),
-                fmin
-            ),
-
-            'optimizer': results['optimizer']
-        }
-        for results in all_results
-    ])
-
-    df_metrics['opt_subspace'] = df_metrics['optimizer'].apply(
-        lambda x:
-        'fides ' + x.split('.')[1].split('=')[1]
-        if len(x.split('.')) > 1
-        else ''
-    )
-
-    df_metrics['hessian'] = df_metrics['optimizer'].apply(
-        lambda x: x.split('.')[2].split('=')[1] if len(x.split('.')) > 2
-        else 'FIM'
-    )
-
-    for analysis, algos in ANALYSIS_ALGOS.items():
-        for metric in ['convergence_count', 'conv_per_grad', 'consistency']:
-            plt.subplots()
-            g = sns.barplot(data=df_metrics, x='optimizer', y=metric,
-                            order=[x for x in algos])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'{MODEL_NAME}_{metric}_{analysis}_{EVALUATION_TYPE}.pdf'
-            ))

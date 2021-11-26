@@ -186,17 +186,17 @@ if __name__ == '__main__':
                        'boundary_minima']:
 
             bottoms = {
-                'conv_per_grad': 5e-7,
-                'conv_count':  0,
-                'unique_at_boundary': 0,
-                'boundary_minima': 0,
+                'conv_per_grad': 1e-7,
+                'conv_count':  1e0,
+                'unique_at_boundary': 1e0,
+                'boundary_minima': 1e0,
             }
 
             tops = {
                 'conv_per_grad': 1e-1,
                 'conv_count': 1e3,
                 'unique_at_boundary': 1e3,
-                'boundary_minima': 3e2,
+                'boundary_minima': 1e3,
             }
 
             plt.subplots()
@@ -210,8 +210,7 @@ if __name__ == '__main__':
                 bottom=bottoms[metric],
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            if metric in ['conv_per_grad']:
-                g.set_yscale('log')
+            g.set_yscale('log')
             g.set(ylim=(bottoms[metric], tops[metric]))
 
             plt.tight_layout()
