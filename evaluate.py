@@ -75,7 +75,6 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.stepback=truncate',
     'fides.subspace=2D.ebounds=10',
     'fides.subspace=2D.ebounds=100',
-    'fides.subspace=2D.ebounds=1000',
     'fides.subspace=2D.ebounds=Inf',
     'ls_trf',
     'ls_trf_2D',
@@ -147,9 +146,9 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D',
         'fides.subspace=2D.stepback=truncate',
         'fides.subspace=2D.stepback=mixed',
+        'fides.subspace=2D.stepback=refine',
         'fides.subspace=2D.ebounds=10',
         'fides.subspace=2D.ebounds=100',
-        'fides.subspace=2D.ebounds=1000',
         'fides.subspace=2D.ebounds=Inf',
     ]
 }
