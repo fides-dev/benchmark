@@ -152,4 +152,4 @@ rule eigenvalues:
                ],
                starts=N_STARTS_FORWARD)
 
-ruleorder: run_benchmark_very_long > run_benchmark_long > run_benchmark_short > run_benchmark
+ruleorder: run_benchmark_extended > run_benchmark_very_long > run_benchmark_long > run_benchmark_short > run_benchmark
