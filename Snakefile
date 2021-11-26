@@ -28,7 +28,7 @@ rule run_benchmark_very_long:
     wildcard_constraints:
         model='(Beer_MolBioSystems2014|Isensee_JCB2018)',
     shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 
@@ -56,7 +56,7 @@ rule run_benchmark_extended:
                   'fides\.subspace=2D\.ebounds=100|'
                   'fides\.subspace=2D\.ebounds=Inf)'
     shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 
@@ -73,7 +73,7 @@ rule run_benchmark_long:
     wildcard_constraints:
         model='(Bachmann_MSB2011|Lucarelli_CellSystems2018)'
     shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 rule run_benchmark_short:
@@ -89,7 +89,7 @@ rule run_benchmark_short:
     wildcard_constraints:
         model='(Crauste_CellSystems2017|Boehm_JProteomeRes2014|Bruno_JExpBot2016)'
     shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 rule run_benchmark:
@@ -103,7 +103,7 @@ rule run_benchmark:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     shell:
-         'python3 {input.script} {wildcards.model} {wildcards.optimizer} '
+         'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
 
 rule check_eigenvalues:
