@@ -22,15 +22,6 @@ def set_solver_model_options(solver, model):
     solver.setAbsoluteTolerance(1e-8)
     solver.setRelativeTolerance(1e-8)
 
-    if model.getName() == 'Chen_MSB2009':
-        solver.setMaxSteps(int(2e5))
-        solver.setInterpolationType(
-            amici.InterpolationType_polynomial
-        )
-        solver.setSensitivityMethod(
-            amici.SensitivityMethod.adjoint
-        )
-
     if model.getName() in ('Brannmark_JBC2010', 'Isensee_JCB2018'):
         model.setSteadyStateSensitivityMode(
             amici.SteadyStateSensitivityMode.simulationFSA
@@ -54,7 +45,6 @@ def get_optimizer(optimizer_name: str, history_file: str,
             'stepback': fides.Options.STEPBACK_STRAT,
             'subspace': fides.Options.SUBSPACE_DIM,
         }
-
 
         happ = parsed_options.pop('hessian', 'FIM')
         enforce_curv = bool(distutils.util.strtobool(
@@ -186,7 +176,19 @@ if __name__ == '__main__':
         parsed_options
     )
 
-    engine = pypesto.engine.MultiThreadEngine(n_threads=10)
+    engine_threads = 10
+    # split parallelization for most expensive models to optimize load
+    # balancing
+    if MODEL_NAME in ['Bachmann_MSB2011', 'Isensee_JCB2018',
+                      'Lucarelli_CellSystems2018', 'Beer_MolBioSystems2014']:
+        # Bachmann   nc =  36 (4* 9)
+        # Lucarelli  nc =  16 (4* 4)
+        # Isensee    nc = 123 (4*30 + 3)
+        # Beer       nc =  19 (4* 4 + 3)
+        engine_threads = 3
+        objective.n_threads = 4
+
+    engine = pypesto.engine.MultiThreadEngine(n_threads=engine_threads)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
                                        startpoint_resample=False,

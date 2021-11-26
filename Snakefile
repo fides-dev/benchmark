@@ -17,7 +17,6 @@ rule compile_model:
 
 rule run_benchmark_very_long:
     input:
-        script='benchmark.py',
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
@@ -35,7 +34,6 @@ rule run_benchmark_very_long:
 
 rule run_benchmark_extended:
     input:
-        script='benchmark.py',
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
@@ -64,7 +62,6 @@ rule run_benchmark_extended:
 
 rule run_benchmark_long:
     input:
-        script='benchmark.py',
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
@@ -81,7 +78,6 @@ rule run_benchmark_long:
 
 rule run_benchmark_short:
     input:
-        script='benchmark.py',
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
@@ -98,7 +94,6 @@ rule run_benchmark_short:
 
 rule run_benchmark:
     input:
-        script='benchmark.py',
         model=os.path.join('amici_models', '{model}', '{model}', '{model}.py')
     output:
         h5=os.path.join('results', PREFIX_TEMPLATE.format(
@@ -128,15 +123,14 @@ rule evaluate_subspace_benchmark:
                     model=['{model}'], optimizer=OPTIMIZER_FORWARD,
                     starts=N_STARTS_FORWARD)
     output:
-        full_waterfall=os.path.join('evaluation',
-                                    '{model}_all_starts_forward.pdf')
+        full_waterfall=os.path.join('evaluation', '{model}_all_starts.pdf')
     shell:
-        'python3 {input.script} {wildcards.model} forward'
+        'python3 {input.script} {wildcards.model}'
 
 rule benchmark:
     input:
         expand(
-            os.path.join('evaluation', '{model}_all_starts_forward.pdf'),
+            os.path.join('evaluation', '{model}_all_starts.pdf'),
             model=MODELS
         )
 
