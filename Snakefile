@@ -26,7 +26,7 @@ rule run_benchmark_very_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
-        model='(Beer_MolBioSystems2014|Isensee_JCB2018)',
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Lucarelli_CellSystems2018)',
     shell:
          'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'
@@ -71,7 +71,7 @@ rule run_benchmark_long:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
-        model='(Bachmann_MSB2011|Lucarelli_CellSystems2018)'
+        model='(Bachmann_MSB2011|Weber_BMC2015)'
     shell:
          'python3 benchmark.py {wildcards.model} {wildcards.optimizer} '
          '{wildcards.starts}'

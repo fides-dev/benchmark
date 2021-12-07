@@ -120,7 +120,11 @@ def read_stats(model_name, optimizer):
                 data['step_type'][:] != b'nd',
             )) /
                 data['fval'].size,
-            'converged': np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLD
+            'converged': np.min(data['fval'][:]) < fmin +
+                         CONVERGENCE_THRESHOLD,
+            'frac_integration_failure': np.sum(np.logical_not(np.isfinite(
+                data['fval'][:]
+            ))) / data['fval'].size,
         } for data in f.values()])
     return stats
 
@@ -155,7 +159,8 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                              'frac_degenerate_subspace',
                              'frac_newton_steps',
                              'frac_gradient_steps',
-                             'frac_border_steps'])
+                             'frac_border_steps',
+                             'frac_integration_failure'])
 
     grid = sns.FacetGrid(
         data=df,
@@ -165,6 +170,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         hue_order=algos,
         palette=ALGO_PALETTES[analysis],
         margin_titles=True,
+        legend=True,
         legend_out=True,
         despine=True,
     )
@@ -176,7 +182,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         markers={True: 's', False: 'X'},
         alpha=0.2,
         s=8,
-    ).set(xscale='log')
+    ).set(xscale='log', yscale='log')
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
