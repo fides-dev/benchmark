@@ -170,7 +170,6 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         hue_order=algos,
         palette=ALGO_PALETTES[analysis],
         margin_titles=True,
-        legend=True,
         legend_out=True,
         despine=True,
     )
@@ -182,7 +181,9 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         markers={True: 's', False: 'X'},
         alpha=0.2,
         s=8,
-    ).set(xscale='log', yscale='log')
+    )
+    grid.set(xscale='log', yscale='log')
+    grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
