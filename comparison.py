@@ -178,9 +178,11 @@ if __name__ == '__main__':
                     10 ** results.loc[results.optimizer == optimizer,
                                       'improvement'].apply(np.log10).mean()
 
-        print(results)
+        
+        print(results.drop('iter'))
 
-        results.to_csv(os.path.join('evaluation', f'comparison_{analysis}.csv'))
+        results.drop('iter').to_csv(os.path.join('evaluation',
+                                                 f'comparison_{analysis}.csv'))
 
         for metric in ['conv_count', 'conv_per_grad', 'unique_at_boundary',
                        'boundary_minima']:
