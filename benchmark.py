@@ -47,47 +47,25 @@ def get_optimizer(optimizer_name: str, history_file: str,
         }
 
         happ = parsed_options.pop('hessian', 'FIM')
-        enforce_curv = bool(distutils.util.strtobool(
-            parsed_options.pop('enforce_curv', 'True')
-        ))
-
-        if re.match(r'Hybrid[SB]0?_[0-9]+', happ):
+        if re.match(r'Hybrid[SB]_[0-9]+', happ):
             hybrid_happ, nswitch = happ[6:].split('_')
 
-            happs = {
-                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
-                                enforce_curv_cond=enforce_curv),
-                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
-            }
+            happs = {'B': fides.BFGS(),
+                     'S': fides.SR1()}
 
             hessian_update = fides.HybridFixed(
                 switch_iteration=int(float(nswitch)),
                 happ=happs[hybrid_happ[0]],
             )
-        elif re.match(r'HybridF[SB]0?_[0-9\-]+', happ):
-            hybrid_happ, tswitch = happ[7:].split('_')
-
-            happs = {
-                'B': fides.BFGS(init_with_hess=hybrid_happ.endswith('0'),
-                                enforce_curv_cond=enforce_curv),
-                'S': fides.SR1(init_with_hess=hybrid_happ.endswith('0'))
-            }
-
-            hessian_update = fides.HybridFraction(
-                switch_threshold=float(tswitch.replace('-', '.')),
-                happ=happs[hybrid_happ[0]],
-            )
         else:
-            hessian_update = {
-                'BFGS': fides.BFGS(enforce_curv_cond=enforce_curv),
-                'SR1': fides.SR1(),
-                'FX': fides.FX(fides.BFGS(enforce_curv_cond=enforce_curv)),
-                'GNSBFGS': fides.GNSBFGS(enforce_curv_cond=enforce_curv),
-                'SSM': fides.SSM(enforce_curv_cond=enforce_curv),
-                'TSSM': fides.TSSM(enforce_curv_cond=enforce_curv),
-                'FIM': None,
-                'FIMe': None,
-            }[happ]
+            hessian_update = {'BFGS': fides.BFGS(),
+                              'SR1': fides.SR1(),
+                              'FX': fides.FX(fides.BFGS()),
+                              'GNSBFGS': fides.GNSBFGS(),
+                              'SSM': fides.SSM(),
+                              'TSSM': fides.TSSM(),
+                              'FIM': None,
+                              'FIMe': None}[happ]
 
         for parse_field, optim_field in parsed2optim.items():
             if parse_field in parsed_options:

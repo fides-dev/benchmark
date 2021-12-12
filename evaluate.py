@@ -44,31 +44,14 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=HybridB_50',
     'fides.subspace=2D.hessian=HybridB_75',
     'fides.subspace=2D.hessian=HybridB_100',
-    'fides.subspace=2D.hessian=HybridB_25.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridB_50.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridB_75.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridB_100.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridFB_0-7',
-    'fides.subspace=2D.hessian=HybridFB_0-8',
-    'fides.subspace=2D.hessian=HybridFB_0-9',
-    'fides.subspace=2D.hessian=HybridFB_0-95',
-    'fides.subspace=2D.hessian=HybridFB_0-7.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridFB_0-8.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridFB_0-9.enforce_curv=False',
-    'fides.subspace=2D.hessian=HybridFB_0-95.enforce_curv=False',
     'fides.subspace=full.hessian=BFGS',
     'fides.subspace=2D.hessian=BFGS',
-    'fides.subspace=2D.hessian=BFGS.enforce_curv=False',
     'fides.subspace=full.hessian=SR1',
     'fides.subspace=2D.hessian=SR1',
     'fides.subspace=2D.hessian=FX',
-    'fides.subspace=2D.hessian=FX.enforce_curv=False',
     'fides.subspace=2D.hessian=SSM',
-    'fides.subspace=2D.hessian=SSM.enforce_curv=False',
     'fides.subspace=2D.hessian=TSSM',
-    'fides.subspace=2D.hessian=TSSM.enforce_curv=False',
     'fides.subspace=2D.hessian=GNSBFGS',
-    'fides.subspace=2D.hessian=GNSBFGS.enforce_curv=False',
     'fides.subspace=2D.stepback=reflect_single',
     'fides.subspace=2D.stepback=truncate',
     'fides.subspace=2D.ebounds=10',
@@ -99,30 +82,6 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.hessian=HybridB_25',
         'fides.subspace=2D.hessian=BFGS'
     ],
-    'hybridFB': [
-        'fides.subspace=2D',
-        'fides.subspace=2D.hessian=HybridFB_0-95',
-        'fides.subspace=2D.hessian=HybridFB_0-9',
-        'fides.subspace=2D.hessian=HybridFB_0-8',
-        'fides.subspace=2D.hessian=HybridFB_0-7',
-        'fides.subspace=2D.hessian=BFGS'
-    ],
-    'hybridBc': [
-        'fides.subspace=2D',
-        'fides.subspace=2D.hessian=HybridB_100.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridB_75.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridB_50.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridB_25.enforce_curv=False',
-        'fides.subspace=2D.hessian=BFGS.enforce_curv=False'
-    ],
-    'hybridFBc': [
-        'fides.subspace=2D',
-        'fides.subspace=2D.hessian=HybridFB_0-95.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridFB_0-9.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridFB_0-8.enforce_curv=False',
-        'fides.subspace=2D.hessian=HybridFB_0-7.enforce_curv=False',
-        'fides.subspace=2D.hessian=BFGS.enforce_curv=False'
-    ],
     'hybrid': [
         'fides.subspace=2D',
         'fides.subspace=2D.hessian=HybridB_50',
@@ -130,14 +89,6 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.hessian=SSM',
         'fides.subspace=2D.hessian=TSSM',
         'fides.subspace=2D.hessian=GNSBFGS'
-    ],
-    'hybridc': [
-        'fides.subspace=2D',
-        'fides.subspace=2D.hessian=HybridB_50.enforce_curv=False',
-        'fides.subspace=2D.hessian=FX.enforce_curv=False',
-        'fides.subspace=2D.hessian=SSM.enforce_curv=False',
-        'fides.subspace=2D.hessian=TSSM.enforce_curv=False',
-        'fides.subspace=2D.hessian=GNSBFGS.enforce_curv=False'
     ],
     'stepback': [
         'fides.subspace=2D.stepback=reflect_single',
@@ -153,11 +104,7 @@ ALGO_PALETTES = {
     'matlab': ALGO_COLORS,
     'curv': 'tab20',
     'hybrid': 'Dark2',
-    'hybridc': 'Dark2',
     'hybridB': 'Blues',
-    'hybridBc': 'Blues',
-    'hybridFB': 'Greens',
-    'hybridFBc': 'Greens',
     'stepback': 'Set2',
 }
 
