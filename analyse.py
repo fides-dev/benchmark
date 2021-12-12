@@ -85,13 +85,12 @@ def read_stats(model_name, optimizer):
                              -np.sqrt(np.spacing(1))*data['hess_max_ev']),
             'singular_shess':
                 np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
-            'posdef_newt': np.sum(data['posdef'][:]) /
-                np.sum(data['step_type'][:] == b'2d'),
+            'posdef_newt': np.sum(data['posdef'][:]),
             'degenerate_subspace': np.logical_and.reduce((
                 data['subspace_dim'][:] == 1,
                 np.logical_not(data['newton'][:]),
                 data['step_type'][:] == b'2d',
-            )).sum() / np.sum(data['step_type'][:] == b'2d'),
+            )).sum(),
             'newton_steps': np.logical_and(
                 data['newton'][:],
                 data['step_type'][:] == b'2d',
