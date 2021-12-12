@@ -26,7 +26,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLD = 0.05
+CONVERGENCE_THRESHOLD = 2
 
 cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
@@ -70,8 +70,6 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=GNSBFGS',
     'fides.subspace=2D.hessian=GNSBFGS.enforce_curv=False',
     'fides.subspace=2D.stepback=reflect_single',
-    'fides.subspace=2D.stepback=refine',
-    'fides.subspace=2D.stepback=mixed',
     'fides.subspace=2D.stepback=truncate',
     'fides.subspace=2D.ebounds=10',
     'fides.subspace=2D.ebounds=100',
@@ -145,8 +143,6 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.stepback=reflect_single',
         'fides.subspace=2D',
         'fides.subspace=2D.stepback=truncate',
-        'fides.subspace=2D.stepback=mixed',
-        'fides.subspace=2D.stepback=refine',
         'fides.subspace=2D.ebounds=10',
         'fides.subspace=2D.ebounds=100',
         'fides.subspace=2D.ebounds=Inf',
