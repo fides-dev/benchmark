@@ -42,89 +42,70 @@ def read_stats(model_name, optimizer):
             'model': model_name,
             'optimizer': optimizer,
             'iter': data['fval'].size,
-            'frac_accepted': np.sum(data['accept'][:]) / data['fval'].size,
-            'frac_no_hess_update': np.logical_and.reduce((
+            'accepted': np.sum(data['accept'][:]),
+            'no_hess_update': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
-            )).sum() / np.sum(data['accept'][:]),
-            'frac_no_hess_update_internal': np.logical_and.reduce((
+            )).sum(),
+            'no_hess_update_internal': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
                 data['reflections'][:] == 0
-            )).sum() / np.sum(data['accept'][:]),
-            'frac_no_hess_update_border': np.logical_and.reduce((
+            )).sum(),
+            'no_hess_update_border': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_update_min_ev'][:] == 0.0,
                 data['hess_update_max_ev'][:] == 0.0,
                 data['reflections'][:] > 0
-            )).sum() / np.sum(data['accept'][:]),
-            'frac_no_hess_struct_update': np.logical_and.reduce((
+            )).sum(),
+            'no_hess_struct_update': np.logical_and.reduce((
                 data['accept'][:],
                 data['hess_struct_update_min_ev'][:] == 0.0,
                 data['hess_struct_update_max_ev'][:] == 0.0,
-            )).sum() / np.sum(data['accept'][:]),
-            'frac_no_tr_update_int_sol': np.logical_and.reduce((
+            )).sum(),
+            'no_tr_update_int_sol': np.logical_and.reduce((
                 data['tr_ratio'][:] > 0.75,
                 data['iterations_since_tr_update'][:] > 0,
-            )).sum() / data['fval'].size,
-            'frac_no_tr_update_tr_ratio': np.logical_and.reduce((
+            )).sum(),
+            'no_tr_update_tr_ratio': np.logical_and.reduce((
                 data['tr_ratio'][:] < 0.75,
                 data['tr_ratio'][:] > 0.25,
                 data['iterations_since_tr_update'][:] > 0,
-            )).sum() / data['fval'].size,
-            'frac_streak_no_tr_update_tr_ratio':  max_streak(
+            )).sum(),
+            'streak_no_tr_update_tr_ratio':  max_streak(
                 np.logical_and.reduce((
                     data['tr_ratio'][:] < 0.75,
                     data['tr_ratio'][:] > 0.25,
                     data['iterations_since_tr_update'][:] > 0,
                 )
-            )) / data['fval'].size,
-            'max_frac_no_tr_update_tr_ratio': np.max(
-                np.cumsum(np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
-                    data['iterations_since_tr_update'][:] > 0,
-                ))) / np.arange(1, data['fval'].size + 1)
-            ),
-            'max25_frac_no_tr_update_tr_ratio': np.max(
-                np.cumsum(np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
-                    data['iterations_since_tr_update'][:] > 0,
-                )))[25:] / np.arange(26, data['fval'].size + 1)
-            ) if data['fval'].size > 25 else 0,
-            'max_hess_ev': np.log10(np.min(data['hess_max_ev'][:])),
-            'frac_neg_ev': np.sum(data['hess_min_ev'][:] <
-                                  -np.sqrt(np.spacing(1))*data['hess_max_ev'])
-                / data['fval'].size,
-            'frac_singular_shess':
-                np.sum(data['cond_shess'][:] > 1 / np.spacing(1)) /
-                data['fval'].size,
-            'frac_posdef_newt': np.sum(data['posdef'][:]) /
+            )),
+            'neg_ev': np.sum(data['hess_min_ev'][:] <
+                             -np.sqrt(np.spacing(1))*data['hess_max_ev']),
+            'singular_shess':
+                np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
+            'posdef_newt': np.sum(data['posdef'][:]) /
                 np.sum(data['step_type'][:] == b'2d'),
-            'frac_degenerate_subspace': np.logical_and.reduce((
+            'degenerate_subspace': np.logical_and.reduce((
                 data['subspace_dim'][:] == 1,
                 np.logical_not(data['newton'][:]),
                 data['step_type'][:] == b'2d',
             )).sum() / np.sum(data['step_type'][:] == b'2d'),
-            'frac_newton_steps': np.logical_and(
+            'newton_steps': np.logical_and(
                 data['newton'][:],
                 data['step_type'][:] == b'2d',
-            ).sum() / np.sum(data['step_type'][:] == b'2d'),
-            'frac_gradient_steps': np.sum(data['step_type'][:] == b'g') /
-                data['fval'].size,
-            'frac_border_steps': np.sum(np.logical_and(
+            ).sum(),
+            'gradient_steps': np.sum(data['step_type'][:] == b'g'),
+            'border_steps': np.sum(np.logical_and(
                 data['step_type'][:] != b'2d',
                 data['step_type'][:] != b'nd',
-            )) /
-                data['fval'].size,
+            )),
             'converged': np.min(data['fval'][:]) < fmin +
                          CONVERGENCE_THRESHOLD,
-            'frac_integration_failure': np.sum(np.logical_not(np.isfinite(
+            'integration_failure': np.sum(np.logical_not(np.isfinite(
                 data['fval'][:]
-            ))) / data['fval'].size,
+            ))),
         } for data in f.values()])
     return stats
 
@@ -143,24 +124,22 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     all_stats = pd.concat(stats)
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
-                 value_vars=['frac_accepted',
-                             'frac_no_hess_update',
-                             'frac_no_hess_update_internal',
-                             'frac_no_hess_update_border',
-                             'frac_no_tr_update_int_sol',
-                             'frac_no_tr_update_tr_ratio',
-                             'frac_streak_no_tr_update_tr_ratio',
-                             'max_frac_no_tr_update_tr_ratio',
-                             'max25_frac_no_tr_update_tr_ratio',
-                             'frac_no_hess_struct_update',
-                             'frac_singular_shess',
-                             'frac_neg_ev',
-                             'frac_posdef_newt',
-                             'frac_degenerate_subspace',
-                             'frac_newton_steps',
-                             'frac_gradient_steps',
-                             'frac_border_steps',
-                             'frac_integration_failure'])
+                 value_vars=['accepted',
+                             'no_hess_update',
+                             'no_hess_update_internal',
+                             'no_hess_update_border',
+                             'no_tr_update_int_sol',
+                             'no_tr_update_tr_ratio',
+                             'streak_no_tr_update_tr_ratio',
+                             'no_hess_struct_update',
+                             'singular_shess',
+                             'neg_ev',
+                             'posdef_newt',
+                             'degenerate_subspace',
+                             'newton_steps',
+                             'gradient_steps',
+                             'border_steps',
+                             'integration_failure'])
 
     grid = sns.FacetGrid(
         data=df,
@@ -182,7 +161,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', yscale='log')
+    grid.set(xscale='log', yscale='symlog')
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
