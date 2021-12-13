@@ -62,7 +62,7 @@ if __name__ == '__main__':
     mpl.rcParams.update(new_rc_params)
 
     all_results = []
-    for model in MODELS[2:3]:
+    for model in MODELS:
         petab_problem, problem = load_problem(model)
         if isinstance(problem.objective, pypesto.AmiciObjective):
             objective = problem.objective
