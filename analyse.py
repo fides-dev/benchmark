@@ -188,6 +188,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         y='value',
         style='converged',
         markers={True: 's', False: 'X'},
+        edgecolor=None,
         alpha=0.2,
         s=8,
     )
