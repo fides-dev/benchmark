@@ -25,8 +25,8 @@ def max_streak(vector):
     return np.max(run_len)
 
 
-FIDES_MU = fides.constants.DEFAULT_OPTIONS.MU
-FIDES_ETA = fides.constants.DEFAULT_OPTIONS.ETA
+FIDES_MU = fides.constants.DEFAULT_OPTIONS[fides.Options.MU]
+FIDES_ETA = fides.constants.DEFAULT_OPTIONS[fides.Options.ETA]
 
 STATS = {
     'accepted':
