@@ -62,7 +62,7 @@ if __name__ == '__main__':
     mpl.rcParams.update(new_rc_params)
 
     all_results = []
-    for model in MODELS:
+    for model in MODELS[2:3]:
         petab_problem, problem = load_problem(model)
         if isinstance(problem.objective, pypesto.AmiciObjective):
             objective = problem.objective
@@ -136,9 +136,11 @@ if __name__ == '__main__':
 
     for threshold in CONVERGENCE_THRESHOLDS:
         for model in MODELS:
+            mrows = results.model == model.split('_')[0]
+
             results_model = [
                 r for r in all_results
-                if r['model'] == model
+                if r['model'] == model.split('_')[0]
             ]
 
             def has_ebounds(optimizer):
@@ -147,16 +149,13 @@ if __name__ == '__main__':
                     for option in optimizer.split('.')
                 )
 
-            if results_model:
-                fmin_all = np.nanmin([
-                    np.min(result['fmin'])
-                    for result in results_model
-                    if not has_ebounds(result['optimizer'])
-                ])
-            else:
-                fmin_all = 0
+            fmin_all = np.nanmin([
+                np.min(result['fmin'])
+                for result in results_model
+                if not has_ebounds(result['optimizer'])
+            ])
 
-            results['conv_count'] = results.apply(
+            results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged(x.fmin,
                                   fmin_all if not has_ebounds(x.optimizer)
@@ -164,7 +163,7 @@ if __name__ == '__main__':
                                   threshold),
                 axis=1
             )
-            results['conv_rate'] = results.apply(
+            results.loc[mrows, 'conv_rate'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged_per_grad(x.fmin, x.iter,
                                            fmin_all if not has_ebounds(
@@ -173,10 +172,8 @@ if __name__ == '__main__':
                                            threshold), axis=1
             )
 
-        # compute improvement compared to ref algo
-        ref_algo = 'fides.subspace=2D'
-        for model in MODELS:
-            mrows = results.model == model.split('_')[0]
+            # compute improvement compared to ref algo
+            ref_algo = 'fides.subspace=2D'
             if np.any(mrows & (results.optimizer == ref_algo)):
                 ref_val = results.loc[
                     mrows & (results.optimizer == ref_algo), 'conv_rate'
@@ -203,10 +200,12 @@ if __name__ == '__main__':
             # conv counts plot
             plt.subplots()
             g = sns.FacetGrid(
-                df_analysis,  row='variable', hue='optimizer',
-                hue_order=algos, sharex=True, sharey=True, palette=palette
+                df_analysis,  row='variable',
+                sharex=True, sharey=True, palette=palette
             )
-            g.map_dataframe(sns.barplot, x='model', y='value', bottom=1e0)
+            g.map_dataframe(sns.barplot, x='model', y='value',
+                            hue='optimizer', hue_order=algos,
+                            bottom=1e0)
 
             g.set(yscale='log', ylim=(1e0, 1e3))
             for ax in g.axes.ravel():
