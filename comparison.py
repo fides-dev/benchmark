@@ -8,7 +8,7 @@ import pypesto
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
-    ANALYSIS_ALGOS, ALGO_PALETTES
+    ANALYSIS_ALGOS, ALGO_PALETTES, CONVERGENCE_THRESHOLDS, OPTIMIZER_FORWARD
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -61,115 +61,128 @@ if __name__ == '__main__':
     }
     mpl.rcParams.update(new_rc_params)
 
-    for analysis, algos in ANALYSIS_ALGOS.items():
+    all_results = []
+    for model in MODELS[2:3]:
+        petab_problem, problem = load_problem(model)
+        if isinstance(problem.objective, pypesto.AmiciObjective):
+            objective = problem.objective
+        else:
+            objective = problem.objective._objectives[0]
+        set_solver_model_options(objective.amici_solver,
+                                 objective.amici_model)
 
-        all_results = []
+        results = {}
+        for optimizer in OPTIMIZER_FORWARD:
+            try:
+                results[optimizer] = load_results(model, optimizer, '1000')
+            except (FileNotFoundError, IOError) as err:
+                print(f'Failed loading: {err}')
 
-        for model in MODELS:
-            petab_problem, problem = load_problem(model)
-            if isinstance(problem.objective, pypesto.AmiciObjective):
-                objective = problem.objective
+        for optimizer in OPTIMIZER_FORWARD:
+            if optimizer not in results:
+                continue
+            result = results[optimizer]
+
+            ebound_option = next((
+                option
+                for option in optimizer.split('.')
+                if option.startswith('ebounds=')
+            ), None)
+
+            if ebound_option is not None:
+                ebound = float(ebound_option.split('=')[1])
+                ubs = np.asarray([
+                    ub + np.log10(ebound) if scale == 'log10'
+                    else ub * ebound
+                    for ub, scale in zip(
+                        problem.ub_full, problem.x_scales
+                    )
+                ])
+                lbs = np.asarray([
+                    lb - np.log10(ebound) if scale == 'log10'
+                    else lb * ebound
+                    for lb, scale in zip(
+                        problem.lb_full, problem.x_scales
+                    )
+                ])
             else:
-                objective = problem.objective._objectives[0]
-            set_solver_model_options(objective.amici_solver,
-                                     objective.amici_model)
+                ubs = problem.ub_full
+                lbs = problem.lb_full
 
-            results = {}
-            for optimizer in algos:
-                try:
-                    results[optimizer] = load_results(model, optimizer, '1000')
-                except (FileNotFoundError, IOError) as err:
-                    print(f'Failed loading: {err}')
+            n_iter = np.asarray(
+                result.optimize_result.get_for_key('n_grad')
+            ) + np.asarray(
+                result.optimize_result.get_for_key('n_sres')
+            )
 
-            if results:
+            all_results.append({
+                'model': model.split('_')[0],
+                'optimizer': optimizer,
+                'iter': n_iter,
+                'fmin': result.optimize_result.get_for_key('fval'),
+                'unique_at_boundary': get_unique_starts_at_boundary(
+                    result.optimize_result.get_for_key('x'),
+                    lbs, ubs
+                ),
+                'boundary_minima': get_number_boundary_optima(
+                    result.optimize_result.get_for_key('x'),
+                    n_iter,
+                    result.optimize_result.get_for_key('grad'),
+                    lbs, ubs
+                ),
+            })
+
+    results = pd.DataFrame(all_results)
+
+    for threshold in CONVERGENCE_THRESHOLDS:
+        for model in MODELS:
+            results_model = [
+                r for r in all_results
+                if r['model'] == model
+            ]
+
+            def has_ebounds(optimizer):
+                return any(
+                    option.startswith('ebounds=')
+                    for option in optimizer.split('.')
+                )
+
+            if results_model:
                 fmin_all = np.nanmin([
-                    result.optimize_result.list[0].fval
-                    for optimizer, result in results.items()
-                    if not np.any([o.startswith('ebounds=')
-                                   for o in optimizer.split('.')])
+                    np.min(result['fmin'])
+                    for result in results_model
+                    if not has_ebounds(result['optimizer'])
                 ])
             else:
                 fmin_all = 0
 
-            for optimizer in algos:
-                if optimizer not in results:
-                    continue
-                result = results[optimizer]
+            results['conv_count'] = results.apply(
+                lambda x:
+                get_num_converged(x.fmin,
+                                  fmin_all if not has_ebounds(x.optimizer)
+                                  else min(np.min(x.fmin), fmin_all),
+                                  threshold),
+                axis=1
+            )
+            results['conv_rate'] = results.apply(
+                lambda x:
+                get_num_converged_per_grad(x.fmin, x.iter,
+                                           fmin_all if not has_ebounds(
+                                               x.optimizer)
+                                           else min(np.min(x.fmin), fmin_all),
+                                           threshold), axis=1
+            )
 
-                ebound_option = next((
-                    option
-                    for option in optimizer.split('.')
-                    if option.startswith('ebounds=')
-                ), None)
-
-                if ebound_option is not None:
-                    ebound = float(ebound_option.split('=')[1])
-                    ubs = np.asarray([
-                        ub + np.log10(ebound) if scale == 'log10'
-                        else ub * ebound
-                        for ub, scale in zip(
-                            problem.ub_full, problem.x_scales
-                        )
-                    ])
-                    lbs = np.asarray([
-                        lb - np.log10(ebound) if scale == 'log10'
-                        else lb * ebound
-                        for lb, scale in zip(
-                            problem.lb_full, problem.x_scales
-                        )
-                    ])
-                    fmin = np.min([
-                        results[optimizer].optimize_result.list[0].fval,
-                        fmin_all
-                    ])
-                else:
-                    ubs = problem.ub_full
-                    lbs = problem.lb_full
-                    fmin = fmin_all
-
-                n_iter = np.asarray(
-                    result.optimize_result.get_for_key('n_grad')
-                ) + np.asarray(
-                    result.optimize_result.get_for_key('n_sres')
-                )
-
-                all_results.append({
-                    'model': model.split('_')[0],
-                    'optimizer': optimizer,
-                    'iter': n_iter,
-                    'conv_count': get_num_converged(
-                        result.optimize_result.get_for_key('fval'),
-                        fmin
-                    ),
-                    'conv_per_grad': get_num_converged_per_grad(
-                        result.optimize_result.get_for_key('fval'), n_iter,
-                        fmin
-                    ),
-                    'unique_at_boundary': get_unique_starts_at_boundary(
-                        result.optimize_result.get_for_key('x'),
-                        lbs, ubs
-                    ),
-                    'boundary_minima': get_number_boundary_optima(
-                        result.optimize_result.get_for_key('x'),
-                        n_iter,
-                        result.optimize_result.get_for_key('grad'),
-                        lbs, ubs
-                    ),
-                })
-
-        results = pd.DataFrame(all_results)
-
-        palette = ALGO_PALETTES[analysis]
-
+        # compute improvement compared to ref algo
+        ref_algo = 'fides.subspace=2D'
         for model in MODELS:
-            model = model.split('_')[0]
-            if np.any((results.model == model) &
-                      (results.optimizer == 'fides.subspace=2D')):
-                results.loc[results.model == model, 'improvement'] = \
-                    results.loc[results.model == model, 'conv_per_grad'] / \
-                    results.loc[(results.model == model) &
-                                (results.optimizer == 'fides.subspace=2D'),
-                                'conv_per_grad'].values[0]
+            mrows = results.model == model.split('_')[0]
+            if np.any(mrows & (results.optimizer == ref_algo)):
+                ref_val = results.loc[
+                    mrows & (results.optimizer == ref_algo), 'conv_rate'
+                ].values[0]
+                results.loc[mrows, 'improvement'] = \
+                    results.loc[mrows, 'conv_rate'] / ref_val
 
         for optimizer in results.optimizer.unique():
             if 'improvement' in results:
@@ -178,62 +191,69 @@ if __name__ == '__main__':
                     10 ** results.loc[results.optimizer == optimizer,
                                       'improvement'].apply(np.log10).mean()
 
-        
-        print(results.drop('iter'))
+        df = pd.melt(results, id_vars=['model', 'optimizer'],
+                     value_vars=['unique_at_boundary', 'boundary_minima',
+                                 'conv_count'])
 
-        results.drop('iter').to_csv(os.path.join('evaluation',
-                                                 f'comparison_{analysis}.csv'))
+        for analysis, algos in ANALYSIS_ALGOS.items():
+            df_analysis = df[df.optimizer.isin(algos)]
+            results_analysis = results[results.optimizer.isin(algos)]
+            palette = ALGO_PALETTES[analysis]
 
-        for metric in ['conv_count', 'conv_per_grad', 'unique_at_boundary',
-                       'boundary_minima']:
-
-            bottoms = {
-                'conv_per_grad': 1e-7,
-                'conv_count':  1e0,
-                'unique_at_boundary': 1e0,
-                'boundary_minima': 1e0,
-            }
-
-            tops = {
-                'conv_per_grad': 1e-1,
-                'conv_count': 1e3,
-                'unique_at_boundary': 1e3,
-                'boundary_minima': 1e3,
-            }
-
+            # conv counts plot
             plt.subplots()
-            g = sns.barplot(
-                data=results,
-                x='model',
-                y=metric,
-                hue='optimizer',
-                hue_order=algos,
-                palette=palette,
-                bottom=bottoms[metric],
+            g = sns.FacetGrid(
+                df_analysis,  row='variable', hue='optimizer',
+                hue_order=algos, sharex=True, sharey=True, palette=palette
             )
-            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set_yscale('log')
-            g.set(ylim=(bottoms[metric], tops[metric]))
+            g.map_dataframe(sns.barplot, x='model', y='value', bottom=1e0)
 
+            g.set(yscale='log', ylim=(1e0, 1e3))
+            for ax in g.axes.ravel():
+                ax.set_xticklabels(ax.get_xticklabels(),
+                                   rotation=45, ha='right')
             plt.tight_layout()
             plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_{metric}.pdf'
+                'evaluation', f'comparison_{analysis}_counts.pdf'
             ))
 
-        df_iter = pd.DataFrame(
-            [(d, tup.model, tup.optimizer)
-             for tup in results.itertuples() for d in tup.iter],
-            columns=['iter', 'model', 'optimizer']
-        )
-        df_iter.iter = df_iter.iter.apply(np.log10)
-        plt.subplots()
-        g = sns.boxplot(
-            data=df_iter, hue_order=algos, palette=palette,
-            x='model', hue='optimizer', y='iter',
-        )
-        g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-        g.set_ylim([0, 5])
-        plt.tight_layout()
-        plt.savefig(os.path.join(
-            'evaluation', f'comparison_{analysis}_iter.pdf'
-        ))
+            # data export
+            results_analysis.drop(columns=['fmin', 'iter']).to_csv(
+                os.path.join('evaluation',
+                             f'comparison_{analysis}_{threshold}.csv')
+            )
+
+            # conv rate plot
+            plt.subplots()
+            g = sns.barplot(
+                data=results_analysis,
+                x='model', y='conv_rate', hue='optimizer', hue_order=algos,
+                palette=palette,
+                bottom=1e-7
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set(yscale='log', ylim=(1e-7, 1e-1))
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_conv_rate.pdf'
+            ))
+
+            # iter plot
+            df_iter = pd.DataFrame(
+                [(d, tup.model, tup.optimizer)
+                 for tup in results_analysis.itertuples()
+                 for d in tup.iter],
+                columns=['iter', 'model', 'optimizer']
+            )
+            df_iter.iter = df_iter.iter.apply(np.log10)
+            plt.subplots()
+            g = sns.boxplot(
+                data=df_iter, hue_order=algos, palette=palette,
+                x='model', hue='optimizer', y='iter'
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set_ylim([0, 5])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_iter.pdf'
+            ))

@@ -1,6 +1,9 @@
+import fides.constants
+
 from comparison import MODELS
 from evaluate import (
-    ANALYSIS_ALGOS, N_STARTS_FORWARD, ALGO_PALETTES, CONVERGENCE_THRESHOLD
+    ANALYSIS_ALGOS, N_STARTS_FORWARD, ALGO_PALETTES, CONVERGENCE_THRESHOLDS,
+    get_stats_file
 )
 
 import h5py
@@ -10,13 +13,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from itertools import groupby
-
-
-def get_stats_file(model_name, optimizer):
-    return os.path.join(
-        'stats',
-        f'{model_name}__{optimizer}__{N_STARTS_FORWARD[0]}__STATS.hdf5'
-    )
 
 
 def glen(grouper):
@@ -30,7 +26,113 @@ def max_streak(vector):
     return np.max(run_len)
 
 
-def read_stats(model_name, optimizer):
+FIDES_MU = fides.constants.DEFAULT_OPTIONS.MU
+FIDES_ETA = fides.constants.DEFAULT_OPTIONS.ETA
+
+STATS = {
+    'accepted':
+        lambda data: np.sum(data['accept'][:]),
+    'no_hess_update':
+        lambda data: np.logical_and.reduce((
+            data['accept'][:],
+            data['hess_update_min_ev'][:] == 0.0,
+            data['hess_update_max_ev'][:] == 0.0,
+        )).sum(),
+    'no_hess_update_internal':
+        lambda data: np.logical_and.reduce((
+            data['accept'][:],
+            data['hess_update_min_ev'][:] == 0.0,
+            data['hess_update_max_ev'][:] == 0.0,
+            data['reflections'][:] == 0
+        )).sum(),
+    'no_hess_update_border':
+        lambda data: np.logical_and.reduce((
+            data['accept'][:],
+            data['hess_update_min_ev'][:] == 0.0,
+            data['hess_update_max_ev'][:] == 0.0,
+            data['reflections'][:] > 0
+        )).sum(),
+    'no_hess_struct_update':
+        lambda data: np.logical_and.reduce((
+            data['accept'][:],
+            data['hess_struct_update_min_ev'][:] == 0.0,
+            data['hess_struct_update_max_ev'][:] == 0.0,
+        )).sum(),
+    'no_tr_update_int_sol':
+        lambda data: np.logical_and.reduce((
+            data['tr_ratio'][:] > fides.constants.DEFAULT_OPTIONS,
+            data['iterations_since_tr_update'][:] > 0,
+        )).sum(),
+    'no_tr_update_tr_ratio':
+        lambda data: np.logical_and.reduce((
+            data['tr_ratio'][:] < FIDES_ETA,
+            data['tr_ratio'][:] > FIDES_MU,
+            data['iterations_since_tr_update'][:] > 0,
+        )).sum(),
+    'streak_no_tr_update_tr_ratio':
+        lambda data: max_streak(np.logical_and.reduce((
+            data['tr_ratio'][:] < FIDES_ETA,
+            data['tr_ratio'][:] > FIDES_MU,
+            data['iterations_since_tr_update'][:] > 0,
+        ))),
+    'neg_ev':
+        lambda data: np.sum(
+            data['hess_min_ev'][:] < -np.spacing(1)*data['hess_max_ev']
+        ),
+    'singular_shess':
+        lambda data: np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
+    'posdef_newt':
+        lambda data: np.sum(data['posdef'][:]),
+    'degenerate_subspace':
+        lambda data: np.logical_and.reduce((
+            data['subspace_dim'][:] == 1,
+            np.logical_not(data['newton'][:]),
+            data['step_type'][:] == b'2d',
+        )).sum(),
+    'newton_steps':
+        lambda data: np.logical_and(
+            data['newton'][:],
+            data['step_type'][:] == b'2d',
+        ).sum(),
+    'gradient_steps':
+        lambda data: np.sum(data['step_type'][:] == b'g'),
+    'border_steps':
+        lambda data: np.sum(np.logical_and(
+            data['step_type'][:] != b'2d',
+            data['step_type'][:] != b'nd',
+        )),
+    'converged':
+        lambda data, fmin:
+            np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLDS[1],
+    'integration_failure':
+        lambda data: np.sum(np.logical_not(np.isfinite(data['fval'][:]))),
+}
+
+analysis_stats = {
+    'curv': [
+        'no_hess_update',
+        'no_update_tr_ratio', 'streak_no_tr_update_tr_ratio',
+        'singular_shess', 'neg_ev',
+        'newton_steps',
+        'integration_failure'
+    ],
+    'hybrid': [
+        'no_hess_update', 'no_hess_struct_update',
+        'no_tr_update_tr_ratio',
+        'singular_shess', 'neg_ev',
+        'newton_steps', 'gradient_steps'
+    ],
+    'hybridB': [
+        'no_hess_update',
+        'no_update_tr_ratio', 'streak_no_tr_update_tr_ratio'
+    ],
+    'stepback': [
+
+    ],
+}
+
+
+def read_stats(model_name, optimizer, analysis):
     stats_file = get_stats_file(model_name, optimizer)
     print(f'loading {stats_file}')
     with h5py.File(stats_file, 'r') as f:
@@ -39,79 +141,19 @@ def read_stats(model_name, optimizer):
             for data in f.values()
         ])
         stats = pd.DataFrame([{
-            'model': model_name,
-            'optimizer': optimizer,
-            'iter': data['fval'].size,
-            'accepted': np.sum(data['accept'][:]),
-            'no_hess_update': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_update_min_ev'][:] == 0.0,
-                data['hess_update_max_ev'][:] == 0.0,
-            )).sum(),
-            'no_hess_update_internal': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_update_min_ev'][:] == 0.0,
-                data['hess_update_max_ev'][:] == 0.0,
-                data['reflections'][:] == 0
-            )).sum(),
-            'no_hess_update_border': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_update_min_ev'][:] == 0.0,
-                data['hess_update_max_ev'][:] == 0.0,
-                data['reflections'][:] > 0
-            )).sum(),
-            'no_hess_struct_update': np.logical_and.reduce((
-                data['accept'][:],
-                data['hess_struct_update_min_ev'][:] == 0.0,
-                data['hess_struct_update_max_ev'][:] == 0.0,
-            )).sum(),
-            'no_tr_update_int_sol': np.logical_and.reduce((
-                data['tr_ratio'][:] > 0.75,
-                data['iterations_since_tr_update'][:] > 0,
-            )).sum(),
-            'no_tr_update_tr_ratio': np.logical_and.reduce((
-                data['tr_ratio'][:] < 0.75,
-                data['tr_ratio'][:] > 0.25,
-                data['iterations_since_tr_update'][:] > 0,
-            )).sum(),
-            'streak_no_tr_update_tr_ratio':  max_streak(
-                np.logical_and.reduce((
-                    data['tr_ratio'][:] < 0.75,
-                    data['tr_ratio'][:] > 0.25,
-                    data['iterations_since_tr_update'][:] > 0,
-                )
-            )),
-            'neg_ev': np.sum(data['hess_min_ev'][:] <
-                             -np.sqrt(np.spacing(1))*data['hess_max_ev']),
-            'singular_shess':
-                np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
-            'posdef_newt': np.sum(data['posdef'][:]),
-            'degenerate_subspace': np.logical_and.reduce((
-                data['subspace_dim'][:] == 1,
-                np.logical_not(data['newton'][:]),
-                data['step_type'][:] == b'2d',
-            )).sum(),
-            'newton_steps': np.logical_and(
-                data['newton'][:],
-                data['step_type'][:] == b'2d',
-            ).sum(),
-            'gradient_steps': np.sum(data['step_type'][:] == b'g'),
-            'border_steps': np.sum(np.logical_and(
-                data['step_type'][:] != b'2d',
-                data['step_type'][:] != b'nd',
-            )),
-            'converged': np.min(data['fval'][:]) < fmin +
-                         CONVERGENCE_THRESHOLD,
-            'integration_failure': np.sum(np.logical_not(np.isfinite(
-                data['fval'][:]
-            ))),
+            **{'model': model_name,
+               'optimizer': optimizer,
+               'iter': data['fval'].size},
+            **{stat: STATS[stat](data) if stat != 'converged' else
+               STATS[stat](data, fmin)
+               for stat in analysis_stats[analysis]}
         } for data in f.values()])
     return stats
 
 
 for analysis, algos in ANALYSIS_ALGOS.items():
     stats = [
-        read_stats(model, opt)
+        read_stats(model, opt, analysis)
         for model in MODELS
         for opt in algos
         if opt.startswith('fides') and os.path.exists(
@@ -123,22 +165,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     all_stats = pd.concat(stats)
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
-                 value_vars=['accepted',
-                             'no_hess_update',
-                             'no_hess_update_internal',
-                             'no_hess_update_border',
-                             'no_tr_update_int_sol',
-                             'no_tr_update_tr_ratio',
-                             'streak_no_tr_update_tr_ratio',
-                             'no_hess_struct_update',
-                             'singular_shess',
-                             'neg_ev',
-                             'posdef_newt',
-                             'degenerate_subspace',
-                             'newton_steps',
-                             'gradient_steps',
-                             'border_steps',
-                             'integration_failure'])
+                 value_vars=analysis_stats[analysis])
 
     grid = sns.FacetGrid(
         data=df,
@@ -160,7 +187,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', yscale='symlog')
+    grid.set(xscale='log', yscale='symlog', ylim=(0, 1e5))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(

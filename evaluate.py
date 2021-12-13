@@ -4,6 +4,7 @@ import re
 import petab
 import pypesto
 import sklearn
+import h5py
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,14 @@ from matplotlib import cm
 from compile_petab import load_problem, PARAMETER_ALIASES, MODEL_ALIASES
 from benchmark import set_solver_model_options
 
+
+def get_stats_file(model_name, optimizer):
+    return os.path.join(
+        'stats',
+        f'{model_name}__{optimizer}__{N_STARTS_FORWARD[0]}__STATS.hdf5'
+    )
+
+
 new_rc_params = {
     "font.family": 'Helvetica',
     "pdf.fonttype": 42,
@@ -26,7 +35,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLD = 2
+CONVERGENCE_THRESHOLDS = [0.05, 2, 10]
 
 cmap = cm.get_cmap('tab10')
 ALGO_COLORS = {
@@ -91,8 +100,8 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.hessian=GNSBFGS'
     ],
     'stepback': [
-        'fides.subspace=2D.stepback=reflect_single',
         'fides.subspace=2D',
+        'fides.subspace=2D.stepback=reflect_single',
         'fides.subspace=2D.stepback=truncate',
         'fides.subspace=2D.ebounds=10',
         'fides.subspace=2D.ebounds=100',
@@ -109,24 +118,13 @@ ALGO_PALETTES = {
 }
 
 
-def get_num_converged(fvals, fmin):
-    return np.nansum(np.asarray(fvals) < fmin + CONVERGENCE_THRESHOLD)
+def get_num_converged(fvals, fmin, threshold=CONVERGENCE_THRESHOLDS[1]):
+    return np.nansum(np.asarray(fvals) < fmin + threshold)
 
 
-def get_num_converged_per_grad(fvals, n_grads, fmin):
-    return get_num_converged(fvals, fmin) / np.nansum(n_grads)
-
-
-def get_dist(fvals, fmin):
-    fvals = np.asarray(fvals)
-    converged_fvals = fvals[fvals < fmin + CONVERGENCE_THRESHOLD]
-    if len(converged_fvals) < 2:
-        return 0
-    distances = sklearn.metrics.pairwise_distances(
-        converged_fvals.reshape(-1, 1)
-    )
-    distances[np.diag_indices(len(converged_fvals))] = np.Inf
-    return 1/np.median(distances.min(axis=1))
+def get_num_converged_per_grad(fvals, n_grads, fmin,
+                               threshold=CONVERGENCE_THRESHOLDS[1]):
+    return get_num_converged(fvals, fmin, threshold) / np.nansum(n_grads)
 
 
 def load_results(model, optimizer, n_starts):
@@ -138,9 +136,27 @@ def load_results(model, optimizer, n_starts):
 
 def load_results_from_hdf5(model, optimizer, n_starts):
     file = f'{model}__{optimizer}__{n_starts}.hdf5'
-    reader = OptimizationResultHDF5Reader(os.path.join('results', file))
-    print(f'Loaded results from {file}')
-    return reader.read()
+    path = os.path.join('results', file)
+    if os.path.exists(path):
+        reader = OptimizationResultHDF5Reader(path)
+        print(f'Loaded results from {file}')
+        return reader.read()
+
+    result = pypesto.Result()
+    stats_file = get_stats_file(model, optimizer)
+    result.optimize_result = pypesto.OptimizeResult()
+    with h5py.File(stats_file, 'r') as f:
+        result.optimize_result.list = [OptimizerResult(**{
+            'fval': np.min(data['fval'][:]),
+            'n_fval': data['fval'].size,
+            'n_grad': data['fval'].size,
+            'n_hess': data['fval'].size,
+            'n_res': 0,
+            'n_sres': 0,
+        }) for data in f.values()]
+    result.optimize_result.sort()
+    print(f'Loaded incomplete results from {stats_file}')
+    return result
 
 
 matlab_alias = {
