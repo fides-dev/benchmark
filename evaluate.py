@@ -3,7 +3,6 @@ import os
 import re
 import petab
 import pypesto
-import sklearn
 import h5py
 
 import numpy as np

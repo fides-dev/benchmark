@@ -2,8 +2,7 @@ import fides.constants
 
 from comparison import MODELS
 from evaluate import (
-    ANALYSIS_ALGOS, N_STARTS_FORWARD, ALGO_PALETTES, CONVERGENCE_THRESHOLDS,
-    get_stats_file
+    ANALYSIS_ALGOS, ALGO_PALETTES, CONVERGENCE_THRESHOLDS, get_stats_file
 )
 
 import h5py
@@ -127,7 +126,10 @@ analysis_stats = {
         'no_update_tr_ratio', 'streak_no_tr_update_tr_ratio'
     ],
     'stepback': [
-
+        'no_tr_update_tr_ratio', 'no_tr_update_int_sol',
+        'singular_shess',
+        'gradient_steps', 'border_steps',
+        'integration_failure'
     ],
 }
 
@@ -152,6 +154,8 @@ def read_stats(model_name, optimizer, analysis):
 
 
 for analysis, algos in ANALYSIS_ALGOS.items():
+    if analysis not in analysis_stats:
+        continue
     stats = [
         read_stats(model, opt, analysis)
         for model in MODELS
