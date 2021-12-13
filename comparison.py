@@ -62,7 +62,7 @@ if __name__ == '__main__':
     mpl.rcParams.update(new_rc_params)
 
     all_results = []
-    for model in MODELS[2:3]:
+    for model in MODELS:
         petab_problem, problem = load_problem(model)
         if isinstance(problem.objective, pypesto.AmiciObjective):
             objective = problem.objective
@@ -149,15 +149,11 @@ if __name__ == '__main__':
                     for option in optimizer.split('.')
                 )
 
-
-            if results_model:
-                fmin_all = np.nanmin([
-                    np.min(result['fmin'])
-                    for result in results_model
-                    if not has_ebounds(result['optimizer'])
-                ])
-            else:
-                fmin_all = 0
+            fmin_all = np.nanmin([
+                np.min(result['fmin'])
+                for result in results_model
+                if not has_ebounds(result['optimizer'])
+            ])
 
             results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
