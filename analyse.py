@@ -148,7 +148,7 @@ def read_stats(model_name, optimizer, analysis):
                'iter': data['fval'].size},
             **{stat: STATS[stat](data) if stat != 'converged' else
                STATS[stat](data, fmin)
-               for stat in analysis_stats[analysis]}
+               for stat in analysis_stats[analysis] + ['converged']}
         } for data in f.values()])
     return stats
 
