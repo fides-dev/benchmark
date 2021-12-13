@@ -119,7 +119,7 @@ if __name__ == '__main__':
                 'model': model.split('_')[0],
                 'optimizer': optimizer,
                 'iter': n_iter,
-                'fmin': result.optimize_result.get_for_key('fval'),
+                'fvals': result.optimize_result.get_for_key('fval'),
                 'unique_at_boundary': get_unique_starts_at_boundary(
                     result.optimize_result.get_for_key('x'),
                     lbs, ubs
@@ -133,15 +133,11 @@ if __name__ == '__main__':
             })
 
     results = pd.DataFrame(all_results)
+    results['fmin'] = results['fvals'].apply(np.min)
 
     for threshold in CONVERGENCE_THRESHOLDS:
         for model in MODELS:
             mrows = results.model == model.split('_')[0]
-
-            results_model = [
-                r for r in all_results
-                if r['model'] == model.split('_')[0]
-            ]
 
             def has_ebounds(optimizer):
                 return any(
@@ -149,26 +145,25 @@ if __name__ == '__main__':
                     for option in optimizer.split('.')
                 )
 
-            fmin_all = np.nanmin([
-                np.min(result['fmin'])
-                for result in results_model
-                if not has_ebounds(result['optimizer'])
-            ])
+            fmin_model = results.loc[
+                mrows & np.logical_not(results.optimizer.apply(has_ebounds)),
+                'fmin'
+            ].nanmin()
 
             results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged(x.fmin,
-                                  fmin_all if not has_ebounds(x.optimizer)
-                                  else min(np.min(x.fmin), fmin_all),
+                                  fmin_model if not has_ebounds(x.optimizer)
+                                  else min(np.min(x.fmin), fmin_model),
                                   threshold),
                 axis=1
             )
             results.loc[mrows, 'conv_rate'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged_per_grad(x.fmin, x.iter,
-                                           fmin_all if not has_ebounds(
+                                           fmin_model if not has_ebounds(
                                                x.optimizer)
-                                           else min(np.min(x.fmin), fmin_all),
+                                           else min(np.min(x.fmin), fmin_model),
                                            threshold), axis=1
             )
 
@@ -188,14 +183,13 @@ if __name__ == '__main__':
                     10 ** results.loc[results.optimizer == optimizer,
                                       'improvement'].apply(np.log10).mean()
 
+        results.drop(columns=['fvals', 'iter']).to_csv(
+            os.path.join('evaluation', f'comparison_{threshold}.csv')
+        )
+
         df = pd.melt(results, id_vars=['model', 'optimizer'],
                      value_vars=['unique_at_boundary', 'boundary_minima',
                                  'conv_count'])
-
-        # data export
-        df.drop(columns=['fmin', 'iter']).to_csv(
-            os.path.join('evaluation', f'comparison_{threshold}.csv')
-        )
 
         for analysis, algos in ANALYSIS_ALGOS.items():
             df_analysis = df[df.optimizer.isin(algos)]

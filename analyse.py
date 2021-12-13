@@ -200,11 +200,11 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         y='value',
         style='converged',
         markers={True: 's', False: 'X'},
-        edgecolor=None,
+        edgecolors='none',
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', ylim=(-1e-5, 1.0))
+    grid.set(xscale='log', ylim=(-1e-5, 10))
     grid.add_legend()
     plt.yscale('symlog', linthreshy=1e-5)
     plt.tight_layout()

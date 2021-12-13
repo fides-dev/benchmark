@@ -61,7 +61,6 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.hessian=TSSM',
     'fides.subspace=2D.hessian=GNSBFGS',
     'fides.subspace=2D.stepback=reflect_single',
-    'fides.subspace=2D.stepback=truncate',
     'fides.subspace=2D.ebounds=10',
     'fides.subspace=2D.ebounds=100',
     'fides.subspace=2D.ebounds=Inf',
@@ -101,7 +100,6 @@ ANALYSIS_ALGOS = {
     'stepback': [
         'fides.subspace=2D',
         'fides.subspace=2D.stepback=reflect_single',
-        'fides.subspace=2D.stepback=truncate',
         'fides.subspace=2D.ebounds=10',
         'fides.subspace=2D.ebounds=100',
         'fides.subspace=2D.ebounds=Inf',
