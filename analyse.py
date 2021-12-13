@@ -204,8 +204,9 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', yscale='symlog', linthreshy=1e-5, ylim=(-1e-5, 1.0))
+    grid.set(xscale='log', ylim=(-1e-5, 1.0))
     grid.add_legend()
+    plt.yscale('symlog', linthreshy=1e-5)
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
