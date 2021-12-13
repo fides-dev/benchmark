@@ -192,6 +192,11 @@ if __name__ == '__main__':
                      value_vars=['unique_at_boundary', 'boundary_minima',
                                  'conv_count'])
 
+        # data export
+        df.drop(columns=['fmin', 'iter']).to_csv(
+            os.path.join('evaluation', f'comparison_{threshold}.csv')
+        )
+
         for analysis, algos in ANALYSIS_ALGOS.items():
             df_analysis = df[df.optimizer.isin(algos)]
             results_analysis = results[results.optimizer.isin(algos)]
@@ -213,14 +218,8 @@ if __name__ == '__main__':
                                    rotation=45, ha='right')
             plt.tight_layout()
             plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_counts.pdf'
+                'evaluation', f'comparison_{analysis}_{threshold}_counts.pdf'
             ))
-
-            # data export
-            results_analysis.drop(columns=['fmin', 'iter']).to_csv(
-                os.path.join('evaluation',
-                             f'comparison_{analysis}_{threshold}.csv')
-            )
 
             # conv rate plot
             plt.subplots()
@@ -234,7 +233,8 @@ if __name__ == '__main__':
             g.set(yscale='log', ylim=(1e-7, 1e-1))
             plt.tight_layout()
             plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_conv_rate.pdf'
+                'evaluation',
+                f'comparison_{analysis}_{threshold}_conv_rate.pdf'
             ))
 
             # iter plot
