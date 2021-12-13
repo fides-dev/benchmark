@@ -149,11 +149,15 @@ if __name__ == '__main__':
                     for option in optimizer.split('.')
                 )
 
-            fmin_all = np.nanmin([
-                np.min(result['fmin'])
-                for result in results_model
-                if not has_ebounds(result['optimizer'])
-            ])
+
+            if results_model:
+                fmin_all = np.nanmin([
+                    np.min(result['fmin'])
+                    for result in results_model
+                    if not has_ebounds(result['optimizer'])
+                ])
+            else:
+                fmin_all = 0
 
             results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
