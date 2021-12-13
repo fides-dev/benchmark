@@ -59,7 +59,7 @@ STATS = {
         )).sum(),
     'no_tr_update_int_sol':
         lambda data: np.logical_and.reduce((
-            data['tr_ratio'][:] > fides.constants.DEFAULT_OPTIONS,
+            data['tr_ratio'][:] > FIDES_MU,
             data['iterations_since_tr_update'][:] > 0,
         )).sum(),
     'no_tr_update_tr_ratio':
@@ -87,14 +87,19 @@ STATS = {
             data['subspace_dim'][:] == 1,
             np.logical_not(data['newton'][:]),
             data['step_type'][:] == b'2d',
-        )).sum(),
+        )).sum() / np.sum(data['step_type'][:] == b'2d'),
     'newton_steps':
         lambda data: np.logical_and(
             data['newton'][:],
             data['step_type'][:] == b'2d',
-        ).sum(),
+        ).sum() / np.sum(data['step_type'][:] == b'2d'),
     'gradient_steps':
-        lambda data: np.sum(data['step_type'][:] == b'g'),
+        lambda data: np.sum(
+            data['step_type'][:] == b'g'
+        ) / np.sum(np.logical_and(
+            data['step_type'][:] != b'2d',
+            data['step_type'][:] != b'nd',
+        )),
     'border_steps':
         lambda data: np.sum(np.logical_and(
             data['step_type'][:] != b'2d',
@@ -104,7 +109,9 @@ STATS = {
         lambda data, fmin:
             np.min(data['fval'][:]) < fmin + CONVERGENCE_THRESHOLDS[1],
     'integration_failure':
-        lambda data: np.sum(np.logical_not(np.isfinite(data['fval'][:]))),
+        lambda data: np.sum(np.logical_not(
+            np.isfinite(data['fval'][:])
+        )),
 }
 
 analysis_stats = {
@@ -146,7 +153,12 @@ def read_stats(model_name, optimizer, analysis):
             **{'model': model_name,
                'optimizer': optimizer,
                'iter': data['fval'].size},
-            **{stat: STATS[stat](data) if stat != 'converged' else
+            **{stat:
+               STATS[stat](data)/data['fval'].size
+               if stat not in ['converged', 'degenerate_subspace',
+                               'newton_steps', 'gradient_steps'] else
+               STATS[stat](data)
+               if stat != 'converged' else
                STATS[stat](data, fmin)
                for stat in analysis_stats[analysis] + ['converged']}
         } for data in f.values()])
@@ -192,7 +204,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', yscale='symlog', ylim=(-1, 1e5))
+    grid.set(xscale='log', yscale='symlog', linthreshy=1e-5, ylim=(-1e-5, 1.0))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
