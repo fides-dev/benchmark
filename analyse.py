@@ -110,7 +110,7 @@ STATS = {
 analysis_stats = {
     'curv': [
         'no_hess_update',
-        'no_update_tr_ratio', 'streak_no_tr_update_tr_ratio',
+        'no_tr_update_tr_ratio', 'streak_no_tr_update_tr_ratio',
         'singular_shess', 'neg_ev',
         'newton_steps',
         'integration_failure'
@@ -123,7 +123,7 @@ analysis_stats = {
     ],
     'hybridB': [
         'no_hess_update',
-        'no_update_tr_ratio', 'streak_no_tr_update_tr_ratio'
+        'no_tr_update_tr_ratio', 'streak_no_tr_update_tr_ratio'
     ],
     'stepback': [
         'no_tr_update_tr_ratio', 'no_tr_update_int_sol',
