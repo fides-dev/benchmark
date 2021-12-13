@@ -148,7 +148,7 @@ if __name__ == '__main__':
             fmin_model = results.loc[
                 mrows & np.logical_not(results.optimizer.apply(has_ebounds)),
                 'fmin'
-            ].nanmin()
+            ].min()
 
             results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
