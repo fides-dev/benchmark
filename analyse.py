@@ -191,7 +191,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.2,
         s=8,
     )
-    grid.set(xscale='log', yscale='symlog', ylim=(0, 1e5))
+    grid.set(xscale='log', yscale='symlog', ylim=(-1, 1e5))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
