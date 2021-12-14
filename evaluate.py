@@ -145,15 +145,15 @@ def load_results_from_hdf5(model, optimizer, n_starts):
     with h5py.File(stats_file, 'r') as f:
         result.optimize_result.list = [OptimizerResult(**{
             'fval': np.min(data['fval'][:]),
-            'n_fval': data['fval'].size,
-            'n_grad': data['fval'].size,
-            'n_hess': data['fval'].size,
+            'n_fval': data['fval'].size+1,
+            'n_grad': data['fval'].size+1,
+            'n_hess': data['fval'].size+1,
             'n_res': 0,
             'n_sres': 0,
         }) for data in f.values()]
     result.optimize_result.sort()
     print(f'Loaded incomplete results from {stats_file} ('
-          f'{result.optimize_result.list}/{n_starts})')
+          f'{len(result.optimize_result.list)}/{n_starts})')
     return result
 
 
