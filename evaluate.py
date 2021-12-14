@@ -152,7 +152,8 @@ def load_results_from_hdf5(model, optimizer, n_starts):
             'n_sres': 0,
         }) for data in f.values()]
     result.optimize_result.sort()
-    print(f'Loaded incomplete results from {stats_file}')
+    print(f'Loaded incomplete results from {stats_file} ('
+          f'{result.optimize_result.list}/{n_starts})')
     return result
 
 
