@@ -147,18 +147,18 @@ if __name__ == '__main__':
 
             results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
                 lambda x:
-                get_num_converged(x.fmin,
+                get_num_converged(x.fvals,
                                   fmin_model if not has_ebounds(x.optimizer)
-                                  else min(np.min(x.fmin), fmin_model),
+                                  else min(x.fmin, fmin_model),
                                   threshold),
                 axis=1
             )
             results.loc[mrows, 'conv_rate'] = results.loc[mrows, :].apply(
                 lambda x:
-                get_num_converged_per_grad(x.fmin, x.iter,
+                get_num_converged_per_grad(x.fvals, x.iter,
                                            fmin_model if not has_ebounds(
                                                x.optimizer)
-                                           else min(np.min(x.fmin), fmin_model),
+                                           else min(x.fmin, fmin_model),
                                            threshold), axis=1
             )
 
@@ -195,11 +195,11 @@ if __name__ == '__main__':
             plt.subplots()
             g = sns.FacetGrid(
                 df_analysis,  row='variable',
-                sharex=True, sharey=True, palette=palette
+                sharex=True, sharey=True
             )
             g.map_dataframe(sns.barplot, x='model', y='value',
                             hue='optimizer', hue_order=algos,
-                            bottom=1e0)
+                            palette=palette, bottom=1e0)
 
             g.set(yscale='log', ylim=(1e0, 1e3))
             for ax in g.axes.ravel():
