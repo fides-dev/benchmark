@@ -71,17 +71,12 @@ if __name__ == '__main__':
         set_solver_model_options(objective.amici_solver,
                                  objective.amici_model)
 
-        results = {}
         for optimizer in OPTIMIZER_FORWARD:
             try:
-                results[optimizer] = load_results(model, optimizer, '1000')
+                result = load_results(model, optimizer, '1000')
             except (FileNotFoundError, IOError) as err:
                 print(f'Failed loading: {err}')
-
-        for optimizer in OPTIMIZER_FORWARD:
-            if optimizer not in results:
                 continue
-            result = results[optimizer]
 
             ebound_option = next((
                 option
@@ -133,7 +128,7 @@ if __name__ == '__main__':
             })
 
     results = pd.DataFrame(all_results)
-    results['fmin'] = results['fvals'].apply(np.min)
+    results['fmin'] = results['fvals'].apply(np.nanmin)
 
     for threshold in CONVERGENCE_THRESHOLDS:
         for model in MODELS:
