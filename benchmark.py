@@ -169,7 +169,6 @@ if __name__ == '__main__':
     engine = pypesto.engine.MultiThreadEngine(n_threads=engine_threads)
 
     options = optimize.OptimizeOptions(allow_failed_starts=True,
-                                       startpoint_resample=False,
                                        report_sres=False, report_hess=False)
 
     # do the optimization

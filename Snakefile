@@ -43,15 +43,12 @@ rule run_benchmark_extended:
             model='{model}', optimizer='{optimizer}', starts='{starts}'
         ) + '__STATS.hdf5')
     wildcard_constraints:
-        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Bachmann_MSB2011|Lucarelli_CellSystems2018)',
+        model='(Beer_MolBioSystems2014|Isensee_JCB2018|Bachmann_MSB2011|'
+              'Lucarelli_CellSystems2018|Weber_BMC2015)',
         optimizer='(fides\.subspace=2D\.hessian=FX|'
-                  'fides\.subspace=2D\.hessian=FX\.enforce_curv=False|'
                   'fides\.subspace=2D\.hessian=GNSBFGS|'
-                  'fides\.subspace=2D\.hessian=GNSBFGS\.enforce_curv=False|'
                   'fides\.subspace=2D\.hessian=SSM|'
-                  'fides\.subspace=2D\.hessian=SSM\.enforce_curv=False|'
                   'fides\.subspace=2D\.hessian=TSSM|'
-                  'fides\.subspace=2D\.hessian=TSSM\.enforce_curv=False|'
                   'fides\.subspace=2D\.ebounds=1000|'
                   'fides\.subspace=2D\.ebounds=100|'
                   'fides\.subspace=2D\.ebounds=Inf)'
