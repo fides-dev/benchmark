@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.scale import SymmetricalLogTransform
 from itertools import groupby
 
 
@@ -154,10 +155,10 @@ def read_stats(model_name, optimizer, analysis):
                'optimizer': optimizer,
                'iter': data['fval'].size},
             **{stat:
-               STATS[stat](data)/data['fval'].size
+               STATS[stat](data)/data['fval'].size + 1e-6
                if stat not in ['converged', 'degenerate_subspace',
                                'newton_steps', 'gradient_steps'] else
-               STATS[stat](data)
+               STATS[stat](data)/data['fval'].size + 1e-6
                if stat != 'converged' else
                STATS[stat](data, fmin)
                for stat in analysis_stats[analysis] + ['converged']}
@@ -198,6 +199,9 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sns.kdeplot,
         x='iter',
         y='value',
+        levels=5,
+        alpha=0.5,
+        log_scale=True,
     )
     grid.map_dataframe(
         sns.scatterplot,
