@@ -204,7 +204,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         x='iter',
         y='value',
         style='converged',
-        markers={True: 'X', False: None},
+        markers={True: 'X', False: False},
         edgecolors='none',
         alpha=0.2,
         s=8,

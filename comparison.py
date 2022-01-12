@@ -71,7 +71,7 @@ if __name__ == '__main__':
         set_solver_model_options(objective.amici_solver,
                                  objective.amici_model)
 
-        for optimizer in OPTIMIZER_FORWARD:
+        for optimizer in OPTIMIZER_FORWARD + ['fmincon', 'lsqnonlin']:
             try:
                 result = load_results(model, optimizer, '1000')
             except (FileNotFoundError, IOError) as err:
