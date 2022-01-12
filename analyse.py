@@ -192,23 +192,22 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         margin_titles=True,
         legend_out=True,
         despine=True,
+        data=df
     )
     grid.map_dataframe(
         sns.kdeplot,
         x='iter',
         y='value',
-        data=df
     )
     grid.map_dataframe(
         sns.scatterplot,
         x='iter',
         y='value',
-        style='converged',
         markers='X',
         edgecolors='none',
         alpha=0.5,
-        s=12,
-        data=df[df.converged]
+        size='converged',
+        sizes={True: 12, False: 0},
     )
     grid.set(xscale='log', ylim=(-1e-5, 10))
     grid.add_legend()
