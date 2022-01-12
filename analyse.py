@@ -155,10 +155,10 @@ def read_stats(model_name, optimizer, analysis):
                'optimizer': optimizer,
                'iter': data['fval'].size},
             **{stat:
-               STATS[stat](data)/data['fval'].size + 1e-6
+               STATS[stat](data)/data['fval'].size + 1e-7
                if stat not in ['converged', 'degenerate_subspace',
                                'newton_steps', 'gradient_steps'] else
-               STATS[stat](data)/data['fval'].size + 1e-6
+               STATS[stat](data)/data['fval'].size + 1e-7
                if stat != 'converged' else
                STATS[stat](data, fmin)
                for stat in analysis_stats[analysis] + ['converged']}
@@ -215,7 +215,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         size='converged',
         sizes={True: 12, False: 0},
     )
-    grid.set(xscale='log', yscale='log', ylim=(1e-7, 10))
+    grid.set(xscale='log', yscale='log', ylim=(1e-8, 10))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
