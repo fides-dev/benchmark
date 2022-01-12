@@ -200,8 +200,10 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         x='iter',
         y='value',
         levels=5,
+        thresh=0.2,
         alpha=0.5,
         log_scale=True,
+        cut=0,
     )
     grid.map_dataframe(
         sns.scatterplot,
