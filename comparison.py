@@ -192,7 +192,7 @@ if __name__ == '__main__':
             palette = ALGO_PALETTES[analysis]
 
             # conv counts plot
-            plt.subplots()
+            plt.figure(figsize=(8, 7))
             g = sns.FacetGrid(
                 df_analysis,  row='variable',
                 sharex=True, sharey=True
@@ -211,7 +211,7 @@ if __name__ == '__main__':
             ))
 
             # conv rate plot
-            plt.subplots()
+            plt.figure(figsize=(8, 3))
             g = sns.barplot(
                 data=results_analysis,
                 x='model', y='conv_rate', hue='optimizer', hue_order=algos,

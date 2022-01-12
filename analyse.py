@@ -184,7 +184,6 @@ for analysis, algos in ANALYSIS_ALGOS.items():
                  value_vars=analysis_stats[analysis])
 
     grid = sns.FacetGrid(
-        data=df,
         row='model',
         col='variable',
         hue='optimizer',
@@ -198,16 +197,18 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sns.kdeplot,
         x='iter',
         y='value',
+        data=df
     )
     grid.map_dataframe(
         sns.scatterplot,
         x='iter',
         y='value',
         style='converged',
-        markers={True: 'X', False: False},
+        markers='X',
         edgecolors='none',
-        alpha=0.2,
-        s=8,
+        alpha=0.5,
+        s=12,
+        data=df[df.converged]
     )
     grid.set(xscale='log', ylim=(-1e-5, 10))
     grid.add_legend()
