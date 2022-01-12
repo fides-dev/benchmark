@@ -195,11 +195,16 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         despine=True,
     )
     grid.map_dataframe(
+        sns.kdeplot,
+        x='iter',
+        y='value',
+    )
+    grid.map_dataframe(
         sns.scatterplot,
         x='iter',
         y='value',
         style='converged',
-        markers={True: 's', False: 'X'},
+        markers={True: 'X', False: None},
         edgecolors='none',
         alpha=0.2,
         s=8,
