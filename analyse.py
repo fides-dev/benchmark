@@ -193,7 +193,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         margin_titles=True,
         legend_out=True,
         despine=True,
-        data=df[df.value > 0]
+        data=df
     )
     grid.map_dataframe(
         sns.kdeplot,
@@ -201,7 +201,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         y='value',
         levels=10,
         alpha=0.5,
-        log_scale=True,
+        log_scale=(True, False),
         cut=0,
     )
     grid.map_dataframe(
@@ -214,7 +214,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         size='converged',
         sizes={True: 12, False: 0},
     )
-    grid.set(xscale='log', yscale='log', ylim=(1e-8, 10))
+    grid.set(xscale='log', yscale='lin', ylim=(0, 1))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
