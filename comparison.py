@@ -211,7 +211,7 @@ if __name__ == '__main__':
             ))
 
             # conv rate plot
-            plt.figure(figsize=(8, 3))
+            plt.figure(figsize=(9, 5))
             g = sns.barplot(
                 data=results_analysis,
                 x='model', y='conv_rate', hue='optimizer', hue_order=algos,
