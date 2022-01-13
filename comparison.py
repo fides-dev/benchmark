@@ -192,10 +192,10 @@ if __name__ == '__main__':
             palette = ALGO_PALETTES[analysis]
 
             # conv counts plot
-            plt.figure(figsize=(8, 7))
             g = sns.FacetGrid(
                 df_analysis,  row='variable',
-                sharex=True, sharey=True
+                sharex=True, sharey=True,
+                height=3, aspect=2,
             )
             g.map_dataframe(sns.barplot, x='model', y='value',
                             hue='optimizer', hue_order=algos,
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                 data=results_analysis,
                 x='model', y='conv_rate', hue='optimizer', hue_order=algos,
                 palette=palette,
-                bottom=1e-7
+                bottom=1e-7,
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             g.set(yscale='log', ylim=(1e-7, 1e-1))
