@@ -214,7 +214,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         size='converged',
         sizes={True: 12, False: 0},
     )
-    grid.set(xscale='log', yscale='lin', ylim=(0, 1))
+    grid.set(xscale='log', yscale='linear', ylim=(0, 1))
     grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
