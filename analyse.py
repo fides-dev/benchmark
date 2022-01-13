@@ -158,7 +158,7 @@ def read_stats(model_name, optimizer, analysis):
                STATS[stat](data)/data['fval'].size + 1e-7
                if stat not in ['converged', 'degenerate_subspace',
                                'newton_steps', 'gradient_steps'] else
-               STATS[stat](data)/data['fval'].size + 1e-7
+               STATS[stat](data) + 1e-7
                if stat != 'converged' else
                STATS[stat](data, fmin)
                for stat in analysis_stats[analysis] + ['converged']}
@@ -199,7 +199,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sns.kdeplot,
         x='iter',
         y='value',
-        levels=[0.25, 0.5, 0.75],
+        levels=[0.2, 0.4, 0.6, 0.8],
         alpha=0.5,
         log_scale=True,
         cut=0,
