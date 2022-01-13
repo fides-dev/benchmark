@@ -155,10 +155,10 @@ def read_stats(model_name, optimizer, analysis):
                'optimizer': optimizer,
                'iter': data['fval'].size},
             **{stat:
-               STATS[stat](data)/data['fval'].size + 1e-7
+               STATS[stat](data)/data['fval'].size
                if stat not in ['converged', 'degenerate_subspace',
                                'newton_steps', 'gradient_steps'] else
-               STATS[stat](data) + 1e-7
+               STATS[stat](data)
                if stat != 'converged' else
                STATS[stat](data, fmin)
                for stat in analysis_stats[analysis] + ['converged']}
@@ -193,13 +193,13 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         margin_titles=True,
         legend_out=True,
         despine=True,
-        data=df
+        data=df[df.value > 0]
     )
     grid.map_dataframe(
         sns.kdeplot,
         x='iter',
         y='value',
-        levels=[0.2, 0.4, 0.6, 0.8],
+        levels=10,
         alpha=0.5,
         log_scale=True,
         cut=0,
