@@ -203,6 +203,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         levels=5,
         alpha=0.5,
         log_scale=(True, False),
+        legend=False,
     )
     grid.map_dataframe(
         sns.scatterplot,
@@ -213,6 +214,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         alpha=0.5,
         size='converged',
         sizes={True: 12, False: 0},
+        legend=False
     )
     grid.set(xscale='log', yscale='linear', ylim=(0, 1))
     #grid.add_legend()
