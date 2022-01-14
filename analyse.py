@@ -201,7 +201,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sns.kdeplot,
         x='iter',
         y='value',
-        levels=10,
+        levels=5,
         alpha=0.5,
         log_scale=(True, False),
     )
