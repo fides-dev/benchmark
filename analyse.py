@@ -95,7 +95,7 @@ STATS = {
             data['newton'][:],
             data['step_type'][:] == b'2d',
         ).sum() / np.sum(data['step_type'][:] == b'2d')
-        if np.sum(data['step_type'][:] == b'2d') > 0 else 0,
+        if np.sum(data['step_type'][:] == b'2d') > 0 else 0.0,
     'gradient_steps':
         lambda data: np.sum(
             data['step_type'][:] == b'g'
