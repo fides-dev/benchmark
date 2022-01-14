@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.scale import SymmetricalLogTransform
 from itertools import groupby
 
 
@@ -81,6 +80,8 @@ STATS = {
         ),
     'singular_shess':
         lambda data: np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
+    'singular_hess':
+        lambda data: np.sum(data['cond_hess'][:] > 1 / np.spacing(1)),
     'posdef_newt':
         lambda data: np.sum(data['posdef'][:]),
     'degenerate_subspace':
@@ -93,7 +94,8 @@ STATS = {
         lambda data: np.logical_and(
             data['newton'][:],
             data['step_type'][:] == b'2d',
-        ).sum() / np.sum(data['step_type'][:] == b'2d'),
+        ).sum() / np.sum(data['step_type'][:] == b'2d')
+        if np.sum(data['step_type'][:] == b'2d') > 0 else 0,
     'gradient_steps':
         lambda data: np.sum(
             data['step_type'][:] == b'g'
@@ -119,14 +121,14 @@ analysis_stats = {
     'curv': [
         'no_hess_update',
         'no_tr_update_tr_ratio', 'streak_no_tr_update_tr_ratio',
-        'singular_shess', 'neg_ev',
+        'singular_hess', 'singular_shess', 'neg_ev',
         'newton_steps',
         'integration_failure'
     ],
     'hybrid': [
         'no_hess_update', 'no_hess_struct_update',
         'no_tr_update_tr_ratio',
-        'singular_shess', 'neg_ev',
+        'singular_hess', 'singular_shess', 'neg_ev',
         'newton_steps', 'gradient_steps'
     ],
     'hybridB': [
@@ -135,7 +137,7 @@ analysis_stats = {
     ],
     'stepback': [
         'no_tr_update_tr_ratio', 'no_tr_update_int_sol',
-        'singular_shess',
+        'singular_hess', 'singular_shess',
         'gradient_steps', 'border_steps',
         'integration_failure'
     ],
