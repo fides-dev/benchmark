@@ -216,7 +216,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sizes={True: 12, False: 0},
     )
     grid.set(xscale='log', yscale='linear', ylim=(0, 1))
-    #grid.add_legend()
+    grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
