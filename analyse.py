@@ -204,7 +204,6 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         levels=10,
         alpha=0.5,
         log_scale=(True, False),
-        cut=0,
     )
     grid.map_dataframe(
         sns.scatterplot,
