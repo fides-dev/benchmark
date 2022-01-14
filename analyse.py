@@ -123,7 +123,6 @@ analysis_stats = {
         'no_tr_update_tr_ratio', 'streak_no_tr_update_tr_ratio',
         'singular_hess', 'singular_shess', 'neg_ev',
         'newton_steps',
-        'integration_failure'
     ],
     'hybrid': [
         'no_hess_update', 'no_hess_struct_update',
@@ -193,7 +192,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         hue_order=algos,
         palette=ALGO_PALETTES[analysis],
         margin_titles=True,
-        legend_out=True,
+        #legend_out=True,
         despine=True,
         data=df
     )
@@ -216,7 +215,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         sizes={True: 12, False: 0},
     )
     grid.set(xscale='log', yscale='linear', ylim=(0, 1))
-    grid.add_legend()
+    #grid.add_legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',

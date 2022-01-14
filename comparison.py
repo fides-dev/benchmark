@@ -47,6 +47,7 @@ def get_number_boundary_optima(pars, iters, grads, lb, ub):
         if par is not None and grad is not None
     ])
 
+OPTIMIZERS = OPTIMIZER_FORWARD + ['fmincon', 'lsqnonlin']
 
 if __name__ == '__main__':
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
         set_solver_model_options(objective.amici_solver,
                                  objective.amici_model)
 
-        for optimizer in OPTIMIZER_FORWARD + ['fmincon', 'lsqnonlin']:
+        for optimizer in OPTIMIZERS:
             try:
                 result = load_results(model, optimizer, '1000')
             except (FileNotFoundError, IOError) as err:
@@ -114,6 +115,7 @@ if __name__ == '__main__':
                 'model': model.split('_')[0],
                 'optimizer': optimizer,
                 'iter': n_iter,
+                'ids': result.optimize_result.get_for_key('id'),
                 'fvals': result.optimize_result.get_for_key('fval'),
                 'unique_at_boundary': get_unique_starts_at_boundary(
                     result.optimize_result.get_for_key('x'),
@@ -171,12 +173,34 @@ if __name__ == '__main__':
                 results.loc[mrows, 'improvement'] = \
                     results.loc[mrows, 'conv_rate'] / ref_val
 
-        for optimizer in results.optimizer.unique():
-            if 'improvement' in results:
+                # sort fvals according to start id
+                fvals = {
+                    opt: np.asarray(results.loc[
+                        mrows & (results.optimizer == opt),
+                        'fvals'
+                    ].values[0])[np.argsort([
+                        int(start_id) for start_id in
+                        results.loc[mrows & (results.optimizer == opt),
+                                    'ids'].values[0]
+                    ])]
+                    for opt in results[mrows].optimizer.unique()
+                }
+                for opt in results[mrows].optimizer.unique():
+                    results.loc[mrows & (results.optimizer == opt), 'fcorr']\
+                        = np.corrcoef(fvals[opt], fvals[ref_algo])[0, 1]
+
+        if 'improvement' in results:
+            for optimizer in results.optimizer.unique():
                 results.loc[results.optimizer == optimizer,
                             'average improvement'] = \
                     10 ** results.loc[results.optimizer == optimizer,
                                       'improvement'].apply(np.log10).mean()
+
+        if 'fcorr' in results:
+            for optimizer in results.optimizer.unique():
+                sel = results.optimizer == optimizer
+                results.loc[sel, 'average fcorr'] = results.loc[sel,
+                                                                'fcorr'].mean()
 
         results.drop(columns=['fvals', 'iter']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
@@ -233,15 +257,27 @@ if __name__ == '__main__':
                  for d in tup.iter],
                 columns=['iter', 'model', 'optimizer']
             )
-            df_iter.iter = df_iter.iter.apply(np.log10)
-            plt.subplots()
+            plt.figure(figsize=(9, 5))
             g = sns.boxplot(
                 data=df_iter, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='iter'
+                x='model', hue='optimizer', y='iter', log=True,
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set_ylim([0, 5])
+            g.set(yscale='log', ylim=[1e-1, 1e5])
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_iter.pdf'
+            ))
+
+            # corr plot
+            plt.figure(figsize=(9, 5))
+            g = sns.barplot(
+                data=results_analysis, hue_order=algos, palette=palette,
+                x='model', hue='optimizer', y='fcorr'
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set(yscale='linear', ylim=[0, 1])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_fcorr.pdf'
             ))

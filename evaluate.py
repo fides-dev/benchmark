@@ -366,8 +366,6 @@ if __name__ == '__main__':
         else 'FIM'
     )
 
-    df.iter = df.iter.apply(np.log10)
-
     for analysis, algos in ANALYSIS_ALGOS.items():
 
         palette = ALGO_PALETTES[analysis]
@@ -377,10 +375,11 @@ if __name__ == '__main__':
             data=df,
             order=algos,
             palette=palette,
-            x='optimizer', y='iter'
+            x='optimizer', y='iter',
+            log=True,
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=90)
-        g.set_ylim([0, 5])
+        g.set(yscale='log', ylim=[1e0, 1e5])
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
