@@ -186,6 +186,8 @@ if __name__ == '__main__':
                     for opt in results[mrows].optimizer.unique()
                 }
                 for opt in results[mrows].optimizer.unique():
+                    if len(fvals[opt]) != len(fvals[ref_algo]):
+                        continue
                     results.loc[mrows & (results.optimizer == opt), 'fcorr']\
                         = np.corrcoef(fvals[opt], fvals[ref_algo])[0, 1]
 
