@@ -260,13 +260,14 @@ if __name__ == '__main__':
                  for d in tup.iter],
                 columns=['iter', 'model', 'optimizer']
             )
+            df_iter.iter = df_iter.iter.apply(np.log10)
             plt.figure(figsize=(9, 5))
             g = sns.boxplot(
                 data=df_iter, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='iter', log=True,
+                x='model', hue='optimizer', y='iter'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set(yscale='log', ylim=[1e-1, 1e5])
+            g.set_ylim([-0.5, 5.5])
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_iter.pdf'
@@ -279,7 +280,7 @@ if __name__ == '__main__':
                 x='model', hue='optimizer', y='fcorr'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set(yscale='linear', ylim=[0, 1])
+            g.set(yscale='linear', ylim=[-0.25, 1])
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_fcorr.pdf'
