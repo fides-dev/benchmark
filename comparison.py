@@ -182,6 +182,7 @@ if __name__ == '__main__':
                         int(start_id) for start_id in
                         results.loc[mrows & (results.optimizer == opt),
                                     'ids'].values[0]
+                        if start_id is not None
                     ])]
                     for opt in results[mrows].optimizer.unique()
                 }
