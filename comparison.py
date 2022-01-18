@@ -186,11 +186,17 @@ if __name__ == '__main__':
                     ])]
                     for opt in results[mrows].optimizer.unique()
                 }
+                corr_max = 500
                 for opt in results[mrows].optimizer.unique():
-                    if len(fvals[opt]) != len(fvals[ref_algo]):
+                    if len(fvals[opt]) < corr_max:
                         continue
-                    results.loc[mrows & (results.optimizer == opt), 'fcorr']\
-                        = np.corrcoef(fvals[opt], fvals[ref_algo])[0, 1]
+                    if len(fvals[ref_algo]) < corr_max:
+                        continue
+                    results.loc[mrows & (results.optimizer == opt),
+                                'fcorr'] = np.corrcoef(
+                        np.log10(fvals[opt][:corr_max] + fmin_model),
+                        np.log10(fvals[ref_algo][:corr_max] + fmin_model)
+                    )[0, 1]
 
         if 'improvement' in results:
             for optimizer in results.optimizer.unique():
