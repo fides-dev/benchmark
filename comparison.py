@@ -175,10 +175,9 @@ if __name__ == '__main__':
                     ].values[0]
                     val = results.loc[mrows, metric] / ref_val
                     results.loc[mrows, f'improvement {metric}'] = \
-                        1 / val if metric is 'mean iter' else val
+                        1 / val if metric == 'mean iter' else val
 
                 # sort fvals according to start id
-
                 opt_ids = {
                     opt: results.loc[mrows & (results.optimizer == opt),
                                      'ids'].values[0]
@@ -186,10 +185,15 @@ if __name__ == '__main__':
                 }
 
                 fvals = {
-                    opt: np.asarray([
-                        results.loc[
+                    opt: results.loc[
                             mrows & (results.optimizer == opt), 'fvals'
-                        ].values[0][opt_ids[opt].index(str(istart))]
+                        ].values[0]
+                    for opt in results[mrows].optimizer.unique()
+                }
+
+                fvals_sorted = {
+                    opt: np.asarray([
+                        fvals[opt][opt_ids[opt].index(str(istart))]
                         if str(istart) in opt_ids[opt]
                         else np.nan
                         for istart in range(1000)
@@ -197,15 +201,20 @@ if __name__ == '__main__':
                     for opt in results[mrows].optimizer.unique()
                 }
                 for opt in results[mrows].optimizer.unique():
-                    mask = np.isnan(fvals[opt]) & np.isnan(fvals[ref_algo])
+                    mask = np.logical_and(
+                        np.isfinite(fvals_sorted[opt]),
+                        np.isfinite(fvals_sorted[ref_algo])
+                    )
                     if not mask.any():
                         print(f'no valid fvals for {model}-{opt}')
+                        print(f'fvals_sorted[opt]: {fvals_sorted[opt]}')
+                        print(f'fvals_sorted[ref]: {fvals_sorted[ref_algo]}')
                         continue
 
                     results.loc[mrows & (results.optimizer == opt),
                                 'fcorr'] = np.corrcoef(
-                        np.log10(fvals[opt][mask] + fmin_model),
-                        np.log10(fvals[ref_algo][mask] + fmin_model)
+                        np.log10(fvals_sorted[opt][mask] + fmin_model),
+                        np.log10(fvals_sorted[ref_algo][mask] + fmin_model)
                     )[0, 1]
             else:
                 print(f'No results for {ref_algo} for {model}')
