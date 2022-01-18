@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
                 opt_ids = {
                     opt: results.loc[mrows & (results.optimizer == opt),
-                                    'ids'].values[0]
+                                     'ids'].values[0]
                     for opt in results[mrows].optimizer.unique()
                 }
 
@@ -197,7 +197,7 @@ if __name__ == '__main__':
                     for opt in results[mrows].optimizer.unique()
                 }
                 for opt in results[mrows].optimizer.unique():
-                    mask = np.isna(fvals[opt]) & np.isna(fvals[ref_algo])
+                    mask = np.isnan(fvals[opt]) & np.isnan(fvals[ref_algo])
                     if not mask.any():
                         print(f'no valid fvals for {model}-{opt}')
                         continue
