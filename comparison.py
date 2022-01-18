@@ -186,9 +186,10 @@ if __name__ == '__main__':
                     ])]
                     for opt in results[mrows].optimizer.unique()
                 }
-                corr_max = 500
+                corr_max = 200
                 for opt in results[mrows].optimizer.unique():
                     if len(fvals[opt]) < corr_max:
+                        print(f'{model}-{opt} has {len(fvals[opt])} values')
                         continue
                     if len(fvals[ref_algo]) < corr_max:
                         continue
@@ -211,7 +212,9 @@ if __name__ == '__main__':
                 results.loc[sel, 'average fcorr'] = results.loc[sel,
                                                                 'fcorr'].mean()
 
-        results.drop(columns=['fvals', 'iter']).to_csv(
+        results['mean_iter'] = results.iter.apply(np.mean)
+
+        results.drop(columns=['fvals', 'iter', 'ids']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
         )
 
