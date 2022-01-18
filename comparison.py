@@ -213,8 +213,8 @@ if __name__ == '__main__':
 
                     results.loc[mrows & (results.optimizer == opt),
                                 'fcorr'] = np.corrcoef(
-                        np.log10(fvals_sorted[opt][mask] + fmin_model),
-                        np.log10(fvals_sorted[ref_algo][mask] + fmin_model)
+                        np.log10(fvals_sorted[opt][mask] - fmin_model + 1),
+                        np.log10(fvals_sorted[ref_algo][mask] - fmin_model + 1)
                     )[0, 1]
             else:
                 print(f'No results for {ref_algo} for {model}')
