@@ -194,13 +194,13 @@ if __name__ == '__main__':
                     if len(fvals[opt]) < corr_max:
                         print(f'{model}-{opt} has {len(fvals[opt])} values')
                         continue
-                    if len(fvals[ref_algo]) < corr_max:
-                        continue
                     results.loc[mrows & (results.optimizer == opt),
                                 'fcorr'] = np.corrcoef(
                         np.log10(fvals[opt][:corr_max] + fmin_model),
                         np.log10(fvals[ref_algo][:corr_max] + fmin_model)
                     )[0, 1]
+            else:
+                print(f'No results for {ref_algo} for {model}')
 
         for metric in ['conv rate', 'conv count', 'mean iter']:
             if f'improvement {metric}' in results:
