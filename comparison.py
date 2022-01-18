@@ -147,7 +147,7 @@ if __name__ == '__main__':
                 'fmin'
             ].min()
 
-            results.loc[mrows, 'conv_count'] = results.loc[mrows, :].apply(
+            results.loc[mrows, 'conv count'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged(x.fvals,
                                   fmin_model if not has_ebounds(x.optimizer)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
                                   threshold),
                 axis=1
             )
-            results.loc[mrows, 'conv_rate'] = results.loc[mrows, :].apply(
+            results.loc[mrows, 'conv rate'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged_per_grad(x.fvals, x.iter,
                                            fmin_model if not has_ebounds(
@@ -164,14 +164,17 @@ if __name__ == '__main__':
                                            threshold), axis=1
             )
 
+            results['mean iter'] = results.iter.apply(np.mean)
+
             # compute improvement compared to ref algo
             ref_algo = 'fides.subspace=2D'
             if np.any(mrows & (results.optimizer == ref_algo)):
-                ref_val = results.loc[
-                    mrows & (results.optimizer == ref_algo), 'conv_rate'
-                ].values[0]
-                results.loc[mrows, 'improvement'] = \
-                    results.loc[mrows, 'conv_rate'] / ref_val
+                for metric in ['conv rate', 'conv count', 'mean iter']:
+                    ref_val = results.loc[
+                        mrows & (results.optimizer == ref_algo), metric
+                    ].values[0]
+                    results.loc[mrows, f'improvement {metric}'] = \
+                        results.loc[mrows, metric] / ref_val
 
                 # sort fvals according to start id
                 fvals = {
@@ -199,12 +202,15 @@ if __name__ == '__main__':
                         np.log10(fvals[ref_algo][:corr_max] + fmin_model)
                     )[0, 1]
 
-        if 'improvement' in results:
-            for optimizer in results.optimizer.unique():
-                results.loc[results.optimizer == optimizer,
-                            'average improvement'] = \
-                    10 ** results.loc[results.optimizer == optimizer,
-                                      'improvement'].apply(np.log10).mean()
+        for metric in ['conv rate', 'conv count', 'mean iter']:
+            if f'improvement {metric}' in results:
+                for optimizer in results.optimizer.unique():
+                    results.loc[results.optimizer == optimizer,
+                                f'average improvement {metric}'] = \
+                        10 ** results.loc[
+                            results.optimizer == optimizer,
+                            f'improvement {metric}'
+                        ].apply(np.log10).mean()
 
         if 'fcorr' in results:
             for optimizer in results.optimizer.unique():
@@ -212,15 +218,13 @@ if __name__ == '__main__':
                 results.loc[sel, 'average fcorr'] = results.loc[sel,
                                                                 'fcorr'].mean()
 
-        results['mean_iter'] = results.iter.apply(np.mean)
-
         results.drop(columns=['fvals', 'iter', 'ids']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
         )
 
         df = pd.melt(results, id_vars=['model', 'optimizer'],
                      value_vars=['unique_at_boundary', 'boundary_minima',
-                                 'conv_count'])
+                                 'conv count'])
 
         for analysis, algos in ANALYSIS_ALGOS.items():
             df_analysis = df[df.optimizer.isin(algos)]
@@ -250,7 +254,7 @@ if __name__ == '__main__':
             plt.figure(figsize=(9, 5))
             g = sns.barplot(
                 data=results_analysis,
-                x='model', y='conv_rate', hue='optimizer', hue_order=algos,
+                x='model', y='conv rate', hue='optimizer', hue_order=algos,
                 palette=palette,
                 bottom=1e-7,
             )
