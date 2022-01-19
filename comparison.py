@@ -222,6 +222,18 @@ if __name__ == '__main__':
                         opt_conv_ids.union(ref_conv_ids)
                     ) if len(ref_conv_ids) > 0 else 0.0
 
+                    n_min = min(len(opt_conv_ids), len(ref_conv_ids))
+                    results.loc[mrows & (results.optimizer == opt),
+                                'overlap'] = len(
+                        opt_conv_ids.intersection(ref_conv_ids)
+                    ) / n_min if n_min > 0 else 0.0
+
+                    n_sum = len(opt_conv_ids) + len(ref_conv_ids)
+                    results.loc[mrows & (results.optimizer == opt),
+                                'dice'] = 2*len(
+                        opt_conv_ids.intersection(ref_conv_ids)
+                    ) / n_sum if n_sum > 0 else 0.0
+
                     mask = np.logical_and(
                         np.isfinite(fvals_sorted[opt]),
                         np.isfinite(fvals_sorted[ref_algo])
@@ -250,7 +262,7 @@ if __name__ == '__main__':
                             f'improvement {metric}'
                         ].apply(np.log10).mean()
 
-        for metric in ['fcorr', 'jaccard']:
+        for metric in ['fcorr', 'jaccard', 'overlap', 'dice']:
             if metric in results:
                 for optimizer in results.optimizer.unique():
                     sel = results.optimizer == optimizer
@@ -305,19 +317,20 @@ if __name__ == '__main__':
                 f'comparison_{analysis}_{threshold}_conv_rate.pdf'
             ))
 
-            # jaccard plot
-            plt.figure(figsize=(9, 5))
-            g = sns.barplot(
-                data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='jaccard'
-            )
-            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set(yscale='linear', ylim=[0, 1])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'comparison_{analysis}_{threshold}_jaccard.pdf'
-            ))
+            # similarity plot
+            for similarity in ['jaccard', 'dice', 'overlap']:
+                plt.figure(figsize=(9, 5))
+                g = sns.barplot(
+                    data=results_analysis, hue_order=algos, palette=palette,
+                    x='model', hue='optimizer', y=similarity
+                )
+                g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+                g.set(yscale='linear', ylim=[0, 1])
+                plt.tight_layout()
+                plt.savefig(os.path.join(
+                    'evaluation',
+                    f'comparison_{analysis}_{threshold}_{similarity}.pdf'
+                ))
 
             # iter plot
             df_iter = pd.DataFrame(
