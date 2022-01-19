@@ -211,14 +211,16 @@ if __name__ == '__main__':
                     for opt in results[mrows].optimizer.unique()
                 }
 
-                ref_conv_ids = opt_ids[ref_algo][:conv_counts[ref_algo]]
+                ref_conv_ids = set(opt_ids[ref_algo][:conv_counts[ref_algo]])
                 for opt in results[mrows].optimizer.unique():
 
+                    opt_conv_ids = set(opt_ids[opt][:conv_counts[opt]])
                     results.loc[mrows & (results.optimizer == opt),
-                                'conv overlap'] = len([
-                        opt_id for opt_id in opt_ids[opt][:conv_counts[opt]]
-                        if opt_id in ref_conv_ids
-                    ]) / conv_counts[opt] if conv_counts[opt] > 0 else 0.0
+                                'jaccard'] = len(
+                        opt_conv_ids.intersection(ref_conv_ids)
+                    ) / len(
+                        opt_conv_ids.union(ref_conv_ids)
+                    ) if len(ref_conv_ids) > 0 else 0.0
 
                     mask = np.logical_and(
                         np.isfinite(fvals_sorted[opt]),
@@ -248,7 +250,7 @@ if __name__ == '__main__':
                             f'improvement {metric}'
                         ].apply(np.log10).mean()
 
-        for metric in ['fcorr', 'conv overlap']:
+        for metric in ['fcorr', 'jaccard']:
             if metric in results:
                 for optimizer in results.optimizer.unique():
                     sel = results.optimizer == optimizer
@@ -340,7 +342,7 @@ if __name__ == '__main__':
             plt.figure(figsize=(9, 5))
             g = sns.barplot(
                 data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='conv overlap'
+                x='model', hue='optimizer', y='jaccard'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             g.set(yscale='linear', ylim=[0, 1])
