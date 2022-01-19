@@ -305,6 +305,20 @@ if __name__ == '__main__':
                 f'comparison_{analysis}_{threshold}_conv_rate.pdf'
             ))
 
+            # jaccard plot
+            plt.figure(figsize=(9, 5))
+            g = sns.barplot(
+                data=results_analysis, hue_order=algos, palette=palette,
+                x='model', hue='optimizer', y='jaccard'
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set(yscale='linear', ylim=[0, 1])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation',
+                f'comparison_{analysis}_{threshold}_jaccard.pdf'
+            ))
+
             # iter plot
             df_iter = pd.DataFrame(
                 [(d, tup.model, tup.optimizer)
@@ -336,17 +350,4 @@ if __name__ == '__main__':
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_fcorr.pdf'
-            ))
-
-            # overlap plot
-            plt.figure(figsize=(9, 5))
-            g = sns.barplot(
-                data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='jaccard'
-            )
-            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set(yscale='linear', ylim=[0, 1])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_overlap.pdf'
             ))
