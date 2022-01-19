@@ -218,7 +218,7 @@ if __name__ == '__main__':
                                 'conv overlap'] = len([
                         opt_id for opt_id in opt_ids[opt][:conv_counts[opt]]
                         if opt_id in ref_conv_ids
-                    ]) / conv_counts[opt]
+                    ]) / conv_counts[opt] if conv_counts[opt] > 0 else 0.0
 
                     mask = np.logical_and(
                         np.isfinite(fvals_sorted[opt]),
