@@ -340,7 +340,7 @@ if __name__ == '__main__':
             plt.figure(figsize=(9, 5))
             g = sns.barplot(
                 data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='overlap'
+                x='model', hue='optimizer', y='conv overlap'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             g.set(yscale='linear', ylim=[0, 1])
