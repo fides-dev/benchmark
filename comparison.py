@@ -15,7 +15,7 @@ from benchmark import set_solver_model_options
 
 MODELS = [
     'Bachmann_MSB2011', 'Beer_MolBioSystems2014', 'Boehm_JProteomeRes2014',
-    'Brannmark_JBC2010', 'Bruno_JExpBot2016',  'Crauste_CellSystems2017',
+    'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
     'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
     'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
     'Zheng_PNAS2012'
@@ -36,8 +36,8 @@ def get_unique_starts_at_boundary(pars, lb, ub):
 def get_number_boundary_optima(pars, iters, grads, lb, ub):
     return sum([
         n_iter > 0 and (
-            np.isclose(par, lb, atol=1e-2, rtol=0.0).any() or
-            np.isclose(par, ub, atol=1e-2, rtol=0.0).any()
+                np.isclose(par, lb, atol=1e-2, rtol=0.0).any() or
+                np.isclose(par, ub, atol=1e-2, rtol=0.0).any()
         ) and
         np.linalg.norm(grad[np.where(
             np.isclose(par, lb, atol=1e-2, rtol=0.0) |
@@ -46,6 +46,7 @@ def get_number_boundary_optima(pars, iters, grads, lb, ub):
         for par, n_iter, grad in zip(pars, iters, grads)
         if par is not None and grad is not None
     ])
+
 
 OPTIMIZERS = OPTIMIZER_FORWARD + ['fmincon', 'lsqnonlin']
 
@@ -136,11 +137,13 @@ if __name__ == '__main__':
         for model in MODELS:
             mrows = results.model == model.split('_')[0]
 
+
             def has_ebounds(optimizer):
                 return any(
                     option.startswith('ebounds=')
                     for option in optimizer.split('.')
                 )
+
 
             fmin_model = results.loc[
                 mrows & np.logical_not(results.optimizer.apply(has_ebounds)),
@@ -186,8 +189,8 @@ if __name__ == '__main__':
 
                 fvals = {
                     opt: results.loc[
-                            mrows & (results.optimizer == opt), 'fvals'
-                        ].values[0]
+                        mrows & (results.optimizer == opt), 'fvals'
+                    ].values[0]
                     for opt in results[mrows].optimizer.unique()
                 }
 
@@ -200,7 +203,23 @@ if __name__ == '__main__':
                     ])
                     for opt in results[mrows].optimizer.unique()
                 }
+
+                conv_counts = {
+                    opt: int(results.loc[
+                        mrows & (results.optimizer == opt), 'conv count'
+                    ].values[0])
+                    for opt in results[mrows].optimizer.unique()
+                }
+
+                ref_conv_ids = opt_ids[ref_algo][:conv_counts[ref_algo]]
                 for opt in results[mrows].optimizer.unique():
+
+                    results.loc[mrows & (results.optimizer == opt),
+                                'conv overlap'] = len([
+                        opt_id for opt_id in opt_ids[opt][:conv_counts[opt]]
+                        if opt_id in ref_conv_ids
+                    ]) / conv_counts[opt]
+
                     mask = np.logical_and(
                         np.isfinite(fvals_sorted[opt]),
                         np.isfinite(fvals_sorted[ref_algo])
@@ -229,11 +248,12 @@ if __name__ == '__main__':
                             f'improvement {metric}'
                         ].apply(np.log10).mean()
 
-        if 'fcorr' in results:
-            for optimizer in results.optimizer.unique():
-                sel = results.optimizer == optimizer
-                results.loc[sel, 'average fcorr'] = results.loc[sel,
-                                                                'fcorr'].mean()
+        for metric in ['fcorr', 'conv overlap']:
+            if metric in results:
+                for optimizer in results.optimizer.unique():
+                    sel = results.optimizer == optimizer
+                    results.loc[sel, f'average {metric}'] = \
+                        results.loc[sel, metric].mean()
 
         results.drop(columns=['fvals', 'iter', 'ids']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
@@ -250,7 +270,7 @@ if __name__ == '__main__':
 
             # conv counts plot
             g = sns.FacetGrid(
-                df_analysis,  row='variable',
+                df_analysis, row='variable',
                 sharex=True, sharey=True,
                 height=3, aspect=2,
             )
@@ -314,4 +334,17 @@ if __name__ == '__main__':
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_fcorr.pdf'
+            ))
+
+            # overlap plot
+            plt.figure(figsize=(9, 5))
+            g = sns.barplot(
+                data=results_analysis, hue_order=algos, palette=palette,
+                x='model', hue='optimizer', y='overlap'
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set(yscale='linear', ylim=[0, 1])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_overlap.pdf'
             ))
