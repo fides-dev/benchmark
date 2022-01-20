@@ -235,14 +235,40 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         plt.figure(figsize=(9, 5))
         g = sns.violinplot(
             data=all_stats, hue_order=algos, palette=palette,
-            x='model', hue='optimizer', y=stat, cut=0,
+            x='model', hue='optimizer', y=stat, cut=0, inner=None, dodge=True,
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
         g.set(yscale='linear', ylim=[-0.05, 1.05])
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
-            f'stat_{analysis}_{stat}.pdf'
+            f'stat_{analysis}_{stat}_violin.pdf'
+        ))
+
+        plt.figure(figsize=(9, 5))
+        g = sns.swarmplot(
+            data=all_stats, hue_order=algos, palette=palette,
+            x='model', hue='optimizer', y=stat, dodge=True,
+        )
+        g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+        g.set(yscale='linear', ylim=[-0.05, 1.05])
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'stat_{analysis}_{stat}_swarm.pdf'
+        ))
+
+        plt.figure(figsize=(9, 5))
+        g = sns.boxplot(
+            data=all_stats, hue_order=algos, palette=palette,
+            x='model', hue='optimizer', y=stat, dodge=True,
+        )
+        g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+        g.set(yscale='linear', ylim=[-0.05, 1.05])
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'stat_{analysis}_{stat}_box.pdf'
         ))
 
     average_stats = all_stats.groupby(['model', 'optimizer']).mean()
