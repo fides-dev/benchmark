@@ -175,6 +175,8 @@ def read_stats(model_name, optimizer, analysis):
 for analysis, algos in ANALYSIS_ALGOS.items():
     if analysis not in analysis_stats:
         continue
+
+    palette = ALGO_PALETTES[analysis]
     stats = [
         read_stats(model, opt, analysis)
         for model in MODELS
@@ -195,7 +197,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         col='variable',
         hue='optimizer',
         hue_order=algos,
-        palette=ALGO_PALETTES[analysis],
+        palette=palette,
         margin_titles=True,
         #legend_out=True,
         despine=True,
@@ -226,8 +228,28 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     plt.tight_layout()
     plt.savefig(os.path.join(
         'evaluation',
-        f'stats_analysis_{analysis}.pdf'
+        f'stats_{analysis}.pdf'
     ))
+
+    for stat in analysis_stats[analysis]:
+        plt.figure(figsize=(9, 5))
+        g = sns.boxplot(
+            data=all_stats, hue_order=algos, palette=palette,
+            x='model', hue='optimizer', y=stat
+        )
+        g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+        g.set(yscale='linear', ylim=[0, 1])
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'stat_{analysis}_{stat}.pdf'
+        ))
+
+    average_stats = all_stats.groupby(['model', 'optimizer']).mean()
+    average_stats.to_csv(
+        os.path.join('evaluation', f'stats_{analysis}.csv')
+    )
+
     print(f'{analysis} done.')
 
 
