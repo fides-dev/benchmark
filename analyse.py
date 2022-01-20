@@ -233,12 +233,12 @@ for analysis, algos in ANALYSIS_ALGOS.items():
 
     for stat in analysis_stats[analysis]:
         plt.figure(figsize=(9, 5))
-        g = sns.boxplot(
+        g = sns.violinplot(
             data=all_stats, hue_order=algos, palette=palette,
-            x='model', hue='optimizer', y=stat
+            x='model', hue='optimizer', y=stat, inner='points',
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-        g.set(yscale='linear', ylim=[0, 1])
+        g.set(yscale='linear', ylim=[-0.1, 1.1])
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
