@@ -235,10 +235,10 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         plt.figure(figsize=(9, 5))
         g = sns.violinplot(
             data=all_stats, hue_order=algos, palette=palette,
-            x='model', hue='optimizer', y=stat, inner='points',
+            x='model', hue='optimizer', y=stat, cut=0,
         )
         g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-        g.set(yscale='linear', ylim=[-0.1, 1.1])
+        g.set(yscale='linear', ylim=[-0.05, 1.05])
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
