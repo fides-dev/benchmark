@@ -89,7 +89,8 @@ STATS = {
             data['subspace_dim'][:] == 1,
             np.logical_not(data['newton'][:]),
             data['step_type'][:] == b'2d',
-        )).sum() / np.sum(data['step_type'][:] == b'2d'),
+        )).sum() / np.sum(data['step_type'][:] == b'2d')
+        if np.sum(data['step_type'][:] == b'2d') > 0 else 0.0,
     'newton_steps':
         lambda data: np.logical_and(
             data['newton'][:],
@@ -99,7 +100,14 @@ STATS = {
     'gradient_steps':
         lambda data: np.sum(
             data['step_type'][:] == b'g'
-        ),
+        ) / np.sum(np.logical_and(
+            data['step_type'][:] != b'2d',
+            data['step_type'][:] != b'nd',
+        ))
+        if np.sum(np.logical_and(
+            data['step_type'][:] != b'2d',
+            data['step_type'][:] != b'nd',
+        )) > 0 else 0.0,
     'border_steps':
         lambda data: np.sum(np.logical_and(
             data['step_type'][:] != b'2d',
@@ -155,7 +163,7 @@ def read_stats(model_name, optimizer, analysis):
             **{stat:
                STATS[stat](data)/data['fval'].size
                if stat not in ['converged', 'degenerate_subspace',
-                               'newton_steps'] else
+                               'newton_steps', 'gradient_steps'] else
                STATS[stat](data)
                if stat != 'converged' else
                STATS[stat](data, fmin)
