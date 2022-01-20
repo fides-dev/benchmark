@@ -99,10 +99,7 @@ STATS = {
     'gradient_steps':
         lambda data: np.sum(
             data['step_type'][:] == b'g'
-        ) / np.sum(np.logical_and(
-            data['step_type'][:] != b'2d',
-            data['step_type'][:] != b'nd',
-        )),
+        ),
     'border_steps':
         lambda data: np.sum(np.logical_and(
             data['step_type'][:] != b'2d',
@@ -158,7 +155,7 @@ def read_stats(model_name, optimizer, analysis):
             **{stat:
                STATS[stat](data)/data['fval'].size
                if stat not in ['converged', 'degenerate_subspace',
-                               'newton_steps', 'gradient_steps'] else
+                               'newton_steps'] else
                STATS[stat](data)
                if stat != 'converged' else
                STATS[stat](data, fmin)
