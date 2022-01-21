@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pypesto
 
+from scipy.stats import skew
+
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
     ANALYSIS_ALGOS, ALGO_PALETTES, CONVERGENCE_THRESHOLDS, OPTIMIZER_FORWARD
@@ -15,10 +17,10 @@ from benchmark import set_solver_model_options
 
 MODELS = [
     'Bachmann_MSB2011', 'Beer_MolBioSystems2014', 'Boehm_JProteomeRes2014',
-    'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-    'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
-    'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
-    'Zheng_PNAS2012'
+    #'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
+    #'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
+    #'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
+    #'Zheng_PNAS2012'
 ]
 
 
@@ -167,11 +169,16 @@ if __name__ == '__main__':
             )
 
             results['mean iter'] = results.iter.apply(np.mean)
+            results['skew iter'] = results.iter.apply(skew)
+            results['nskew iter'] = results.iter.apply(
+                lambda x: (np.mean(x) - np.median(x)) / np.std(x)
+            )
 
             # compute improvement compared to ref algo
             ref_algo = 'fides.subspace=2D'
             if np.any(mrows & (results.optimizer == ref_algo)):
-                for metric in ['conv rate', 'conv count', 'mean iter']:
+                for metric in ['conv rate', 'conv count', 'mean iter',
+                               'skew iter', 'nskew iter']:
                     ref_val = results.loc[
                         mrows & (results.optimizer == ref_algo), metric
                     ].values[0]
@@ -236,8 +243,10 @@ if __name__ == '__main__':
             stats = pd.read_csv(os.path.join('evaluation',
                                              f'stats_{analysis}.csv'))
 
-            stat_columns = [stat for stat in stats.columns
-                            if stat not in ['model', 'optimizer']]
+            stat_columns = [
+                stat for stat in stats.columns
+                if stat not in ['model', 'optimizer', 'converged', 'iter']
+            ]
             for _, row in stats.iterrows():
                 for stat in stat_columns:
                     results_analysis.loc[
@@ -348,6 +357,7 @@ if __name__ == '__main__':
             ))
 
             # stats comparison
+            df_improvement[df_improvement.improvement < -2].improvement = -2
             df_stats = pd.melt(
                 df_improvement,
                 id_vars=group_vars + ['improvement var', 'improvement'],
@@ -357,6 +367,7 @@ if __name__ == '__main__':
             )
             g = sns.lmplot(
                 df_stats,
+                sharex=False, sharey=True,
                 row='stat var', column='improvement var',
                 x='stat', y='improvement',
                 hue='optimizer', hue_order=algos, palette=palette,
@@ -365,4 +376,3 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_stats.pdf'
             ))
-
