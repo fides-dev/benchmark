@@ -17,10 +17,10 @@ from benchmark import set_solver_model_options
 
 MODELS = [
     'Bachmann_MSB2011', 'Beer_MolBioSystems2014', 'Boehm_JProteomeRes2014',
-    #'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
-    #'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
-    #'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
-    #'Zheng_PNAS2012'
+    'Brannmark_JBC2010', 'Bruno_JExpBot2016', 'Crauste_CellSystems2017',
+    'Fiedler_BMC2016', 'Fujita_SciSignal2010', 'Isensee_JCB2018',
+    'Lucarelli_CellSystems2018', 'Schwen_PONE2014', 'Weber_BMC2015',
+    'Zheng_PNAS2012'
 ]
 
 
@@ -66,74 +66,82 @@ if __name__ == '__main__':
     mpl.rcParams.update(new_rc_params)
 
     all_results = []
-    for model in MODELS:
-        petab_problem, problem = load_problem(model)
-        if isinstance(problem.objective, pypesto.AmiciObjective):
-            objective = problem.objective
-        else:
-            objective = problem.objective._objectives[0]
-        set_solver_model_options(objective.amici_solver,
-                                 objective.amici_model)
 
-        for optimizer in OPTIMIZERS:
-            try:
-                result = load_results(model, optimizer, '1000')
-            except (FileNotFoundError, IOError) as err:
-                print(f'Failed loading: {err}')
-                continue
+    hdf_key = 'results'
+    hdf_file = os.path.join('evaluation', 'comparison.h5')
 
-            ebound_option = next((
-                option
-                for option in optimizer.split('.')
-                if option.startswith('ebounds=')
-            ), None)
-
-            if ebound_option is not None:
-                ebound = float(ebound_option.split('=')[1])
-                ubs = np.asarray([
-                    ub + np.log10(ebound) if scale == 'log10'
-                    else ub * ebound
-                    for ub, scale in zip(
-                        problem.ub_full, problem.x_scales
-                    )
-                ])
-                lbs = np.asarray([
-                    lb - np.log10(ebound) if scale == 'log10'
-                    else lb * ebound
-                    for lb, scale in zip(
-                        problem.lb_full, problem.x_scales
-                    )
-                ])
+    if not os.path.exists(hdf_file):
+        for model in MODELS:
+            petab_problem, problem = load_problem(model)
+            if isinstance(problem.objective, pypesto.AmiciObjective):
+                objective = problem.objective
             else:
-                ubs = problem.ub_full
-                lbs = problem.lb_full
+                objective = problem.objective._objectives[0]
+            set_solver_model_options(objective.amici_solver,
+                                     objective.amici_model)
 
-            n_iter = np.asarray(
-                result.optimize_result.get_for_key('n_grad')
-            ) + np.asarray(
-                result.optimize_result.get_for_key('n_sres')
-            )
+            for optimizer in OPTIMIZERS:
+                try:
+                    result = load_results(model, optimizer, '1000')
+                except (FileNotFoundError, IOError) as err:
+                    print(f'Failed loading: {err}')
+                    continue
 
-            all_results.append({
-                'model': model.split('_')[0],
-                'optimizer': optimizer,
-                'iter': n_iter,
-                'ids': result.optimize_result.get_for_key('id'),
-                'fvals': result.optimize_result.get_for_key('fval'),
-                'unique_at_boundary': get_unique_starts_at_boundary(
-                    result.optimize_result.get_for_key('x'),
-                    lbs, ubs
-                ),
-                'boundary_minima': get_number_boundary_optima(
-                    result.optimize_result.get_for_key('x'),
-                    n_iter,
-                    result.optimize_result.get_for_key('grad'),
-                    lbs, ubs
-                ),
-            })
+                ebound_option = next((
+                    option
+                    for option in optimizer.split('.')
+                    if option.startswith('ebounds=')
+                ), None)
 
-    results = pd.DataFrame(all_results)
-    results['fmin'] = results['fvals'].apply(np.nanmin)
+                if ebound_option is not None:
+                    ebound = float(ebound_option.split('=')[1])
+                    ubs = np.asarray([
+                        ub + np.log10(ebound) if scale == 'log10'
+                        else ub * ebound
+                        for ub, scale in zip(
+                            problem.ub_full, problem.x_scales
+                        )
+                    ])
+                    lbs = np.asarray([
+                        lb - np.log10(ebound) if scale == 'log10'
+                        else lb * ebound
+                        for lb, scale in zip(
+                            problem.lb_full, problem.x_scales
+                        )
+                    ])
+                else:
+                    ubs = problem.ub_full
+                    lbs = problem.lb_full
+
+                n_iter = np.asarray(
+                    result.optimize_result.get_for_key('n_grad')
+                ) + np.asarray(
+                    result.optimize_result.get_for_key('n_sres')
+                )
+
+                all_results.append({
+                    'model': model.split('_')[0],
+                    'optimizer': optimizer,
+                    'iter': n_iter,
+                    'ids': result.optimize_result.get_for_key('id'),
+                    'fvals': result.optimize_result.get_for_key('fval'),
+                    'unique_at_boundary': get_unique_starts_at_boundary(
+                        result.optimize_result.get_for_key('x'),
+                        lbs, ubs
+                    ),
+                    'boundary_minima': get_number_boundary_optima(
+                        result.optimize_result.get_for_key('x'),
+                        n_iter,
+                        result.optimize_result.get_for_key('grad'),
+                        lbs, ubs
+                    ),
+                })
+
+        results = pd.DataFrame(all_results)
+        results['fmin'] = results['fvals'].apply(np.nanmin)
+        results.to_hdf(hdf_file, hdf_key)
+    else:
+        results = pd.read_hdf(hdf_file, hdf_key)
 
     for threshold in CONVERGENCE_THRESHOLDS:
         for model in MODELS:
