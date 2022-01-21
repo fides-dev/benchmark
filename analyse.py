@@ -243,7 +243,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         plt.tight_layout()
         plt.savefig(os.path.join(
             'evaluation',
-            f'stat_{analysis}_{stat}_box.pdf'
+            f'stat_{analysis}_{stat}.pdf'
         ))
 
     average_stats = all_stats.groupby(['model', 'optimizer']).mean()

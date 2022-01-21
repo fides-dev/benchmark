@@ -137,7 +137,6 @@ if __name__ == '__main__':
         for model in MODELS:
             mrows = results.model == model.split('_')[0]
 
-
             def has_ebounds(optimizer):
                 return any(
                     option.startswith('ebounds=')
@@ -233,7 +232,20 @@ if __name__ == '__main__':
 
         for analysis, algos in ANALYSIS_ALGOS.items():
             df_analysis = df[df.optimizer.isin(algos)]
-            results_analysis = results[results.optimizer.isin(algos)]
+            results_analysis = results[results.optimizer.isin(algos)].copy()
+            stats = pd.read_csv(os.path.join('evaluation',
+                                             f'stats_{analysis}.csv'))
+
+            stat_columns = [stat for stat in stats.columns
+                            if stat not in ['model', 'optimizer']]
+            for _, row in stats.iterrows():
+                for stat in stat_columns:
+                    results_analysis.loc[
+                        (results_analysis.model == row.model) &
+                        (results_analysis.optimizer == row.optimizer),
+                        stat
+                    ] = row[stat]
+
             palette = ALGO_PALETTES[analysis]
 
             # conv counts plot
@@ -304,3 +316,53 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_iter.pdf'
             ))
+
+            # improvement plot
+            group_vars = ['model', 'optimizer']
+            improvements = ['improvement conv count',
+                            'improvement mean iter',
+                            'improvement conv rate']
+            df_improvement = pd.melt(
+                results_analysis,
+                id_vars=group_vars + stat_columns,
+                value_vars=improvements,
+                var_name='improvement var',
+                value_name='improvement'
+            )
+            df_improvement.value.apply(np.log10)
+
+            plt.figure(figsize=(9, 4))
+            g = sns.FacetGrid(
+                df_improvement, row='variable',
+                row_order=improvements,
+            )
+            g.map_dataframe(
+                sns.barplot, x='model', y='value',
+                hue='variable', hue_order=algos, palette=palette,
+                lower=-2,
+            )
+            g.set(ylim=[-2, 2])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_improvements.pdf'
+            ))
+
+            # stats comparison
+            df_stats = pd.melt(
+                df_improvement,
+                id_vars=group_vars + ['improvement var', 'improvement'],
+                value_vars=stat_columns,
+                var_name='stat var',
+                value_name='stat'
+            )
+            g = sns.lmplot(
+                df_stats,
+                row='stat var', column='improvement var',
+                x='stat', y='improvement',
+                hue='optimizer', hue_order=algos, palette=palette,
+            )
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation', f'comparison_{analysis}_stats.pdf'
+            ))
+
