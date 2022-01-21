@@ -188,6 +188,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     if not stats:
         continue
     all_stats = pd.concat(stats)
+    all_stats.model = all_stats.model.apply(lambda x: x.split('_')[0])
     df = pd.melt(all_stats, id_vars=['optimizer', 'model', 'iter',
                                      'converged'],
                  value_vars=analysis_stats[analysis])
@@ -232,7 +233,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
     ))
 
     for stat in analysis_stats[analysis]:
-        plt.figure(figsize=(9, 5))
+        plt.figure(figsize=(9, 2))
         g = sns.violinplot(
             data=all_stats, hue_order=algos, palette=palette,
             x='model', hue='optimizer', y=stat, cut=0, inner=None, dodge=True,
@@ -245,7 +246,7 @@ for analysis, algos in ANALYSIS_ALGOS.items():
             f'stat_{analysis}_{stat}_violin.pdf'
         ))
 
-        plt.figure(figsize=(9, 5))
+        plt.figure(figsize=(9, 2))
         g = sns.boxplot(
             data=all_stats, hue_order=algos, palette=palette,
             x='model', hue='optimizer', y=stat, dodge=True,
@@ -256,6 +257,24 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         plt.savefig(os.path.join(
             'evaluation',
             f'stat_{analysis}_{stat}_box.pdf'
+        ))
+
+    for opt in all_stats.optimizer.unique():
+        plt.figure(figsize=(9, 9))
+        g = sns.pairplot(
+            all_stats[all_stats.optimizer == opt],
+            vars=analysis_stats[analysis],
+            hue='model',
+            palette='tab20',
+            hue_order=MODELS,
+            kind='kde',
+            corner=True
+        )
+        g.map_lower(sns.kdeplot, levels=4, color=".2")
+        plt.tight_layout()
+        plt.savefig(os.path.join(
+            'evaluation',
+            f'stat_{analysis}_pair_{opt}.pdf'
         ))
 
     average_stats = all_stats.groupby(['model', 'optimizer']).mean()
