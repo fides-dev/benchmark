@@ -180,27 +180,9 @@ if __name__ == '__main__':
                     results.loc[mrows, f'improvement {metric}'] = \
                         1 / val if metric == 'mean iter' else val
 
-                # sort fvals according to start id
                 opt_ids = {
                     opt: results.loc[mrows & (results.optimizer == opt),
                                      'ids'].values[0]
-                    for opt in results[mrows].optimizer.unique()
-                }
-
-                fvals = {
-                    opt: results.loc[
-                        mrows & (results.optimizer == opt), 'fvals'
-                    ].values[0]
-                    for opt in results[mrows].optimizer.unique()
-                }
-
-                fvals_sorted = {
-                    opt: np.asarray([
-                        fvals[opt][opt_ids[opt].index(str(istart))]
-                        if str(istart) in opt_ids[opt]
-                        else np.nan
-                        for istart in range(1000)
-                    ])
                     for opt in results[mrows].optimizer.unique()
                 }
 
@@ -215,12 +197,6 @@ if __name__ == '__main__':
                 for opt in results[mrows].optimizer.unique():
 
                     opt_conv_ids = set(opt_ids[opt][:conv_counts[opt]])
-                    results.loc[mrows & (results.optimizer == opt),
-                                'jaccard'] = len(
-                        opt_conv_ids.intersection(ref_conv_ids)
-                    ) / len(
-                        opt_conv_ids.union(ref_conv_ids)
-                    ) if len(ref_conv_ids) > 0 else 0.0
 
                     n_min = min(len(opt_conv_ids), len(ref_conv_ids))
                     results.loc[mrows & (results.optimizer == opt),
@@ -228,27 +204,6 @@ if __name__ == '__main__':
                         opt_conv_ids.intersection(ref_conv_ids)
                     ) / n_min if n_min > 0 else 0.0
 
-                    n_sum = len(opt_conv_ids) + len(ref_conv_ids)
-                    results.loc[mrows & (results.optimizer == opt),
-                                'dice'] = 2*len(
-                        opt_conv_ids.intersection(ref_conv_ids)
-                    ) / n_sum if n_sum > 0 else 0.0
-
-                    mask = np.logical_and(
-                        np.isfinite(fvals_sorted[opt]),
-                        np.isfinite(fvals_sorted[ref_algo])
-                    )
-                    if not mask.any():
-                        print(f'no valid fvals for {model}-{opt}')
-                        print(f'fvals_sorted[opt]: {fvals_sorted[opt]}')
-                        print(f'fvals_sorted[ref]: {fvals_sorted[ref_algo]}')
-                        continue
-
-                    results.loc[mrows & (results.optimizer == opt),
-                                'fcorr'] = np.corrcoef(
-                        np.log10(fvals_sorted[opt][mask] - fmin_model + 1),
-                        np.log10(fvals_sorted[ref_algo][mask] - fmin_model + 1)
-                    )[0, 1]
             else:
                 print(f'No results for {ref_algo} for {model}')
 
@@ -262,12 +217,11 @@ if __name__ == '__main__':
                             f'improvement {metric}'
                         ].apply(np.log10).mean()
 
-        for metric in ['fcorr', 'jaccard', 'overlap', 'dice']:
-            if metric in results:
-                for optimizer in results.optimizer.unique():
-                    sel = results.optimizer == optimizer
-                    results.loc[sel, f'average {metric}'] = \
-                        results.loc[sel, metric].mean()
+        if 'overlap' in results:
+            for optimizer in results.optimizer.unique():
+                sel = results.optimizer == optimizer
+                results.loc[sel, f'average overlap'] = \
+                    results.loc[sel, 'overlap'].mean()
 
         results.drop(columns=['fvals', 'iter', 'ids']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
@@ -292,7 +246,7 @@ if __name__ == '__main__':
                             hue='optimizer', hue_order=algos,
                             palette=palette, bottom=1e0)
 
-            g.set(yscale='log', ylim=(1e0, 1e3))
+            g.set(yscale='log', ylim=(10**0.5, 10**3.5))
             for ax in g.axes.ravel():
                 ax.set_xticklabels(ax.get_xticklabels(),
                                    rotation=45, ha='right')
@@ -302,7 +256,7 @@ if __name__ == '__main__':
             ))
 
             # conv rate plot
-            plt.figure(figsize=(9, 5))
+            plt.figure(figsize=(9, 4))
             g = sns.barplot(
                 data=results_analysis,
                 x='model', y='conv rate', hue='optimizer', hue_order=algos,
@@ -318,19 +272,18 @@ if __name__ == '__main__':
             ))
 
             # similarity plot
-            for similarity in ['jaccard', 'dice', 'overlap']:
-                plt.figure(figsize=(9, 5))
-                g = sns.barplot(
-                    data=results_analysis, hue_order=algos, palette=palette,
-                    x='model', hue='optimizer', y=similarity
-                )
-                g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-                g.set(yscale='linear', ylim=[0, 1])
-                plt.tight_layout()
-                plt.savefig(os.path.join(
-                    'evaluation',
-                    f'comparison_{analysis}_{threshold}_{similarity}.pdf'
-                ))
+            plt.figure(figsize=(9, 4))
+            g = sns.barplot(
+                data=results_analysis, hue_order=algos, palette=palette,
+                x='model', hue='optimizer', y='overlap'
+            )
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            g.set(yscale='linear', ylim=[0, 1])
+            plt.tight_layout()
+            plt.savefig(os.path.join(
+                'evaluation',
+                f'comparison_{analysis}_{threshold}_overlap.pdf'
+            ))
 
             # iter plot
             df_iter = pd.DataFrame(
@@ -340,7 +293,7 @@ if __name__ == '__main__':
                 columns=['iter', 'model', 'optimizer']
             )
             df_iter.iter = df_iter.iter.apply(np.log10)
-            plt.figure(figsize=(9, 5))
+            plt.figure(figsize=(9, 4))
             g = sns.boxplot(
                 data=df_iter, hue_order=algos, palette=palette,
                 x='model', hue='optimizer', y='iter'
@@ -350,17 +303,4 @@ if __name__ == '__main__':
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation', f'comparison_{analysis}_iter.pdf'
-            ))
-
-            # corr plot
-            plt.figure(figsize=(9, 5))
-            g = sns.barplot(
-                data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='fcorr'
-            )
-            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-            g.set(yscale='linear', ylim=[-0.25, 1])
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_fcorr.pdf'
             ))

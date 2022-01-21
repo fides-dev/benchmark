@@ -247,6 +247,18 @@ for analysis, algos in ANALYSIS_ALGOS.items():
         ))
 
     average_stats = all_stats.groupby(['model', 'optimizer']).mean()
+
+    ref_algo = 'fides.subspace=2D'
+    for model in MODELS:
+        mrows = all_stats.model == model.split('_')[0]
+        if np.any(mrows & (all_stats.optimizer == ref_algo)):
+            for stat in analysis_stats[analysis]:
+                ref_val = all_stats.loc[
+                    mrows & (all_stats.optimizer == ref_algo), stat
+                ].values[0]
+                all_stats.loc[mrows, f'improvement {stat}'] = \
+                    all_stats.loc[mrows, stat] / ref_val
+
     average_stats.to_csv(
         os.path.join('evaluation', f'stats_{analysis}.csv')
     )
