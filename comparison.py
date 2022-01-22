@@ -177,16 +177,15 @@ if __name__ == '__main__':
             )
 
             results['mean iter'] = results.iter.apply(np.mean)
-            results['skew iter'] = results.iter.apply(skew)
-            results['nskew iter'] = results.iter.apply(
-                lambda x: (np.mean(x) - np.median(x)) / np.std(x)
+            results['skew iter'] = results.iter.apply(lambda x: skew(
+                np.log10(x))
             )
 
             # compute improvement compared to ref algo
             ref_algo = 'fides.subspace=2D'
             if np.any(mrows & (results.optimizer == ref_algo)):
                 for metric in ['conv rate', 'conv count', 'mean iter',
-                               'skew iter', 'nskew iter']:
+                               'skew iter']:
                     ref_val = results.loc[
                         mrows & (results.optimizer == ref_algo), metric
                     ].values[0]
@@ -248,20 +247,23 @@ if __name__ == '__main__':
         for analysis, algos in ANALYSIS_ALGOS.items():
             df_analysis = df[df.optimizer.isin(algos)]
             results_analysis = results[results.optimizer.isin(algos)].copy()
-            stats = pd.read_csv(os.path.join('evaluation',
-                                             f'stats_{analysis}.csv'))
+            if analysis != 'matlab':
+                stats = pd.read_csv(os.path.join('evaluation',
+                                                 f'stats_{analysis}.csv'))
 
-            stat_columns = [
-                stat for stat in stats.columns
-                if stat not in ['model', 'optimizer', 'converged', 'iter']
-            ]
-            for _, row in stats.iterrows():
-                for stat in stat_columns:
-                    results_analysis.loc[
-                        (results_analysis.model == row.model) &
-                        (results_analysis.optimizer == row.optimizer),
-                        stat
-                    ] = row[stat]
+                stat_columns = [
+                    stat for stat in stats.columns
+                    if stat not in ['model', 'optimizer', 'converged', 'iter']
+                ]
+                for _, row in stats.iterrows():
+                    for stat in stat_columns:
+                        results_analysis.loc[
+                            (results_analysis.model == row.model) &
+                            (results_analysis.optimizer == row.optimizer),
+                            stat
+                        ] = row[stat]
+            else:
+                stat_columns = []
 
             palette = ALGO_PALETTES[analysis]
 
