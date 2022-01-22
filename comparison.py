@@ -348,7 +348,7 @@ if __name__ == '__main__':
                 var_name='improvement var',
                 value_name='improvement'
             )
-            df_improvement.value.apply(np.log10)
+            df_improvement.improvement.apply(np.log10)
 
             plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
