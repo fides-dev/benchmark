@@ -356,7 +356,8 @@ if __name__ == '__main__':
                 var_name='improvement var',
                 value_name='improvement'
             )
-            df_improvement.improvement.apply(np.log10)
+            df_improvement.improvement = \
+                df_improvement.improvement.apply(np.log10)
             df_improvement[df_improvement.improvement < -2].improvement = -2
             df_improvement.dropna(subset=['improvement'], inplace=True)
 
@@ -369,7 +370,7 @@ if __name__ == '__main__':
             g.map_dataframe(
                 sns.barplot, x='model', y='improvement',
                 hue='improvement var', hue_order=algos, palette=palette,
-                bottom=-2,
+                bottom=-2, top=2,
             )
             g.set(ylim=[-2, 2])
             for ax in g.axes.ravel():
