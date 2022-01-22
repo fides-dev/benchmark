@@ -356,7 +356,7 @@ if __name__ == '__main__':
                 row_order=improvements,
             )
             g.map_dataframe(
-                sns.barplot, x='model', y='value',
+                sns.barplot, x='model', y='improvement',
                 hue='variable', hue_order=algos, palette=palette,
                 lower=-2,
             )
