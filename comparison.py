@@ -363,7 +363,8 @@ if __name__ == '__main__':
             g.set(ylim=[-2, 2])
             plt.tight_layout()
             plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_improvements.pdf'
+                'evaluation',
+                f'comparison_{analysis}_{threshold}_improvements.pdf'
             ))
 
             # stats comparison
@@ -384,5 +385,6 @@ if __name__ == '__main__':
             )
             plt.tight_layout()
             plt.savefig(os.path.join(
-                'evaluation', f'comparison_{analysis}_stats.pdf'
+                'evaluation',
+                f'comparison_{analysis}_{threshold}_stats.pdf'
             ))
