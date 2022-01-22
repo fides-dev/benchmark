@@ -358,6 +358,7 @@ if __name__ == '__main__':
             )
             df_improvement.improvement.apply(np.log10)
             df_improvement[df_improvement.improvement < -2].improvement = -2
+            df_improvement.dropna(subset=['improvement'], inplace=True)
 
             plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
@@ -371,7 +372,9 @@ if __name__ == '__main__':
                 bottom=-2,
             )
             g.set(ylim=[-2, 2])
-            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+            for ax in g.axes.ravel():
+                ax.set_xticklabels(ax.get_xticklabels(),
+                                   rotation=45, ha='right')
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
