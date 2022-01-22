@@ -177,8 +177,16 @@ if __name__ == '__main__':
             )
 
             results['mean iter'] = results.iter.apply(np.mean)
-            results['skew iter'] = results.iter.apply(lambda x: skew(
-                np.log10(x))
+            results['skew logiter'] = results.iter.apply(lambda x: skew(
+                np.log10(x)
+            ))
+            results['skew iter'] = results.iter.apply(skew)
+            results['nskew logiter'] = results.iter.apply(
+                lambda x: (np.mean(np.log10(x)) -
+                           np.median(np.log10(x)))/np.std(np.log10(x))
+            )
+            results['nskew iter'] = results.iter.apply(
+                lambda x: (np.mean(x) - np.median(x))/np.std(x)
             )
 
             # compute improvement compared to ref algo
@@ -368,23 +376,24 @@ if __name__ == '__main__':
             ))
 
             # stats comparison
-            df_improvement[df_improvement.improvement < -2].improvement = -2
-            df_stats = pd.melt(
-                df_improvement,
-                id_vars=group_vars + ['improvement var', 'improvement'],
-                value_vars=stat_columns,
-                var_name='stat var',
-                value_name='stat'
-            )
-            g = sns.lmplot(
-                data=df_stats,
-                sharex=False, sharey=True,
-                row='stat var', col='improvement var',
-                x='stat', y='improvement',
-                hue='optimizer', hue_order=algos, palette=palette,
-            )
-            plt.tight_layout()
-            plt.savefig(os.path.join(
-                'evaluation',
-                f'comparison_{analysis}_{threshold}_stats.pdf'
-            ))
+            if stat_columns:
+                df_improvement[df_improvement.improvement<-2].improvement = -2
+                df_stats = pd.melt(
+                    df_improvement,
+                    id_vars=group_vars + ['improvement var', 'improvement'],
+                    value_vars=stat_columns,
+                    var_name='stat var',
+                    value_name='stat'
+                )
+                g = sns.lmplot(
+                    data=df_stats,
+                    sharex=False, sharey=True,
+                    row='stat var', col='improvement var',
+                    x='stat', y='improvement',
+                    hue='optimizer', hue_order=algos, palette=palette,
+                )
+                plt.tight_layout()
+                plt.savefig(os.path.join(
+                    'evaluation',
+                    f'comparison_{analysis}_{threshold}_stats.pdf'
+                ))
