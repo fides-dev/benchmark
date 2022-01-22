@@ -352,7 +352,7 @@ if __name__ == '__main__':
 
             plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
-                df_improvement, row='variable',
+                df_improvement, row='improvement var',
                 row_order=improvements,
             )
             g.map_dataframe(
