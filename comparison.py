@@ -357,7 +357,7 @@ if __name__ == '__main__':
             )
             g.map_dataframe(
                 sns.barplot, x='model', y='improvement',
-                hue='variable', hue_order=algos, palette=palette,
+                hue='improvement var', hue_order=algos, palette=palette,
                 lower=-2,
             )
             g.set(ylim=[-2, 2])
