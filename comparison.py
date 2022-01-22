@@ -359,7 +359,9 @@ if __name__ == '__main__':
             df_improvement.improvement = \
                 df_improvement.improvement.apply(np.log10)
             df_improvement[df_improvement.improvement < -2].improvement = -2
-            df_improvement.dropna(subset=['improvement'], inplace=True)
+            df_improvement = df_improvement[
+                df_improvement.improvement.apply(np.isfinite)
+            ]
 
             plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
