@@ -378,7 +378,7 @@ if __name__ == '__main__':
             g = sns.lmplot(
                 df_stats,
                 sharex=False, sharey=True,
-                row='stat var', column='improvement var',
+                row='stat var', col='improvement var',
                 x='stat', y='improvement',
                 hue='optimizer', hue_order=algos, palette=palette,
             )
