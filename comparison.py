@@ -357,11 +357,13 @@ if __name__ == '__main__':
                 value_name='improvement'
             )
             df_improvement.improvement.apply(np.log10)
+            df_improvement[df_improvement.improvement < -2].improvement = -2
 
             plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
                 df_improvement, row='improvement var',
                 row_order=improvements,
+                height=3, aspect=2,
             )
             g.map_dataframe(
                 sns.barplot, x='model', y='improvement',
@@ -369,6 +371,7 @@ if __name__ == '__main__':
                 bottom=-2,
             )
             g.set(ylim=[-2, 2])
+            g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
@@ -377,7 +380,6 @@ if __name__ == '__main__':
 
             # stats comparison
             if stat_columns:
-                df_improvement[df_improvement.improvement<-2].improvement = -2
                 df_stats = pd.melt(
                     df_improvement,
                     id_vars=group_vars + ['improvement var', 'improvement'],
