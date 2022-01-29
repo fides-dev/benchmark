@@ -13,7 +13,7 @@ import matplotlib as mpl
 
 from pypesto.store import OptimizationResultHDF5Reader
 from pypesto.visualize import waterfall
-from pypesto.optimize.result import OptimizerResult
+from pypesto.result import OptimizerResult
 from matplotlib import cm
 from compile_petab import load_problem, PARAMETER_ALIASES, MODEL_ALIASES
 from benchmark import set_solver_model_options

@@ -4,7 +4,6 @@ import amici
 import fides
 import pypesto
 import re
-import distutils.util
 import pypesto.optimize as optimize
 import pypesto.visualize as visualize
 from pypesto.store import OptimizationResultHDF5Writer
