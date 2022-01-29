@@ -5,12 +5,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pypesto
+import re
 
-from scipy.stats import skew
+from scipy.stats import pearsonr
 
 from evaluate import (
     load_results, get_num_converged_per_grad, get_num_converged,
-    ANALYSIS_ALGOS, ALGO_PALETTES, CONVERGENCE_THRESHOLDS, OPTIMIZER_FORWARD
+    ANALYSIS_ALGOS, ALGO_PALETTES, ALGO_COLORS, CONVERGENCE_THRESHOLDS,
+    OPTIMIZER_FORWARD
 )
 from compile_petab import load_problem
 from benchmark import set_solver_model_options
@@ -143,7 +145,13 @@ if __name__ == '__main__':
     else:
         results = pd.read_hdf(hdf_file, hdf_key)
 
-    for threshold in CONVERGENCE_THRESHOLDS:
+    ref_algos = {
+        'GN': 'fides.subspace=2D',
+        'BFGS': 'fides.subspace=2D.hessian=BFGS',
+        'SR1': 'fides.subspace=2D.hessian=SR1',
+    }
+
+    for threshold in CONVERGENCE_THRESHOLDS[1:]:
         for model in MODELS:
             mrows = results.model == model.split('_')[0]
 
@@ -152,7 +160,6 @@ if __name__ == '__main__':
                     option.startswith('ebounds=')
                     for option in optimizer.split('.')
                 )
-
 
             fmin_model = results.loc[
                 mrows & np.logical_not(results.optimizer.apply(has_ebounds)),
@@ -167,7 +174,7 @@ if __name__ == '__main__':
                                   threshold),
                 axis=1
             )
-            results.loc[mrows, 'conv rate'] = results.loc[mrows, :].apply(
+            results.loc[mrows, 'perf'] = results.loc[mrows, :].apply(
                 lambda x:
                 get_num_converged_per_grad(x.fvals, x.iter,
                                            fmin_model if not has_ebounds(
@@ -176,73 +183,73 @@ if __name__ == '__main__':
                                            threshold), axis=1
             )
 
-            results['mean iter'] = results.iter.apply(np.mean)
-            results['skew logiter'] = results.iter.apply(lambda x: skew(
-                np.log10(x)
-            ))
-            results['skew iter'] = results.iter.apply(skew)
-            results['nskew logiter'] = results.iter.apply(
-                lambda x: (np.mean(np.log10(x)) -
-                           np.median(np.log10(x)))/np.std(np.log10(x))
+            results.loc[mrows, 'best performer'] = \
+                results.loc[mrows, 'perf'] > \
+                results.loc[mrows, 'perf'].max() * 0.85
+
+            results['conv rate'] = results.iter.apply(
+                lambda x: 1 / np.sum(x) if np.sum(x) > 0 else np.nan
             )
-            results['nskew iter'] = results.iter.apply(
-                lambda x: (np.mean(x) - np.median(x))/np.std(x)
-            )
+            perfs = ['perf', 'conv rate', 'conv count']
 
             # compute improvement compared to ref algo
-            ref_algo = 'fides.subspace=2D'
-            if np.any(mrows & (results.optimizer == ref_algo)):
-                for metric in ['conv rate', 'conv count', 'mean iter',
-                               'skew iter']:
-                    ref_val = results.loc[
-                        mrows & (results.optimizer == ref_algo), metric
-                    ].values[0]
-                    val = results.loc[mrows, metric] / ref_val
-                    results.loc[mrows, f'improvement {metric}'] = \
-                        1 / val if metric == 'mean iter' else val
+            improvements = []
+            for ref_name, ref_algo in ref_algos.items():
+                if np.any(mrows & (results.optimizer == ref_algo)):
+                    for perf in perfs:
+                        ref_val = results.loc[
+                            mrows & (results.optimizer == ref_algo), perf
+                        ].values[0]
+                        val = results.loc[mrows, perf] / ref_val
+                        results.loc[mrows, f'improvement ({ref_name}) {perf}']\
+                            = val
 
-                opt_ids = {
-                    opt: results.loc[mrows & (results.optimizer == opt),
-                                     'ids'].values[0]
-                    for opt in results[mrows].optimizer.unique()
-                }
+                    opt_ids = {
+                        opt: results.loc[mrows & (results.optimizer == opt),
+                                         'ids'].values[0]
+                        for opt in results[mrows].optimizer.unique()
+                    }
 
-                conv_counts = {
-                    opt: int(results.loc[
-                        mrows & (results.optimizer == opt), 'conv count'
-                    ].values[0])
-                    for opt in results[mrows].optimizer.unique()
-                }
+                    conv_counts = {
+                        opt: int(results.loc[
+                            mrows & (results.optimizer == opt), 'conv count'
+                        ].values[0])
+                        for opt in results[mrows].optimizer.unique()
+                    }
 
-                ref_conv_ids = set(opt_ids[ref_algo][:conv_counts[ref_algo]])
-                for opt in results[mrows].optimizer.unique():
+                    ref_conv_ids = set(
+                        opt_ids[ref_algo][:conv_counts[ref_algo]]
+                    )
+                    for opt in results[mrows].optimizer.unique():
 
-                    opt_conv_ids = set(opt_ids[opt][:conv_counts[opt]])
+                        opt_conv_ids = set(opt_ids[opt][:conv_counts[opt]])
 
-                    n_min = min(len(opt_conv_ids), len(ref_conv_ids))
-                    results.loc[mrows & (results.optimizer == opt),
-                                'overlap'] = len(
-                        opt_conv_ids.intersection(ref_conv_ids)
-                    ) / n_min if n_min > 0 else 0.0
+                        n_min = min(len(opt_conv_ids), len(ref_conv_ids))
+                        results.loc[mrows & (results.optimizer == opt),
+                                    f'overlap ({ref_name})'] = len(
+                            opt_conv_ids.intersection(ref_conv_ids)
+                        ) / n_min if n_min > 0 else 0.0
 
-            else:
-                print(f'No results for {ref_algo} for {model}')
+                else:
+                    print(f'No results for {ref_algo} for {model}')
 
-        for metric in ['conv rate', 'conv count', 'mean iter']:
-            if f'improvement {metric}' in results:
-                for optimizer in results.optimizer.unique():
-                    results.loc[results.optimizer == optimizer,
-                                f'average improvement {metric}'] = \
-                        10 ** results.loc[
+        for ref in ref_algos.keys():
+            for perf in perfs:
+                if f'improvement ({ref}) {perf}' in results:
+                    for optimizer in results.optimizer.unique():
+                        val = 10 ** results.loc[
                             results.optimizer == optimizer,
-                            f'improvement {metric}'
+                            f'improvement ({ref}) {perf}'
                         ].apply(np.log10).mean()
+                        results.loc[results.optimizer == optimizer,
+                                    f'average improvement ({ref}) {perf}'] =\
+                            val
 
-        if 'overlap' in results:
-            for optimizer in results.optimizer.unique():
-                sel = results.optimizer == optimizer
-                results.loc[sel, f'average overlap'] = \
-                    results.loc[sel, 'overlap'].mean()
+            if f'overlap ({ref})' in results:
+                for optimizer in results.optimizer.unique():
+                    sel = results.optimizer == optimizer
+                    results.loc[sel, f'average overlap ({ref})'] = \
+                        results.loc[sel, f'overlap ({ref})'].mean()
 
         results.drop(columns=['fvals', 'iter', 'ids']).to_csv(
             os.path.join('evaluation', f'comparison_{threshold}.csv')
@@ -273,11 +280,83 @@ if __name__ == '__main__':
             else:
                 stat_columns = []
 
+            overlaps = [f'overlap ({ref})' for ref in ref_algos.keys()]
+
+            for ref_name, ref_algo in ref_algos.items():
+                if analysis not in ['curv', 'hybridB'] and ref_name != 'GN':
+                    continue
+                if analysis == 'hybridB' and ref_name == 'SR1':
+                    continue
+                for model in MODELS:
+                    mrows = results_analysis.model == model.split('_')[0]
+                    for stat in stat_columns:
+                        ref_val = results_analysis.loc[
+                            mrows & (results_analysis.optimizer == ref_algo),
+                            stat
+                        ].values[0]
+                        results_analysis.loc[mrows,
+                                             f'change ({ref_name}) {stat}'] = \
+                            results_analysis.loc[mrows, stat] - ref_val
+
             palette = ALGO_PALETTES[analysis]
+
+            for perf in perfs:
+                for opt in results_analysis.optimizer.unique():
+                    if opt == 'fides.subspace=2D':
+                        continue
+                    results_opt = results_analysis.loc[
+                        results_analysis.optimizer == opt, :
+                    ]
+                    better_than_ref = results_opt[
+                        results_opt[f'improvement (GN) {perf}'] > 1.15
+                    ]
+                    similar_to_ref = results_opt[
+                        (results_opt[f'improvement (GN) {perf}'] < 1.15) &
+                        (results_opt[f'improvement (GN) {perf}'] > 0.85)
+                    ]
+                    worse_than_ref = results_opt[
+                        (results_opt[f'improvement (GN) {perf}'] < 0.85) &
+                        (results_opt[f'improvement (GN) {perf}'] > 0.0)
+                    ]
+                    failed = results_opt[
+                        (results_opt[f'improvement (GN) {perf}'] < 0.01)
+                    ]
+                    worked = results_opt[
+                        (results_opt[f'improvement (GN) {perf}'] > 0.01)
+                    ]
+                    best_performer = results_opt[results_opt['best performer']]
+
+                    evaluations = [
+                        (f'had better {perf}', better_than_ref),
+                        (f'had similar {perf}', similar_to_ref),
+                        (f'had worse {perf}', worse_than_ref),
+                    ]
+                    if perf == 'perf':
+                        evaluations += [
+                            ('worked', worked),
+                            ('failed', failed),
+                            ('was best performer', best_performer)
+                        ]
+
+                    for predicate, frame in evaluations:
+                        models = ", ".join([
+                            f"\\textit{{{model}}}" for model in frame.model
+                        ])
+                        if frame.empty:
+                            continue
+
+                        print(
+                            f'{opt} {predicate} on {len(frame)} problems '
+                            f'({min(frame["improvement (GN) perf"]):.2f} '
+                            f'to {max(frame["improvement (GN) perf"]):.2f} '
+                            f'fold change; '
+                            f'{frame["improvement (GN) perf"].values[0]:.2f} '
+                            f'average; {models})'
+                        )
 
             # conv counts plot
             g = sns.FacetGrid(
-                df_analysis, row='variable',
+                data=df_analysis, row='variable',
                 sharex=True, sharey=True,
                 height=3, aspect=2,
             )
@@ -294,11 +373,11 @@ if __name__ == '__main__':
                 'evaluation', f'comparison_{analysis}_{threshold}_counts.pdf'
             ))
 
-            # conv rate plot
+            # performance plot
             plt.figure(figsize=(9, 4))
             g = sns.barplot(
                 data=results_analysis,
-                x='model', y='conv rate', hue='optimizer', hue_order=algos,
+                x='model', y='perf', hue='optimizer', hue_order=algos,
                 palette=palette,
                 bottom=1e-7,
             )
@@ -314,7 +393,7 @@ if __name__ == '__main__':
             plt.figure(figsize=(9, 4))
             g = sns.barplot(
                 data=results_analysis, hue_order=algos, palette=palette,
-                x='model', hue='optimizer', y='overlap'
+                x='model', hue='optimizer', y='overlap (GN)'
             )
             g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
             g.set(yscale='linear', ylim=[0, 1])
@@ -344,64 +423,168 @@ if __name__ == '__main__':
                 'evaluation', f'comparison_{analysis}_iter.pdf'
             ))
 
-            # improvement plot
+            stat_changes = [
+                f'change ({ref}) {stat}'
+                for stat in stat_columns
+                for ref in ref_algos.keys()
+            ]
+            stat_changes = [change for change in stat_changes
+                            if change in results_analysis.columns]
+
+            # decompose perf change into convergence count + iteration
             group_vars = ['model', 'optimizer']
-            improvements = ['improvement conv count',
-                            'improvement mean iter',
-                            'improvement conv rate']
+            improvements_perfs = [
+                f'improvement ({ref}) {perf}' for perf in perfs
+                for ref in ref_algos.keys()
+            ]
+            improvements_perfs = [imp for imp in improvements_perfs
+                                  if imp in results_analysis.columns]
+
+            for imp in improvements_perfs:
+                results_analysis[imp] = \
+                    results_analysis[imp].apply(np.log10)
+                results_analysis.loc[results_analysis[imp] < -2, imp] = -2
+                results_analysis.loc[results_analysis[imp] > 2, imp] = 2
+
             df_improvement = pd.melt(
                 results_analysis,
-                id_vars=group_vars + stat_columns,
-                value_vars=improvements,
+                id_vars=group_vars,
+                value_vars=improvements_perfs,
                 var_name='improvement var',
                 value_name='improvement'
             )
-            df_improvement.improvement = \
-                df_improvement.improvement.apply(np.log10)
-            df_improvement[df_improvement.improvement < -2].improvement = -2
-            df_improvement = df_improvement[
-                df_improvement.improvement.apply(np.isfinite)
-            ]
 
-            plt.figure(figsize=(9, 4))
             g = sns.FacetGrid(
-                df_improvement, row='improvement var',
-                row_order=improvements,
-                height=3, aspect=2,
+                data=df_improvement, row='improvement var',
+                row_order=[
+                    f'improvement (GN) {perf}' for perf in perfs
+                ],
+                height=2, aspect=3,
             )
+            g.axes[0, 0].axhline(np.log10(1.15), color='k', linestyle='--')
+            g.axes[0, 0].axhline(np.log10(0.85), color='k', linestyle='--')
             g.map_dataframe(
                 sns.barplot, x='model', y='improvement',
-                hue='improvement var', hue_order=algos, palette=palette,
-                bottom=-2,
+                hue='optimizer', hue_order=algos, palette=palette,
             )
             g.set(ylim=[-2, 2])
-            for ax in g.axes.ravel():
-                ax.set_xticklabels(ax.get_xticklabels(),
-                                   rotation=45, ha='right')
+            g.axes[-1, 0].set_xticklabels(g.axes[-1, 0].get_xticklabels(),
+                                          rotation=45, ha='right')
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
-                f'comparison_{analysis}_{threshold}_improvements.pdf'
+                f'comparison_{analysis}_{threshold}_improvement_decomp.pdf'
             ))
 
-            # stats comparison
-            if stat_columns:
-                df_stats = pd.melt(
-                    df_improvement,
-                    id_vars=group_vars + ['improvement var', 'improvement'],
-                    value_vars=stat_columns,
-                    var_name='stat var',
-                    value_name='stat'
+            for perf in perfs:
+                results_analysis[perf] = results_analysis[perf].apply(np.log10)
+                results_analysis.loc[results_analysis[perf] < -7, perf] = -7
+
+            for col_type, cols in zip(['stat', 'change', 'overlap'],
+                                      [stat_columns, stat_changes, overlaps]):
+                if not cols:
+                    continue
+                for opt in results_analysis.optimizer.unique():
+                    data = results_analysis[results_analysis.optimizer == opt]
+                    for x in cols:
+                        for y in perfs + improvements_perfs:
+                            points = data.dropna(subset=[x, y])
+                            r, p = pearsonr(points[x], points[y])
+
+                            if np.isnan(p) or p > 0.05:
+                                continue
+
+                            if analysis == 'curv':
+                                if (x.startswith('change (GN)') or
+                                    y.startswith('improvement (GN)')) and (
+                                    opt not in [
+                                        'fides.subspace=full',
+                                        'fides.subspace=2D.hessian=BFGS',
+                                        'fides.subspace=2D.hessian=SR1',
+                                    ]
+                                ):
+                                    continue
+
+                                if (x.startswith('change (BFGS)') or
+                                    y.startswith('improvement (BFGS)')) and (
+                                    opt not in [
+                                        'fides.subspace=full.hessian=BFGS',
+                                        'fides.subspace=2D.hessian=SR1',
+                                    ]
+                                ):
+                                    continue
+
+                                if (x.startswith('change (SR1)') or
+                                    y.startswith('improvement (SR1)')) and (
+                                    opt not in [
+                                        'fides.subspace=full.hessian=SR1',
+                                        'fides.subspace=2D.hessian=BFGS',
+                                    ]
+                                ):
+                                    continue
+
+                            if analysis in ['curv', 'hybridB']:
+                                my = re.match(r'improvement \(([\w]+)\)', y)
+                                mx = re.match(r'change \(([\w]+)\)', x)
+
+                                if mx and my and mx.group(1) != my.group(1):
+                                    continue
+
+                            plt.figure(figsize=(4, 4))
+                            g = sns.regplot(
+                                data=points, x=x, y=y,
+                                color=ALGO_COLORS[analysis][opt]
+                            )
+                            g.text(.05, .8, f'r={r:.2f}, p={p:.2e}',
+                                   transform=g.transAxes)
+                            plt.tight_layout()
+                            plt.savefig(os.path.join(
+                                'evaluation',
+                                f'comparison_{analysis}_{threshold}_'
+                                f'{opt}_{x}_vs_{y}.pdf'
+                            ))
+
+                df_plot = pd.melt(
+                    results_analysis,
+                    id_vars=group_vars + perfs + improvements_perfs,
+                    value_vars=cols,
+                    var_name=f'{col_type} var',
+                    value_name=col_type
                 )
+                if col_type == 'change':
+                    if analysis == 'curv':
+                        df_plot = df_plot[
+                            df_plot[f'{col_type} var'].apply(
+                                lambda x: x.startswith('change (GN)')
+                            ) & (
+                                (df_plot.optimizer ==
+                                 'fides.subspace=2D.hessian=BFGS') |
+                                (df_plot.optimizer ==
+                                 'fides.subspace=2D.hessian=SR1')
+                            )
+                        ]
+                    else:
+                        df_plot = df_plot[
+                            df_plot.optimizer != 'fides.subspace=2D'
+                        ]
+                else:
+                    data = results_analysis
+                df_plot.dropna(inplace=True, how='any')
                 g = sns.lmplot(
-                    data=df_stats,
-                    sharex=False, sharey=True,
-                    row='stat var', col='improvement var',
-                    x='stat', y='improvement',
+                    data=pd.melt(
+                        df_plot,
+                        value_vars=perfs + improvements_perfs,
+                        id_vars=[f'{col_type} var', col_type] + group_vars,
+                    ),
+                    sharex=False, sharey=False,
+                    row=f'{col_type} var', col='variable',
+                    x=col_type, y='value',
                     hue='optimizer', hue_order=algos, palette=palette,
                 )
                 plt.tight_layout()
                 plt.savefig(os.path.join(
                     'evaluation',
-                    f'comparison_{analysis}_{threshold}_stats.pdf'
+                    f'comparison_{analysis}_{threshold}_'
+                    f'{col_type}_vs_perf.pdf'
                 ))
+

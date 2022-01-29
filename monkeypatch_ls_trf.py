@@ -188,7 +188,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
             step_norm = norm(step)
             termination_status = check_termination(
-                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
+                actual_reduction, cost, step_h_norm, norm(x), ratio, ftol,
+                xtol)
             if termination_status is not None:
                 break
 

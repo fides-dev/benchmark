@@ -34,16 +34,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLDS = [0.05, 2, 10]
-
-cmap = cm.get_cmap('tab10')
-ALGO_COLORS = {
-    legend: tuple([*cmap.colors[il], 1.0])
-    for il, legend in enumerate([
-        'fides.subspace=2D', 'fides.subspace=2D.hessian=FIMe', 'fmincon',
-        'lsqnonlin', 'ls_trf_2D',
-    ])
-}
+CONVERGENCE_THRESHOLDS = [0.05, 4, 20]
 
 OPTIMIZER_FORWARD = [
     'fides.subspace=2D',
@@ -72,7 +63,20 @@ OPTIMIZER_FORWARD = [
 N_STARTS_FORWARD = ['1000']
 
 ANALYSIS_ALGOS = {
-    'matlab': list(ALGO_COLORS.keys()),
+    'matlab': [
+        'fides.subspace=2D',
+        'fides.subspace=2D.hessian=FIMe',
+        'fmincon',
+        'lsqnonlin',
+        'ls_trf_2D',
+    ],
+    'stepback': [
+        'fides.subspace=2D',
+        'fides.subspace=2D.stepback=reflect_single',
+        'fides.subspace=2D.ebounds=10',
+        'fides.subspace=2D.ebounds=100',
+        'fides.subspace=2D.ebounds=Inf',
+    ],
     'curv': [
         'fides.subspace=2D',
         'fides.subspace=full',
@@ -97,21 +101,26 @@ ANALYSIS_ALGOS = {
         'fides.subspace=2D.hessian=TSSM',
         'fides.subspace=2D.hessian=GNSBFGS'
     ],
-    'stepback': [
-        'fides.subspace=2D',
-        'fides.subspace=2D.stepback=reflect_single',
-        'fides.subspace=2D.ebounds=10',
-        'fides.subspace=2D.ebounds=100',
-        'fides.subspace=2D.ebounds=Inf',
-    ]
 }
 
 ALGO_PALETTES = {
-    'matlab': ALGO_COLORS,
+    'matlab': 'tab10',
     'curv': 'tab20',
     'hybrid': 'Dark2',
     'hybridB': 'Blues',
     'stepback': 'Set2',
+}
+
+ALGO_COLORS = {
+    analysis: {
+        legend: tuple([*cm.get_cmap(cmap).colors[il], 1.0])
+        if cmap not in ['Blues']
+        else tuple(cm.get_cmap('Blues')(
+            range(len(ANALYSIS_ALGOS[analysis])))[il]
+        )
+        for il, legend in enumerate(ANALYSIS_ALGOS[analysis])
+    }
+    for analysis, cmap in ALGO_PALETTES.items()
 }
 
 
