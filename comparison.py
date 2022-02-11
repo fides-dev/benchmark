@@ -145,13 +145,16 @@ if __name__ == '__main__':
     else:
         results = pd.read_hdf(hdf_file, hdf_key)
 
-    ref_algos = {
-        'GN': 'fides.subspace=2D',
-        'BFGS': 'fides.subspace=2D.hessian=BFGS',
-        'SR1': 'fides.subspace=2D.hessian=SR1',
-    }
+    for threshold in CONVERGENCE_THRESHOLDS:
 
-    for threshold in CONVERGENCE_THRESHOLDS[1:]:
+        ref_algos = {
+            'GN': 'fides.subspace=2D'
+            if threshold != CONVERGENCE_THRESHOLDS[0]
+            else 'fides.subspace=2D.hessian=FIMe',
+            'BFGS': 'fides.subspace=2D.hessian=BFGS',
+            'SR1': 'fides.subspace=2D.hessian=SR1',
+        }
+
         for model in MODELS:
             mrows = results.model == model.split('_')[0]
 
@@ -260,6 +263,10 @@ if __name__ == '__main__':
                                  'conv count'])
 
         for analysis, algos in ANALYSIS_ALGOS.items():
+            if threshold == CONVERGENCE_THRESHOLDS[0]:
+                algos = [a if a != 'fides.subspace=2D' else
+                         'fides.subspace=2D.hessian=FIMe'
+                         for a in algos if a != 'random']
             df_analysis = df[df.optimizer.isin(algos)]
             results_analysis = results[results.optimizer.isin(algos)].copy()
             if analysis != 'matlab':
@@ -302,7 +309,7 @@ if __name__ == '__main__':
 
             for perf in perfs:
                 for opt in results_analysis.optimizer.unique():
-                    if opt == 'fides.subspace=2D':
+                    if opt == ref_algos['GN']:
                         continue
                     results_opt = results_analysis.loc[
                         results_analysis.optimizer == opt, :
@@ -386,7 +393,7 @@ if __name__ == '__main__':
             plt.tight_layout()
             plt.savefig(os.path.join(
                 'evaluation',
-                f'comparison_{analysis}_{threshold}_conv_rate.pdf'
+                f'comparison_{analysis}_{threshold}_perf.pdf'
             ))
 
             # similarity plot
@@ -486,9 +493,15 @@ if __name__ == '__main__':
                     continue
                 for opt in results_analysis.optimizer.unique():
                     data = results_analysis[results_analysis.optimizer == opt]
+                    if threshold == CONVERGENCE_THRESHOLDS[0]:
+                        if opt == 'fides.subspace=2D.hessian=FIMe':
+                            # only changes color & skipping
+                            opt = 'fides.subspace=2D'
                     for x in cols:
                         for y in perfs + improvements_perfs:
                             points = data.dropna(subset=[x, y])
+                            if points.empty:
+                                continue
                             r, p = pearsonr(points[x], points[y])
 
                             if np.isnan(p) or p > 0.05:
@@ -565,17 +578,19 @@ if __name__ == '__main__':
                         ]
                     else:
                         df_plot = df_plot[
-                            df_plot.optimizer != 'fides.subspace=2D'
+                            df_plot.optimizer != ref_algos['GN']
                         ]
                 else:
                     data = results_analysis
-                df_plot.dropna(inplace=True, how='any')
+                data = pd.melt(
+                    df_plot,
+                    value_vars=perfs + improvements_perfs,
+                    id_vars=[f'{col_type} var', col_type] + group_vars,
+                ).dropna(subset=['value', col_type])
+                if data.empty:
+                    continue
                 g = sns.lmplot(
-                    data=pd.melt(
-                        df_plot,
-                        value_vars=perfs + improvements_perfs,
-                        id_vars=[f'{col_type} var', col_type] + group_vars,
-                    ),
+                    data=data,
                     sharex=False, sharey=False,
                     row=f'{col_type} var', col='variable',
                     x=col_type, y='value',

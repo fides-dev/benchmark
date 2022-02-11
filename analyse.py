@@ -76,7 +76,7 @@ STATS = {
         ))),
     'neg_ev':
         lambda data: np.sum(
-            data['hess_min_ev'][:] < -np.spacing(1)*data['hess_max_ev']
+            data['hess_min_ev'][:] < -np.spacing(1)*np.abs(data['hess_max_ev'])
         ),
     'singular_shess':
         lambda data: np.sum(data['cond_shess'][:] > 1 / np.spacing(1)),
