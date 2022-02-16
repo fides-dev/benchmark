@@ -309,59 +309,57 @@ if __name__ == '__main__':
 
             palette = ALGO_PALETTES[analysis]
 
-            for perf in perfs:
-                for opt in results_analysis.optimizer.unique():
-                    if opt == ref_algos['GN']:
-                        continue
-                    results_opt = results_analysis.loc[
-                        results_analysis.optimizer == opt, :
-                    ]
-                    better_than_ref = results_opt[
-                        results_opt[f'improvement (GN) {perf}'] > 1.15
-                    ]
-                    similar_to_ref = results_opt[
-                        (results_opt[f'improvement (GN) {perf}'] < 1.15) &
-                        (results_opt[f'improvement (GN) {perf}'] > 0.85)
-                    ]
-                    worse_than_ref = results_opt[
-                        (results_opt[f'improvement (GN) {perf}'] < 0.85) &
-                        (results_opt[f'improvement (GN) {perf}'] > 0.0)
-                    ]
-                    failed = results_opt[
-                        (results_opt[f'improvement (GN) {perf}'] < 0.01)
-                    ]
-                    worked = results_opt[
-                        (results_opt[f'improvement (GN) {perf}'] > 0.01)
-                    ]
-                    best_performer = results_opt[results_opt['best performer']]
-
-                    evaluations = [
-                        (f'had better {perf}', better_than_ref),
-                        (f'had similar {perf}', similar_to_ref),
-                        (f'had worse {perf}', worse_than_ref),
-                    ]
-                    if perf == 'perf':
-                        evaluations += [
-                            ('worked', worked),
-                            ('failed', failed),
-                            ('was best performer', best_performer)
+            for ref in ref_algos.keys():
+                for perf in perfs:
+                    for opt in results_analysis.optimizer.unique():
+                        if opt == ref_algos['GN']:
+                            continue
+                        results_opt = results_analysis.loc[
+                            results_analysis.optimizer == opt, :
                         ]
 
-                    for predicate, frame in evaluations:
-                        models = ", ".join([
-                            f"\\textit{{{model}}}" for model in frame.model
-                        ])
-                        if frame.empty:
-                            continue
+                        values = results_opt[f'improvement ({ref}) {perf}']
 
-                        print(
-                            f'{opt} {predicate} on {len(frame)} problems '
-                            f'({min(frame[f"improvement (GN) {perf}"]):.2f} '
-                            f'to {max(frame[f"improvement (GN) {perf}"]):.2f} '
-                            f'fold change; '
-                            f'{frame[f"improvement (GN) {perf}"].values[0]:.2f}'
-                            f' average; {models})'
-                        )
+                        better_than_ref = results_opt[values > 1.15]
+                        similar_to_ref = results_opt[(values < 1.15) &
+                                                     (values > 0.85)]
+                        worse_than_ref = results_opt[(values < 0.85) &
+                                                     (values > 0.0)]
+                        failed = results_opt[(values < 0.01)]
+                        worked = results_opt[(values > 0.01)]
+                        best_performer = results_opt[
+                            results_opt['best performer']
+                        ]
+
+                        evaluations = [
+                            (f'had better {perf}', better_than_ref),
+                            (f'had similar {perf}', similar_to_ref),
+                            (f'had worse {perf}', worse_than_ref),
+                        ]
+                        if perf == 'perf':
+                            evaluations += [
+                                ('worked', worked),
+                                ('failed', failed),
+                                ('was best performer', best_performer)
+                            ]
+
+                        for predicate, frame in evaluations:
+                            models = ", ".join([
+                                f"\\textit{{{model}}}" for model in frame.model
+                            ])
+                            if frame.empty:
+                                continue
+
+                            ps = frame[f"improvement ({ref}) {perf}"]
+
+                            pmin = ps.min()
+                            pmax = ps.max()
+                            pmean = ps.mean()
+                            print(
+                                f'{opt} {predicate} on {len(frame)} problems '
+                                f'({pmin:.2f} to {pmax:.2f} fold change;'
+                                f' {pmean:.2f} average; {models})'
+                            )
 
             # conv counts plot
             g = sns.FacetGrid(
