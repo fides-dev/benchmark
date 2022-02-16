@@ -34,7 +34,7 @@ new_rc_params = {
 }
 mpl.rcParams.update(new_rc_params)
 
-CONVERGENCE_THRESHOLDS = [0.05, 4, 20]
+CONVERGENCE_THRESHOLDS = [0.05, 1, 5]
 
 OPTIMIZER_FORWARD = [
     'fides.subspace=2D',
