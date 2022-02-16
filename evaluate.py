@@ -55,7 +55,6 @@ OPTIMIZER_FORWARD = [
     'fides.subspace=2D.ebounds=10',
     'fides.subspace=2D.ebounds=100',
     'fides.subspace=2D.ebounds=Inf',
-    'ls_trf',
     'ls_trf_2D',
     'fides.subspace=2D.hessian=FIMe',
 ]
