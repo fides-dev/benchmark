@@ -354,11 +354,11 @@ if __name__ == '__main__':
 
                         print(
                             f'{opt} {predicate} on {len(frame)} problems '
-                            f'({min(frame["improvement (GN) perf"]):.2f} '
-                            f'to {max(frame["improvement (GN) perf"]):.2f} '
+                            f'({min(frame[f"improvement (GN) {perf}"]):.2f} '
+                            f'to {max(frame[f"improvement (GN) {perf}"]):.2f} '
                             f'fold change; '
-                            f'{frame["improvement (GN) perf"].values[0]:.2f} '
-                            f'average; {models})'
+                            f'{frame[f"improvement (GN) {perf}"].values[0]:.2f}'
+                            f' average; {models})'
                         )
 
             # conv counts plot
