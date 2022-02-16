@@ -147,6 +147,8 @@ if __name__ == '__main__':
 
     for threshold in CONVERGENCE_THRESHOLDS:
 
+        print(f'\n==== Threshold: {threshold} ====')
+
         ref_algos = {
             'GN': 'fides.subspace=2D'
             if threshold != CONVERGENCE_THRESHOLDS[0]
