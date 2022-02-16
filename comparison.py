@@ -309,7 +309,7 @@ if __name__ == '__main__':
 
             palette = ALGO_PALETTES[analysis]
 
-            for ref in ref_algos.keys():
+            for ref, ref_algo in ref_algos.items():
                 for perf in perfs:
                     for opt in results_analysis.optimizer.unique():
                         if opt == ref_algos['GN']:
@@ -356,7 +356,8 @@ if __name__ == '__main__':
                             pmax = ps.max()
                             pmean = ps.mean()
                             print(
-                                f'{opt} {predicate} on {len(frame)} problems '
+                                f'{opt} {predicate} than {ref_algo} on'
+                                f' {len(frame)} problems '
                                 f'({pmin:.2f} to {pmax:.2f} fold change;'
                                 f' {pmean:.2f} average; {models})'
                             )
