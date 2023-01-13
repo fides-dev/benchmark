@@ -2,7 +2,7 @@ This repository contains the supplementary information accompanying the
 manuscript "Fides: Reliable Trust-Region Optimization for Parameter Estimation
 of Ordinary Differential Equation Models". 
 
-To set up the scripts, execute the script `unlock.sh`, this will setup a
+To set up the scripts, execute the script `setup.sh`, this will setup a
  virtual environment and download and install additional dependencies.
  
 To ensure reproducibility, the scripts are organized using snakemake. To
